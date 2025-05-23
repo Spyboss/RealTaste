@@ -7,10 +7,8 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files
+# Copy package files (we're building from backend directory)
 COPY package*.json ./
-COPY shared/package*.json ./shared/
-COPY backend/package*.json ./backend/
 
 # Install dependencies
 RUN npm ci --only=production && npm cache clean --force
@@ -21,12 +19,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build shared package first
-WORKDIR /app/shared
-RUN npm run build
-
 # Build backend
-WORKDIR /app/backend
 RUN npm run build
 
 # Production image, copy all the files and run the app
@@ -37,9 +30,9 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nodejs
 
-# Copy built application
-COPY --from=builder --chown=nodejs:nodejs /app/backend/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/backend/package*.json ./
+# Copy built application (we're building from backend directory)
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 USER nodejs
