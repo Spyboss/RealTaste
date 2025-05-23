@@ -1,0 +1,42 @@
+{
+  "name": "realtaste",
+  "version": "1.0.0",
+  "description": "High-performance PWA restaurant order pickup app for Sri Lanka",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "npm run build:shared && npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build:shared": "cd shared && npm run build",
+    "setup": "npm install && npm run setup:workspaces",
+    "setup:workspaces": "npm install --workspaces",
+    "type-check": "npm run type-check --workspaces",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "restaurant",
+    "pwa",
+    "sri-lanka",
+    "pickup",
+    "realtime"
+  ],
+  "author": "Uminda H.",
+  "license": "MIT"
+}
