@@ -34,12 +34,21 @@ export const useCartStore = create<CartState>()(
       isOpen: false,
 
       addItem: (menuItem, variant, addons = [], quantity = 1, notes) => {
+        const variantModifier = variant?.price_modifier || 0;
+        const addonPrices = addons.reduce((sum, addon) => sum + addon.price, 0);
+        const itemPrice = menuItem.base_price + variantModifier + addonPrices;
+
         const newItem: CartItem = {
+          id: `${menuItem.id}-${Date.now()}`,
+          menu_item_id: menuItem.id,
           menu_item: menuItem,
+          name: menuItem.name,
+          price: itemPrice,
           variant,
           addons,
           quantity,
           notes,
+          total: itemPrice * quantity,
         };
 
         set((state) => ({
@@ -89,6 +98,10 @@ export const useCartStore = create<CartState>()(
       },
 
       getItemPrice: (item) => {
+        if (!item.menu_item) {
+          return item.price * item.quantity;
+        }
+
         const variantModifier = item.variant?.price_modifier || 0;
         const addonPrices = item.addons.map(addon => addon.price);
 

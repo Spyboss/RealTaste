@@ -69,7 +69,7 @@ const Cart: React.FC = () => {
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900">
-                          {item.menu_item.name}
+                          {item.menu_item?.name || item.name}
                         </h3>
                         {item.variant && (
                           <p className="text-sm text-gray-600">

@@ -61,7 +61,7 @@ const CheckoutPage: React.FC = () => {
         payment_method: data.paymentMethod,
         notes: data.notes || undefined,
         items: items.map(item => ({
-          menu_item_id: item.menu_item.id,
+          menu_item_id: item.menu_item?.id || item.menu_item_id,
           variant_id: item.variant?.id,
           quantity: item.quantity,
           notes: item.notes,
@@ -97,7 +97,7 @@ const CheckoutPage: React.FC = () => {
             {items.map((item, index) => (
               <div key={index} className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h3 className="font-medium text-gray-900">{item.menu_item.name}</h3>
+                  <h3 className="font-medium text-gray-900">{item.menu_item?.name || item.name}</h3>
                   {item.variant && (
                     <p className="text-sm text-gray-600">Size: {item.variant.name}</p>
                   )}
