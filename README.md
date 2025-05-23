@@ -204,7 +204,7 @@ menu_items (id, category_id, name, description, base_price, image_url, is_availa
 menu_variants (id, menu_item_id, name, price_modifier)
 menu_addons (id, menu_item_id, name, price, is_available)
 
--- Order Management  
+-- Order Management
 orders (id, user_id, status, total_amount, customer_info, created_at)
 order_items (id, order_id, menu_item_id, variant_id, quantity, unit_price, total_price)
 order_item_addons (id, order_item_id, addon_id, quantity, unit_price)
@@ -233,33 +233,43 @@ The database comes pre-seeded with authentic Sri Lankan dishes:
 
 ## 🚀 Deployment
 
-### Frontend (Vercel - Recommended)
+### ⚡ Quick Deploy (30 minutes)
 ```bash
-# Build frontend
-npm run build:frontend
+# 1. Check prerequisites
+npm run deploy:check
 
-# Deploy to Vercel
-vercel --prod
+# 2. Deploy backend to Fly.io
+cd backend
+fly launch --no-deploy
+fly secrets set NODE_ENV=production SUPABASE_URL=your-url SUPABASE_ANON_KEY=your-key
+fly deploy
 
-# Configure environment variables in Vercel dashboard
+# 3. Deploy frontend to Cloudflare Pages
+# Push to GitHub, then connect to Cloudflare Pages
+git push origin main
 ```
 
-### Backend (Railway - Recommended)
+**📚 Detailed Guides:**
+- **🚀 Quick Start**: [QUICK_DEPLOY.md](QUICK_DEPLOY.md) - 30-minute deployment
+- **📖 Full Guide**: [DEPLOYMENT.md](DEPLOYMENT.md) - Complete instructions
+- **✅ Checklist**: [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) - Step-by-step verification
+
+### 🌐 Production Stack
+- **Frontend**: Cloudflare Pages (Free tier, global CDN)
+- **Backend**: Fly.io (Free tier, Singapore region)
+- **Database**: Supabase (Already configured)
+
+### 🔧 Deployment Commands
 ```bash
-# Build backend
-npm run build:backend
+# Check deployment readiness
+npm run deploy:check
 
-# Deploy to Railway
-railway login
-railway deploy
+# Deploy backend only
+npm run deploy:backend
 
-# Configure environment variables in Railway dashboard
+# Get deployment help
+npm run deploy:help
 ```
-
-### Database (Supabase)
-- Already hosted and managed by Supabase
-- Automatic backups and scaling
-- Global CDN for fast access
 
 ## 📱 PWA Features
 

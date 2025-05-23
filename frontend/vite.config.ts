@@ -70,15 +70,20 @@ export default defineConfig({
     target: 'esnext',
     minify: 'esbuild',
     sourcemap: false,
+    outDir: 'dist',
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          ui: ['lucide-react', 'react-hot-toast']
+          ui: ['lucide-react', 'react-hot-toast'],
+          supabase: ['@supabase/supabase-js'],
+          utils: ['axios', 'zustand']
         }
       }
-    }
+    },
+    // Copy static files for Cloudflare Pages
+    copyPublicDir: true
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom']

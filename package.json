@@ -20,7 +20,10 @@
     "setup:workspaces": "npm install --workspaces",
     "type-check": "npm run type-check --workspaces",
     "lint": "npm run lint --workspaces",
-    "test": "npm run test --workspaces"
+    "test": "npm run test --workspaces",
+    "deploy:backend": "cd backend && npm run build && fly deploy",
+    "deploy:check": "powershell -ExecutionPolicy Bypass -File deploy-all.ps1 -Check",
+    "deploy:help": "powershell -ExecutionPolicy Bypass -File deploy-all.ps1"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

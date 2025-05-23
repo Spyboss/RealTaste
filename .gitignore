@@ -131,3 +131,10 @@ workbox-*.js
 *.njsproj
 *.sln
 *.sw?
+
+# Deployment
+.fly/
+.vercel/
+.netlify/
+.cloudflare/
+fly.toml.bak
