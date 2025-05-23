@@ -10,13 +10,18 @@ WORKDIR /app
 # Copy package files (we're building from backend directory)
 COPY package*.json ./
 
-# Install dependencies
+# Install production dependencies
 RUN npm install --only=production && npm cache clean --force
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+
+# Copy package files and install ALL dependencies (including dev dependencies for build)
+COPY package*.json ./
+RUN npm install
+
+# Copy source code
 COPY . .
 
 # Build backend
