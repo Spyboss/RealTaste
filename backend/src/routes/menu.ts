@@ -3,7 +3,7 @@ import { supabaseAdmin, tables } from '../services/supabase';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
 import { validate, schemas } from '../middleware/validation';
 import { adminLimiter } from '../middleware/rateLimiter';
-import { ApiResponse, MenuItem, Category } from '@realtaste/shared';
+import { ApiResponse, MenuItem, Category } from '../types/shared';
 
 const router = Router();
 
@@ -84,11 +84,11 @@ router.get('/categories', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // POST /api/menu/categories - Create new category (admin only)
-router.post('/categories', 
-  authenticateToken, 
-  requireAdmin, 
+router.post('/categories',
+  authenticateToken,
+  requireAdmin,
   adminLimiter,
-  validate(schemas.createCategory), 
+  validate(schemas.createCategory),
   async (req, res) => {
     try {
       const { data, error } = await supabaseAdmin

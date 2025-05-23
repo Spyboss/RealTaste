@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { config } from '../config';
-import { ApiResponse, BusinessHours, isRestaurantOpen } from '@realtaste/shared';
+import { ApiResponse, BusinessHours, isRestaurantOpen } from '../types/shared';
 
 const router = Router();
 
@@ -52,11 +52,11 @@ router.get('/status', async (req, res) => {
     };
 
     const currentlyOpen = isRestaurantOpen(businessHours);
-    
+
     // Get current Sri Lanka time
     const now = new Date();
     const sriLankaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Colombo" }));
-    
+
     const response: ApiResponse<{
       is_open: boolean;
       current_time: string;
@@ -67,7 +67,7 @@ router.get('/status', async (req, res) => {
       data: {
         is_open: currentlyOpen,
         current_time: sriLankaTime.toISOString(),
-        message: currentlyOpen 
+        message: currentlyOpen
           ? `We're open! Orders accepted until ${config.business.closeTime}`
           : `We're closed. We open at ${config.business.openTime} tomorrow.`
       }

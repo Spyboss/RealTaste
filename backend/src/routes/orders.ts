@@ -3,7 +3,7 @@ import { supabaseAdmin, tables } from '../services/supabase';
 import { authenticateToken, requireAdmin, optionalAuth } from '../middleware/auth';
 import { validate, schemas, validateQuery, querySchemas } from '../middleware/validation';
 import { orderLimiter, adminLimiter } from '../middleware/rateLimiter';
-import { ApiResponse, Order, CreateOrderRequest, generateOrderId } from '@realtaste/shared';
+import { ApiResponse, Order, CreateOrderRequest, generateOrderId } from '../types/shared';
 
 const router = Router();
 
@@ -15,7 +15,7 @@ router.post('/',
   async (req, res) => {
     try {
       const orderData: CreateOrderRequest = req.body;
-      
+
       // Calculate order totals
       let subtotal = 0;
       const orderItems = [];
@@ -57,7 +57,7 @@ router.post('/',
         // Calculate addon prices
         let addonTotal = 0;
         const itemAddons = [];
-        
+
         if (item.addon_ids && item.addon_ids.length > 0) {
           for (const addonId of item.addon_ids) {
             const addon = menuItem.menu_addons?.find((a: any) => a.id === addonId);

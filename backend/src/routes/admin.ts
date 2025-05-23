@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { supabaseAdmin, tables } from '../services/supabase';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
 import { adminLimiter } from '../middleware/rateLimiter';
-import { ApiResponse, DailyStats, PopularItem } from '@realtaste/shared';
+import { ApiResponse, DailyStats, PopularItem } from '../types/shared';
 
 const router = Router();
 
@@ -126,13 +126,13 @@ router.get('/analytics', authenticateToken, requireAdmin, async (req, res) => {
 
     // Group orders by date
     const dailyStats = new Map<string, DailyStats>();
-    
+
     // Initialize all dates with zero values
     for (let i = 0; i < daysCount; i++) {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
-      
+
       dailyStats.set(dateStr, {
         date: dateStr,
         total_orders: 0,
@@ -148,17 +148,17 @@ router.get('/analytics', authenticateToken, requireAdmin, async (req, res) => {
     orders?.forEach(order => {
       const orderDate = order.created_at.split('T')[0];
       const dayStats = dailyStats.get(orderDate);
-      
+
       if (dayStats) {
         dayStats.total_orders += 1;
         dayStats.total_revenue += order.total_amount;
-        
+
         // Track items for this date
         if (!itemStats.has(orderDate)) {
           itemStats.set(orderDate, new Map());
         }
         const dayItems = itemStats.get(orderDate)!;
-        
+
         order.order_items?.forEach((item: any) => {
           const itemId = item.menu_item_id;
           if (dayItems.has(itemId)) {
@@ -182,7 +182,7 @@ router.get('/analytics', authenticateToken, requireAdmin, async (req, res) => {
       if (stats.total_orders > 0) {
         stats.avg_order_value = stats.total_revenue / stats.total_orders;
       }
-      
+
       const dayItems = itemStats.get(date);
       if (dayItems) {
         stats.popular_items = Array.from(dayItems.values())
@@ -191,7 +191,7 @@ router.get('/analytics', authenticateToken, requireAdmin, async (req, res) => {
       }
     });
 
-    const analyticsData = Array.from(dailyStats.values()).sort((a, b) => 
+    const analyticsData = Array.from(dailyStats.values()).sort((a, b) =>
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 

@@ -1,48 +1,42 @@
-# fly.toml app configuration file generated for realtaste-api
+# fly.toml app configuration file generated for realtaste-api on 2025-05-23T21:32:23+05:30
+#
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "realtaste-api"
-primary_region = "sin"  # Singapore region for better performance in Sri Lanka
-kill_signal = "SIGINT"
-kill_timeout = "5s"
+app = 'realtaste-api'
+primary_region = 'sin'
+kill_signal = 'SIGINT'
+kill_timeout = '5s'
 
 [experimental]
   auto_rollback = true
 
 [build]
-  dockerfile = "Dockerfile"
-
-[env]
-  NODE_ENV = "production"
-  PORT = "3001"
-
-[http_service]
-  internal_port = 3001
-  force_https = true
-  auto_stop_machines = true
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ["app"]
-
-  [[http_service.checks]]
-    grace_period = "10s"
-    interval = "30s"
-    method = "GET"
-    timeout = "5s"
-    path = "/health"
-
-[vm]
-  cpu_kind = "shared"
-  cpus = 1
-  memory_mb = 256
-
-[[vm.restart_policy]]
-  policy = "on-failure"
+  dockerfile = 'Dockerfile'
 
 [deploy]
   release_command = "echo 'Deployment successful'"
 
-# Uncomment if you need persistent storage
-# [[mounts]]
-#   source = "realtaste_data"
-#   destination = "/data"
+[env]
+  NODE_ENV = 'production'
+  PORT = '3001'
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/health'
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
