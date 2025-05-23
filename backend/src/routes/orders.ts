@@ -118,11 +118,13 @@ router.post('/',
 
       // Create order items
       for (const item of orderItems) {
+        const { addons, ...itemData } = item; // Separate addons from item data
+
         const { data: orderItem, error: itemError } = await supabaseAdmin
           .from(tables.order_items)
           .insert({
             order_id: order.id,
-            ...item
+            ...itemData
           })
           .select()
           .single();
@@ -130,7 +132,7 @@ router.post('/',
         if (itemError) throw itemError;
 
         // Create order item addons
-        for (const addon of item.addons) {
+        for (const addon of addons) {
           const { error: addonError } = await supabaseAdmin
             .from(tables.order_item_addons)
             .insert({
@@ -169,11 +171,17 @@ router.post('/',
       };
 
       res.status(201).json(response);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating order:', error);
+      console.error('Error details:', {
+        message: error?.message || 'Unknown error',
+        stack: error?.stack || 'No stack trace',
+        orderData: JSON.stringify(req.body, null, 2)
+      });
       res.status(500).json({
         success: false,
-        error: 'Failed to create order'
+        error: 'Failed to create order',
+        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
       });
     }
   }
