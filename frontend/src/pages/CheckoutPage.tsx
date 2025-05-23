@@ -5,7 +5,7 @@ import { CreditCard, Banknote, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useCreateOrder } from '@/hooks/useOrders';
-import { CreateOrderRequest } from '@realtaste/shared';
+import { CreateOrderRequest } from '../types/shared';
 import { formatPrice, validatePhoneNumber } from '@/utils/tempUtils';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';

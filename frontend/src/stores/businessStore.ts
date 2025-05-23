@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { BusinessHours } from '@realtaste/shared';
+import { BusinessHours } from '../types/shared';
 import { businessService } from '@/services/businessService';
 
 interface BusinessState {

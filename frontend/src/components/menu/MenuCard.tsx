@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Star } from 'lucide-react';
-import { MenuItem } from '@realtaste/shared';
+import { MenuItem } from '../../types/shared';
 import { formatPrice } from '@/utils/tempUtils';
 import { useCartStore } from '@/stores/cartStore';
 import Button from '@/components/ui/Button';

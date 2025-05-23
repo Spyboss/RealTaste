@@ -1,5 +1,5 @@
 import { api, handleApiResponse } from './api';
-import { Order, CreateOrderRequest, UpdateOrderStatusRequest } from '@realtaste/shared';
+import { Order, CreateOrderRequest, UpdateOrderStatusRequest } from '../types/shared';
 
 export const orderService = {
   // Create new order

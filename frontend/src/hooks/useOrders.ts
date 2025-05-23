@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { orderService } from '@/services/orderService';
-import { CreateOrderRequest, UpdateOrderStatusRequest } from '@realtaste/shared';
+import { CreateOrderRequest, UpdateOrderStatusRequest } from '../types/shared';
 import toast from 'react-hot-toast';
 
 export const useOrders = (params?: {

@@ -1,5 +1,5 @@
 import { api, handleApiResponse } from './api';
-import { BusinessHours } from '@realtaste/shared';
+import { BusinessHours } from '../types/shared';
 
 export const businessService = {
   // Get business hours and info

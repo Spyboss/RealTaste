@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CartItem, MenuItem, MenuVariant, MenuAddon } from '@realtaste/shared';
+import { CartItem, MenuItem, MenuVariant, MenuAddon } from '../types/shared';
 import { calculateItemTotal } from '@/utils/tempUtils';
 
 interface CartState {

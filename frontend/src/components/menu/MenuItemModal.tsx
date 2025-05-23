@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Plus, Minus } from 'lucide-react';
-import { MenuItem, MenuVariant, MenuAddon } from '@realtaste/shared';
+import { MenuItem, MenuVariant, MenuAddon } from '../../types/shared';
 import { formatPrice, calculateItemTotal } from '@/utils/tempUtils';
 import { useCartStore } from '@/stores/cartStore';
 import Button from '@/components/ui/Button';

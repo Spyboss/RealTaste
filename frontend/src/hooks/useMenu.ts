@@ -1,6 +1,6 @@
 import { useQuery } from 'react-query';
 import { menuService } from '@/services/menuService';
-import { Category } from '@realtaste/shared';
+import { Category } from '../types/shared';
 
 export const useMenu = () => {
   return useQuery<Category[], Error>({

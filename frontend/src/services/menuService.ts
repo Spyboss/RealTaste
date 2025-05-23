@@ -1,5 +1,5 @@
 import { api, handleApiResponse } from './api';
-import { Category, MenuItem } from '@realtaste/shared';
+import { Category, MenuItem } from '../types/shared';
 
 export const menuService = {
   // Get full menu with categories and items
