@@ -1,7 +1,7 @@
 // Test script to test production API
 const axios = require('axios');
 
-const API_BASE = 'https://realtaste-api.fly.dev/api';
+const API_BASE = 'https://realtaste.fly.dev/api';
 
 async function testProductionAPI() {
   try {
