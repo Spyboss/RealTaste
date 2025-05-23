@@ -36,7 +36,7 @@ export const schemas = {
     items: Joi.array().items(
       Joi.object({
         menu_item_id: Joi.string().uuid().required(),
-        variant_id: Joi.string().uuid().optional(),
+        variant_id: Joi.string().uuid().allow(null).optional(),
         quantity: Joi.number().integer().min(1).max(10).required(),
         notes: Joi.string().max(200).optional(),
         addon_ids: Joi.array().items(Joi.string().uuid()).optional()

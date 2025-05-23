@@ -13,6 +13,9 @@ import businessRoutes from './routes/business';
 
 const app = express();
 
+// Trust proxy for Fly.io deployment
+app.set('trust proxy', true);
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -68,11 +71,11 @@ app.use('*', (req, res) => {
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Global error handler:', err);
-  
+
   res.status(err.status || 500).json({
     success: false,
-    error: config.nodeEnv === 'production' 
-      ? 'Internal server error' 
+    error: config.nodeEnv === 'production'
+      ? 'Internal server error'
       : err.message,
     ...(config.nodeEnv !== 'production' && { stack: err.stack })
   });
@@ -85,7 +88,7 @@ app.listen(PORT, () => {
   console.log(`📱 Environment: ${config.nodeEnv}`);
   console.log(`🏪 Restaurant: ${config.business.name}`);
   console.log(`⏰ Business Hours: ${config.business.openTime} - ${config.business.closeTime}`);
-  
+
   if (config.nodeEnv === 'development') {
     console.log(`🔗 Health check: http://localhost:${PORT}/health`);
     console.log(`📋 Menu API: http://localhost:${PORT}/api/menu`);

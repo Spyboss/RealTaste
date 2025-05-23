@@ -96,6 +96,33 @@ router.post('/',
       const taxAmount = subtotal * taxRate;
       const totalAmount = subtotal + taxAmount;
 
+      // Ensure user exists in users table if authenticated
+      if (req.user?.id) {
+        const { data: existingUser, error: userCheckError } = await supabaseAdmin
+          .from(tables.users)
+          .select('id')
+          .eq('id', req.user.id)
+          .single();
+
+        if (userCheckError && userCheckError.code === 'PGRST116') {
+          // User doesn't exist, create them
+          console.log('Creating user record for:', req.user.id);
+          const { error: createUserError } = await supabaseAdmin
+            .from(tables.users)
+            .insert({
+              id: req.user.id,
+              email: req.user.email,
+              role: 'customer'
+            });
+
+          if (createUserError) {
+            console.error('Error creating user:', createUserError);
+            // Continue with guest order if user creation fails
+            req.user = undefined;
+          }
+        }
+      }
+
       // Create order
       const { data: order, error: orderError } = await supabaseAdmin
         .from(tables.orders)
