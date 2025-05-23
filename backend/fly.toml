@@ -14,8 +14,8 @@ kill_timeout = '5s'
 [build]
   dockerfile = 'Dockerfile'
 
-[deploy]
-  release_command = "echo 'Deployment successful'"
+# [deploy]
+#   release_command = "echo 'Deployment successful'"
 
 [env]
   NODE_ENV = 'production'
