@@ -96,7 +96,7 @@ export interface Order {
   customer_phone: string;
   customer_email?: string;
   customer_id?: string;
-  status: 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+  status: 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled' | 'ready_for_pickup';
   payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
   payment_method: 'payhere' | 'cash';
   total_amount: number;
@@ -109,6 +109,7 @@ export interface Order {
   created_at: string;
   updated_at: string;
   order_items?: OrderItem[];
+  items?: OrderItem[]; // Alias for compatibility
 }
 
 export interface OrderItem {
@@ -163,7 +164,7 @@ export interface OrderItemAddon {
 export interface CreateOrderRequest {
   customer_name?: string;
   customer_phone: string;
-  payment_method: 'payhere' | 'cash';
+  payment_method: 'payhere' | 'cash' | 'card';
   notes?: string;
   items: {
     menu_item_id: string;
@@ -182,6 +183,7 @@ export interface UpdateOrderStatusRequest {
 export interface CartItem {
   id: string;
   menu_item_id: string;
+  menu_item?: MenuItem;
   name: string;
   price: number;
   quantity: number;
