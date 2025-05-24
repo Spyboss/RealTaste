@@ -19,6 +19,12 @@ import OrderDetailsPage from '@/pages/OrderDetailsPage';
 import CheckoutPage from '@/pages/CheckoutPage';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 
+// Payment Pages
+import PaymentSuccessPage from '@/pages/PaymentSuccessPage';
+import PaymentErrorPage from '@/pages/PaymentErrorPage';
+import PaymentPendingPage from '@/pages/PaymentPendingPage';
+import PaymentCancelledPage from '@/pages/PaymentCancelledPage';
+
 // Components
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -84,6 +90,31 @@ function App() {
             <Route path="/checkout" element={
               <Layout>
                 <CheckoutPage />
+              </Layout>
+            } />
+
+            {/* Payment routes */}
+            <Route path="/payment/success" element={
+              <Layout>
+                <PaymentSuccessPage />
+              </Layout>
+            } />
+
+            <Route path="/payment/error" element={
+              <Layout>
+                <PaymentErrorPage />
+              </Layout>
+            } />
+
+            <Route path="/payment/pending" element={
+              <Layout>
+                <PaymentPendingPage />
+              </Layout>
+            } />
+
+            <Route path="/payment/cancelled" element={
+              <Layout>
+                <PaymentCancelledPage />
               </Layout>
             } />
 

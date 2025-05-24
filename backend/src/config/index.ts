@@ -24,10 +24,16 @@ export const config = {
   payhere: {
     merchantId: process.env.PAYHERE_MERCHANT_ID!,
     merchantSecret: process.env.PAYHERE_MERCHANT_SECRET!,
-    sandbox: process.env.PAYHERE_SANDBOX === 'true',
-    baseUrl: process.env.PAYHERE_SANDBOX === 'true'
-      ? 'https://sandbox.payhere.lk'
-      : 'https://www.payhere.lk',
+    // Use sandbox unless explicitly set to use live PayHere
+    sandbox: process.env.USE_LIVE_PAYHERE !== 'true',
+    baseUrl: process.env.USE_LIVE_PAYHERE === 'true'
+      ? 'https://www.payhere.lk'
+      : 'https://sandbox.payhere.lk',
+    // Backend URL for callbacks (supports both local dev and deployed environments)
+    backendUrl: process.env.BACKEND_URL ||
+      (process.env.NODE_ENV === 'production'
+        ? 'https://realtaste-api.fly.dev'
+        : 'http://localhost:3001'),
   },
 
   // Firebase
@@ -77,3 +83,9 @@ for (const envVar of requiredEnvVars) {
     throw new Error(`Missing required environment variable: ${envVar}`);
   }
 }
+
+// Debug logging for PayHere configuration
+console.log('🔧 Config Debug - PayHere Settings:');
+console.log(`   PAYHERE_SANDBOX env var: "${process.env.PAYHERE_SANDBOX}"`);
+console.log(`   Parsed sandbox boolean: ${config.payhere.sandbox}`);
+console.log(`   Base URL: ${config.payhere.baseUrl}`);

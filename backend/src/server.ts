@@ -10,6 +10,7 @@ import menuRoutes from './routes/menu';
 import orderRoutes from './routes/orders';
 import adminRoutes from './routes/admin';
 import businessRoutes from './routes/business';
+import paymentRoutes from './routes/payments';
 
 const app = express();
 
@@ -58,6 +59,7 @@ app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/business', businessRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

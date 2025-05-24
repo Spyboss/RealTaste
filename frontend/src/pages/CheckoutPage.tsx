@@ -69,13 +69,43 @@ const CheckoutPage: React.FC = () => {
         })),
       };
 
-      const order = await createOrderMutation.mutateAsync(orderData);
+      const response = await createOrderMutation.mutateAsync(orderData);
 
-      // Clear cart and redirect to order details
+      // Clear cart
       clearCart();
-      navigate(`/orders/${order.id}`);
 
-      toast.success('Order placed successfully!');
+      // Handle different payment methods
+      if (data.paymentMethod === 'card' && 'payment' in response) {
+        // For card payments, redirect to PayHere
+        const paymentResponse = response as any;
+        const paymentData = paymentResponse.payment.paymentData;
+        const paymentUrl = paymentResponse.payment.paymentUrl;
+
+        // Create a form and submit to PayHere
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = paymentUrl;
+        form.style.display = 'none';
+
+        // Add all payment data as hidden inputs
+        Object.entries(paymentData).forEach(([key, value]) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = String(value);
+          form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+
+        toast.success('Redirecting to payment...');
+      } else {
+        // For cash payments, redirect to order details
+        const orderResponse = response as any;
+        navigate(`/orders/${orderResponse.id}`);
+        toast.success('Order placed successfully!');
+      }
     } catch (error) {
       // Error is handled by the mutation
     }

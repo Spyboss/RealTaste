@@ -4,6 +4,7 @@ import { authenticateToken, requireAdmin, optionalAuth } from '../middleware/aut
 import { validate, schemas, validateQuery, querySchemas } from '../middleware/validation';
 import { orderLimiter, adminLimiter } from '../middleware/rateLimiter';
 import { ApiResponse, Order, CreateOrderRequest, generateOrderId } from '../types/shared';
+import { payHereService } from '../services/payhere';
 
 const router = Router();
 
@@ -191,13 +192,45 @@ router.post('/',
 
       if (fetchError) throw fetchError;
 
-      const response: ApiResponse<Order> = {
-        success: true,
-        data: completeOrder,
-        message: 'Order created successfully'
-      };
+      // Handle different payment methods
+      if (orderData.payment_method === 'card') {
+        // For card payments, initiate PayHere payment
+        const paymentData = payHereService.createPaymentData(
+          completeOrder.id,
+          completeOrder.total_amount,
+          completeOrder.customer_name || 'Customer',
+          completeOrder.customer_phone
+        );
 
-      res.status(201).json(response);
+        const response: ApiResponse<{
+          order: Order;
+          payment: {
+            paymentUrl: string;
+            paymentData: typeof paymentData;
+          };
+        }> = {
+          success: true,
+          data: {
+            order: completeOrder,
+            payment: {
+              paymentUrl: payHereService.getPaymentUrl(),
+              paymentData
+            }
+          },
+          message: 'Order created successfully. Proceed to payment.'
+        };
+
+        res.status(201).json(response);
+      } else {
+        // For cash payments, return order normally
+        const response: ApiResponse<Order> = {
+          success: true,
+          data: completeOrder,
+          message: 'Order created successfully'
+        };
+
+        res.status(201).json(response);
+      }
     } catch (error: any) {
       console.error('Error creating order:', error);
       console.error('Error details:', {

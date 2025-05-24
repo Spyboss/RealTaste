@@ -31,7 +31,7 @@ export const schemas = {
         'string.pattern.base': 'Please provide a valid Sri Lankan phone number'
       }),
     customer_name: Joi.string().min(1).max(100).optional(),
-    payment_method: Joi.string().valid('card', 'cash', 'payhere').required(),
+    payment_method: Joi.string().valid('card', 'cash').required(),
     notes: Joi.string().max(500).optional(),
     items: Joi.array().items(
       Joi.object({
