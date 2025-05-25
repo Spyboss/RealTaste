@@ -69,7 +69,10 @@ export class PayHereService {
     currency: string,
     merchantSecret: string
   ): string {
-    const hashString = `${merchantId}${orderId}${amount}${currency}${merchantSecret.toUpperCase()}`;
+    // First, hash the merchant secret
+    const secretHash = crypto.createHash('md5').update(merchantSecret).digest('hex').toUpperCase();
+    // Then create the final hash string
+    const hashString = `${merchantId}${orderId}${amount}${currency}${secretHash}`;
     return crypto.createHash('md5').update(hashString).digest('hex').toUpperCase();
   }
 
@@ -84,7 +87,10 @@ export class PayHereService {
     statusCode: string,
     merchantSecret: string
   ): string {
-    const hashString = `${merchantId}${orderId}${amount}${currency}${statusCode}${merchantSecret.toUpperCase()}`;
+    // First, hash the merchant secret
+    const secretHash = crypto.createHash('md5').update(merchantSecret).digest('hex').toUpperCase();
+    // Then create the final hash string
+    const hashString = `${merchantId}${orderId}${amount}${currency}${statusCode}${secretHash}`;
     return crypto.createHash('md5').update(hashString).digest('hex').toUpperCase();
   }
 
