@@ -121,7 +121,7 @@ export class PayHereService {
     console.log(`💳 Creating PayHere payment for Order ${orderId}:`);
     console.log(`   Amount: LKR ${amountStr}`);
     console.log(`   Sandbox Mode: ${this.sandbox}`);
-    console.log(`   PayHere URL: ${this.baseUrl}/pay`);
+    console.log(`   PayHere URL: ${this.baseUrl}`);
     console.log(`   Callback Base: ${baseCallbackUrl}`);
 
     return {
@@ -164,7 +164,7 @@ export class PayHereService {
    * Get PayHere payment form URL
    */
   getPaymentUrl(): string {
-    return `${this.baseUrl}/pay`;
+    return this.baseUrl;
   }
 
   /**

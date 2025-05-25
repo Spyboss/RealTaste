@@ -27,12 +27,12 @@ export const config = {
     // Use sandbox unless explicitly set to use live PayHere
     sandbox: process.env.USE_LIVE_PAYHERE !== 'true',
     baseUrl: process.env.USE_LIVE_PAYHERE === 'true'
-      ? 'https://www.payhere.lk'
-      : 'https://sandbox.payhere.lk',
+      ? 'https://www.payhere.lk/pay/checkout'
+      : 'https://sandbox.payhere.lk/pay/checkout',
     // Backend URL for callbacks (supports both local dev and deployed environments)
     backendUrl: process.env.BACKEND_URL ||
       (process.env.NODE_ENV === 'production'
-        ? 'https://realtaste-api.fly.dev'
+        ? 'https://realtaste.fly.dev'
         : 'http://localhost:3001'),
   },
 
