@@ -194,7 +194,7 @@ router.post('/',
 
       // Handle different payment methods
       if (orderData.payment_method === 'card') {
-        // For card payments, initiate PayHere payment
+        // For card payments, use PayHere JavaScript SDK method
         const paymentData = payHereService.createPaymentData(
           completeOrder.id,
           completeOrder.total_amount,
@@ -205,7 +205,6 @@ router.post('/',
         const response: ApiResponse<{
           order: Order;
           payment: {
-            paymentUrl: string;
             paymentData: typeof paymentData;
           };
         }> = {
@@ -213,7 +212,6 @@ router.post('/',
           data: {
             order: completeOrder,
             payment: {
-              paymentUrl: payHereService.getPaymentUrl(),
               paymentData
             }
           },

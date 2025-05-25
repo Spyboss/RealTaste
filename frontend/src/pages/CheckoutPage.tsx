@@ -11,6 +11,18 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import toast from 'react-hot-toast';
 
+// PayHere JavaScript SDK types
+declare global {
+  interface Window {
+    payhere: {
+      startPayment: (payment: any) => void;
+      onCompleted: (orderId: string) => void;
+      onDismissed: () => void;
+      onError: (error: string) => void;
+    };
+  }
+}
+
 interface CheckoutForm {
   customerPhone: string;
   customerName?: string;
@@ -39,6 +51,51 @@ const CheckoutPage: React.FC = () => {
 
   const paymentMethod = watch('paymentMethod');
   const totalPrice = getTotalPrice();
+
+  // PayHere payment initiation function
+  const initiatePayHerePayment = (paymentData: any) => {
+    // Set up PayHere event handlers
+    window.payhere.onCompleted = function (orderId: string) {
+      console.log('Payment completed. OrderID:', orderId);
+      toast.success('Payment completed successfully!');
+      navigate(`/orders/${orderId}`);
+    };
+
+    window.payhere.onDismissed = function () {
+      console.log('Payment dismissed');
+      toast.error('Payment was cancelled. Please try again.');
+    };
+
+    window.payhere.onError = function (error: string) {
+      console.log('Payment error:', error);
+      toast.error('Payment failed. Please try again.');
+    };
+
+    // Prepare payment object for PayHere SDK
+    const payment = {
+      sandbox: true, // Use sandbox for testing
+      merchant_id: paymentData.merchant_id,
+      return_url: undefined, // Important for SDK
+      cancel_url: undefined, // Important for SDK
+      notify_url: paymentData.notify_url,
+      order_id: paymentData.order_id,
+      items: paymentData.items,
+      amount: paymentData.amount,
+      currency: paymentData.currency,
+      hash: paymentData.hash,
+      first_name: paymentData.first_name,
+      last_name: paymentData.last_name,
+      email: paymentData.email,
+      phone: paymentData.phone,
+      address: paymentData.address,
+      city: paymentData.city,
+      country: paymentData.country,
+    };
+
+    // Start PayHere payment
+    window.payhere.startPayment(payment);
+    toast.success('Opening PayHere payment...');
+  };
 
   if (items.length === 0) {
     return (
@@ -76,30 +133,27 @@ const CheckoutPage: React.FC = () => {
 
       // Handle different payment methods
       if (data.paymentMethod === 'card' && 'payment' in response) {
-        // For card payments, redirect to PayHere
+        // For card payments, use PayHere JavaScript SDK
         const paymentResponse = response as any;
-        const paymentData = paymentResponse.payment.paymentData;
-        const paymentUrl = paymentResponse.payment.paymentUrl;
 
-        // Create a form and submit to PayHere
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = paymentUrl;
-        form.style.display = 'none';
+        if (paymentResponse.payment.paymentData) {
+          // Use PayHere JavaScript SDK for onsite checkout
+          const paymentData = paymentResponse.payment.paymentData;
 
-        // Add all payment data as hidden inputs
-        Object.entries(paymentData).forEach(([key, value]) => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = key;
-          input.value = String(value);
-          form.appendChild(input);
-        });
-
-        document.body.appendChild(form);
-        form.submit();
-
-        toast.success('Redirecting to payment...');
+          // Load PayHere JavaScript SDK if not already loaded
+          if (!window.payhere) {
+            const script = document.createElement('script');
+            script.src = 'https://www.payhere.lk/lib/payhere.js';
+            script.onload = () => {
+              initiatePayHerePayment(paymentData);
+            };
+            document.head.appendChild(script);
+          } else {
+            initiatePayHerePayment(paymentData);
+          }
+        } else {
+          toast.error('Payment configuration error');
+        }
       } else {
         // For cash payments, redirect to order details
         const orderResponse = response as any;

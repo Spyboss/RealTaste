@@ -24,6 +24,9 @@ export const config = {
   payhere: {
     merchantId: process.env.PAYHERE_MERCHANT_ID!,
     merchantSecret: process.env.PAYHERE_MERCHANT_SECRET!,
+    // API credentials for advanced integration
+    apiAppId: process.env.PAYHERE_API_APP_ID!,
+    apiAppSecret: process.env.PAYHERE_API_APP_SECRET!,
     // Use sandbox unless explicitly set to use live PayHere
     sandbox: process.env.USE_LIVE_PAYHERE !== 'true',
     baseUrl: process.env.USE_LIVE_PAYHERE === 'true'
