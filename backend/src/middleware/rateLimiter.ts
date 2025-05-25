@@ -11,8 +11,10 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  // Skip trust proxy validation in development
-  validate: config.nodeEnv === 'development' ? false : undefined,
+  // Skip trust proxy validation for Fly.io deployment
+  validate: {
+    trustProxy: false, // Disable trust proxy validation
+  },
 });
 
 // Strict rate limiter for order creation
@@ -27,8 +29,10 @@ export const orderLimiter = rateLimit({
   legacyHeaders: false,
   // Skip rate limiting for authenticated users (they have account-based limits)
   skip: (req) => !!req.user,
-  // Skip trust proxy validation in development
-  validate: config.nodeEnv === 'development' ? false : undefined,
+  // Skip trust proxy validation for Fly.io deployment
+  validate: {
+    trustProxy: false, // Disable trust proxy validation
+  },
 });
 
 // Auth rate limiter for login attempts
@@ -41,8 +45,10 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip trust proxy validation in development
-  validate: config.nodeEnv === 'development' ? false : undefined,
+  // Skip trust proxy validation for Fly.io deployment
+  validate: {
+    trustProxy: false, // Disable trust proxy validation
+  },
 });
 
 // Admin action rate limiter
@@ -55,6 +61,8 @@ export const adminLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip trust proxy validation in development
-  validate: config.nodeEnv === 'development' ? false : undefined,
+  // Skip trust proxy validation for Fly.io deployment
+  validate: {
+    trustProxy: false, // Disable trust proxy validation
+  },
 });
