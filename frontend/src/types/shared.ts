@@ -1,6 +1,3 @@
-// Shared types for RealTaste frontend
-// This is a temporary solution to avoid shared package dependency
-
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -30,7 +27,6 @@ export interface BusinessHours {
   is_open: boolean;
 }
 
-// Utility function to check if restaurant is open
 export function isRestaurantOpen(hours: BusinessHours): boolean {
   if (!hours.is_open) return false;
 
@@ -87,9 +83,6 @@ export interface MenuCategory {
   menu_items?: MenuItem[];
 }
 
-// Alias for compatibility
-export interface Category extends MenuCategory {}
-
 export interface Order {
   id: string;
   customer_name: string;
@@ -97,6 +90,7 @@ export interface Order {
   customer_email?: string;
   customer_id?: string;
   status: 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled' | 'ready_for_pickup';
+  priority?: 'urgent' | 'normal' | 'low';
   payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
   payment_method: 'payhere' | 'cash';
   total_amount: number;
@@ -109,7 +103,7 @@ export interface Order {
   created_at: string;
   updated_at: string;
   order_items?: OrderItem[];
-  items?: OrderItem[]; // Alias for compatibility
+  items?: OrderItem[];
 }
 
 export interface OrderItem {
@@ -193,19 +187,16 @@ export interface CartItem {
   total: number;
 }
 
-// Utility function to generate order ID
 export function generateOrderId(): string {
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).substr(2, 5);
   return `RT-${timestamp}-${random}`.toUpperCase();
 }
 
-// Utility function to format currency
 export function formatCurrency(amount: number): string {
   return `Rs. ${amount.toFixed(2)}`;
 }
 
-// Utility function to format date
 export function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-LK', {
     year: 'numeric',
@@ -214,4 +205,52 @@ export function formatDate(dateString: string): string {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+// Admin Dashboard Types
+export interface DailyAnalytics {
+  date: string;
+  total_orders: number;
+  total_revenue: number;
+  avg_order_value: number;
+}
+
+export interface TopItem {
+  name: string;
+  quantity: number;
+  revenue: number;
+}
+
+export interface TrendData {
+  date: string;
+  orders: number;
+  revenue: number;
+}
+
+export interface DashboardStats {
+  timeframe: string;
+  stats: {
+    total_orders: number;
+    completed_orders: number;
+    total_revenue: number;
+    avg_order_value: number;
+    avg_prep_time: number;
+    popular_items: {
+      name: string;
+      count: number;
+      revenue: number;
+    }[];
+  };
+  chart_data: {
+    label: string;
+    orders: number;
+    revenue: number;
+  }[];
+  pending_orders: Order[];
+  queue_length: number;
+}
+
+export interface AnalyticsData {
+  timeframe: string;
+  stats: DailyStats[];
 }

@@ -1,108 +1,187 @@
-import React from 'react';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { BarChart3, Package, Users, Settings } from 'lucide-react';
-
-// Admin components (we'll create these)
-const AdminOverview = () => (
-  <div className="p-6">
-    <h2 className="text-2xl font-bold text-gray-900 mb-4">Dashboard Overview</h2>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">Today's Orders</h3>
-        <p className="text-3xl font-bold text-primary-600 mt-2">12</p>
-        <p className="text-sm text-gray-600 mt-1">+3 from yesterday</p>
-      </div>
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">Revenue</h3>
-        <p className="text-3xl font-bold text-green-600 mt-2">Rs. 8,450</p>
-        <p className="text-sm text-gray-600 mt-1">+12% from yesterday</p>
-      </div>
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">Pending Orders</h3>
-        <p className="text-3xl font-bold text-yellow-600 mt-2">3</p>
-        <p className="text-sm text-gray-600 mt-1">Needs attention</p>
-      </div>
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">Avg Order Value</h3>
-        <p className="text-3xl font-bold text-blue-600 mt-2">Rs. 704</p>
-        <p className="text-sm text-gray-600 mt-1">-2% from yesterday</p>
-      </div>
-    </div>
-  </div>
-);
-
-const AdminOrders = () => (
-  <div className="p-6">
-    <h2 className="text-2xl font-bold text-gray-900 mb-4">Order Management</h2>
-    <p className="text-gray-600">Order management interface coming soon...</p>
-  </div>
-);
-
-const AdminMenu = () => (
-  <div className="p-6">
-    <h2 className="text-2xl font-bold text-gray-900 mb-4">Menu Management</h2>
-    <p className="text-gray-600">Menu management interface coming soon...</p>
-  </div>
-);
-
-const AdminSettings = () => (
-  <div className="p-6">
-    <h2 className="text-2xl font-bold text-gray-900 mb-4">Settings</h2>
-    <p className="text-gray-600">Settings interface coming soon...</p>
-  </div>
-);
+import React, { useState, useEffect } from 'react';
+import { useQuery } from 'react-query';
+import { useAdminStore } from '@/stores/adminStore';
+import { fetchDashboardStats, fetchOrderQueue, fetchDailyAnalytics, fetchTopItems, fetchTrendsData } from '@/services/adminService';
+import { useBulkUpdateOrders } from '@/hooks/useAdmin';
+import DashboardStats from '@/components/admin/DashboardStats';
+import OrderQueue from '@/components/admin/OrderQueue';
+import Layout from '@/components/layout/Layout';
+import { LayoutGrid, BarChart2, Clock, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Order } from '@/types/shared';
+import AnalyticsSummary from '@/components/admin/AnalyticsSummary';
+import SalesChart from '@/components/admin/SalesChart';
+import ItemPerformance from '@/components/admin/ItemPerformance';
 
 const AdminDashboard: React.FC = () => {
-  const location = useLocation();
+  const {
+    dashboardStats,
+    orderQueue,
+    lastUpdated,
+    isRealtimeConnected,
+    isPollingFallback,
+    setOrderQueue,
+    subscribeToOrders,
+    fetchDailySummary,
+    fetchTopItems,
+    fetchTrendsData
+  } = useAdminStore();
+  
+  const [selectedTab, setSelectedTab] = useState('dashboard');
+  const isQueueLoading = useAdminStore(state => state.isLoading);
 
-  const navigation = [
-    { name: 'Overview', href: '/admin', icon: BarChart3, current: location.pathname === '/admin' },
-    { name: 'Orders', href: '/admin/orders', icon: Package, current: location.pathname === '/admin/orders' },
-    { name: 'Menu', href: '/admin/menu', icon: Users, current: location.pathname === '/admin/menu' },
-    { name: 'Settings', href: '/admin/settings', icon: Settings, current: location.pathname === '/admin/settings' },
-  ];
+  // Initialize realtime subscription
+  useEffect(() => {
+    const unsubscribe = subscribeToOrders();
+    return unsubscribe;
+  }, [subscribeToOrders]);
+
+  // Fetch initial order queue
+  const { isLoading: isInitialQueueLoading } = useQuery(
+    'orderQueue',
+    () => {
+      return fetchOrderQueue().then((orders: Order[]) => {
+        setOrderQueue(orders);
+        return orders;
+      });
+    },
+    { enabled: orderQueue.length === 0 }
+  );
+
+  const { data: dashboardStatsData, isLoading: isDashboardLoading } = useQuery(
+    'dashboardStats',
+    fetchDashboardStats
+  );
+
+  // Fetch analytics data when tab is selected
+  useEffect(() => {
+    if (selectedTab === 'analytics') {
+      fetchDailySummary();
+      fetchTopItems();
+      fetchTrendsData();
+    }
+  }, [selectedTab, fetchDailySummary, fetchTopItems, fetchTrendsData]);
+  
+  const bulkUpdateMutation = useBulkUpdateOrders();
+  
+  const handlePriorityChange = (orderId: string, priority: string) => {
+    bulkUpdateMutation.mutate({
+      orderIds: [orderId],
+      priority,
+    });
+  };
+
+  // Status indicator component
+  const renderStatusIndicator = () => {
+    if (isPollingFallback) {
+      return (
+        <div className="flex items-center text-yellow-600">
+          <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+          <span>Polling</span>
+        </div>
+      );
+    }
+    return isRealtimeConnected ? (
+      <div className="flex items-center text-green-600">
+        <Wifi className="w-4 h-4 mr-1" />
+        <span>Realtime</span>
+      </div>
+    ) : (
+      <div className="flex items-center text-red-600">
+        <WifiOff className="w-4 h-4 mr-1" />
+        <span>Disconnected</span>
+      </div>
+    );
+  };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-white shadow-sm">
-        <div className="p-6">
-          <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
-        </div>
-        <nav className="mt-6">
-          <div className="px-3">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md mb-1 ${
-                  item.current
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <item.icon
-                  className={`mr-3 h-5 w-5 ${
-                    item.current ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
-                  }`}
-                />
-                {item.name}
-              </Link>
-            ))}
+    <Layout>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            {renderStatusIndicator()}
+            {lastUpdated && (
+              <div className="text-sm text-gray-500">
+                Last updated: {new Date(lastUpdated).toLocaleTimeString()}
+              </div>
+            )}
           </div>
-        </nav>
-      </div>
+        </div>
 
-      {/* Main content */}
-      <div className="flex-1 overflow-auto">
-        <Routes>
-          <Route path="/" element={<AdminOverview />} />
-          <Route path="/orders" element={<AdminOrders />} />
-          <Route path="/menu" element={<AdminMenu />} />
-          <Route path="/settings" element={<AdminSettings />} />
-        </Routes>
+        <div className="mb-4 flex flex-wrap gap-2">
+          <button
+            onClick={() => setSelectedTab('dashboard')}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              selectedTab === 'dashboard'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4 mr-2" />
+            Dashboard
+          </button>
+          <button
+            onClick={() => setSelectedTab('analytics')}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              selectedTab === 'analytics'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <BarChart2 className="w-4 h-4 mr-2" />
+            Analytics
+          </button>
+          <button
+            onClick={() => setSelectedTab('orderQueue')}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              selectedTab === 'orderQueue'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Clock className="w-4 h-4 mr-2" />
+            Order Queue
+          </button>
+        </div>
+
+        {selectedTab === 'dashboard' && (
+          <DashboardStats
+            stats={dashboardStats || dashboardStatsData}
+            isLoading={isDashboardLoading}
+          />
+        )}
+
+        {selectedTab === 'analytics' && (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+              <h3 className="text-lg font-medium text-blue-800 mb-2">Analytics Dashboard</h3>
+              <p className="text-blue-600">Analytics features coming soon!</p>
+              <p className="text-sm text-blue-500 mt-2">
+                We're working on bringing you detailed sales analytics and performance metrics.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {selectedTab === 'orderQueue' && (
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            {(isQueueLoading || isInitialQueueLoading) ? (
+              <div className="p-8 flex flex-col items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+                <p className="text-gray-600">Loading order queue...</p>
+              </div>
+            ) : (
+              <OrderQueue
+                orders={orderQueue}
+                isLoading={false}
+                onPriorityChange={handlePriorityChange}
+              />
+            )}
+          </div>
+        )}
       </div>
-    </div>
+    </Layout>
   );
 };
 

@@ -51,11 +51,50 @@ export const verifyAdminRole = async (userId: string): Promise<boolean> => {
       .select('role')
       .eq('id', userId)
       .single();
-    
+
     if (error) throw error;
     return data?.role === 'admin';
   } catch (error) {
     console.error('Error verifying admin role:', error);
+    return false;
+  }
+};
+
+// Realtime functionality for order status updates
+export const setupOrderStatusRealtime = (channelName: string, callback: (payload: any) => void) => {
+  const channel = supabaseAdmin.channel(channelName);
+
+  channel
+    .on('postgres_changes', { event: '*', schema: 'public', table: tables.orders }, payload => {
+      callback(payload);
+    })
+    .subscribe(err => {
+      if (err) {
+        console.error('Error subscribing to order status updates:', err);
+      } else {
+        console.log(`Subscribed to order status updates on channel ${channelName}`);
+      }
+    });
+};
+
+// Function to trigger order status updates
+export const triggerOrderStatusUpdate = async (orderId: string) => {
+  try {
+    // This will trigger the realtime update by updating the order's updated_at timestamp
+    const { error } = await supabaseAdmin
+      .from(tables.orders)
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', orderId);
+
+    if (error) {
+      console.error('Error triggering order status update:', error);
+      throw error;
+    }
+
+    console.log(`Order status update triggered for order ${orderId}`);
+    return true;
+  } catch (error) {
+    console.error('Error in triggerOrderStatusUpdate:', error);
     return false;
   }
 };
