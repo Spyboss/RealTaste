@@ -89,7 +89,7 @@ export interface Order {
   customer_phone: string;
   customer_email?: string;
   customer_id?: string;
-  status: 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled' | 'ready_for_pickup';
+  status: 'received' | 'confirmed' | 'preparing' | 'ready_for_pickup' | 'completed' | 'cancelled';
   priority?: 'urgent' | 'normal' | 'low';
   payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
   payment_method: 'payhere' | 'cash';

@@ -8,7 +8,7 @@ export interface Order {
   customer_id?: string | null; // UUID, can be null for guest orders
   customer_phone: string;
   customer_name?: string | null;
-  status: 'received' | 'preparing' | 'ready_for_pickup' | 'picked_up' | 'cancelled';
+  status: 'received' | 'confirmed' | 'preparing' | 'ready_for_pickup' | 'completed' | 'cancelled';
   payment_method: 'card' | 'cash';
   payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
   subtotal: number; // DECIMAL(10,2)
@@ -54,8 +54,7 @@ export const updateOrderStatusHandler = async (req: Request, res: Response): Pro
     return;
   }
 
-  // Validate status against the ENUM (optional here, as DB will also validate)
-  const validStatuses: Order['status'][] = ['received', 'preparing', 'ready_for_pickup', 'picked_up', 'cancelled'];
+  const validStatuses: Order['status'][] = ['received', 'confirmed', 'preparing', 'ready_for_pickup', 'completed', 'cancelled'];
   if (!validStatuses.includes(status)) {
     res.status(400).json({ success: false, error: `Invalid status value. Must be one of: ${validStatuses.join(', ')}` });
     return;

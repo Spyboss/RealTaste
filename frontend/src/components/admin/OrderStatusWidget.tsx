@@ -10,10 +10,10 @@ interface OrderStatusWidgetProps {
 // Define available statuses based on the shared Order type
 const availableStatuses: { value: Order['status']; label: string }[] = [
   { value: 'received', label: 'Received' },
+  { value: 'confirmed', label: 'Confirmed' },
   { value: 'preparing', label: 'Preparing' },
   { value: 'ready_for_pickup', label: 'Ready for Pickup' },
-  { value: 'ready', label: 'Ready (Generic)' }, // Added from frontend type
-  { value: 'completed', label: 'Completed' },     // Added from frontend type
+  { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
 

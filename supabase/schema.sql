@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create custom types
-CREATE TYPE order_status AS ENUM ('received', 'preparing', 'ready_for_pickup', 'picked_up', 'cancelled');
+CREATE TYPE order_status AS ENUM ('received', 'confirmed', 'preparing', 'ready_for_pickup', 'completed', 'picked_up', 'cancelled');
 CREATE TYPE payment_method AS ENUM ('card', 'cash');
 CREATE TYPE payment_status AS ENUM ('pending', 'completed', 'failed', 'refunded');
 CREATE TYPE user_role AS ENUM ('customer', 'admin');
