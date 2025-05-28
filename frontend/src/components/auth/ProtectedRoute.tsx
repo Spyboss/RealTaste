@@ -29,7 +29,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Check admin requirement
-  if (requireAdmin && user?.user_metadata?.role !== 'admin') {
+  if (requireAdmin && user?.app_metadata?.role !== 'admin') {
     return (
       <div className="text-center py-12">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">

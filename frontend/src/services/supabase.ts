@@ -18,6 +18,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Fetch user role from the users table
 export const fetchUserRole = async (userId: string) => {
+  // First try to get role from app_metadata
+  const { data: { user } } = await supabase.auth.getUser();
+  const roleFromMeta = user?.app_metadata?.role;
+  
+  if (roleFromMeta) {
+    return roleFromMeta;
+  }
+
+  // If not in app_metadata, get from users table and update app_metadata
   const { data, error } = await supabase
     .from('users')
     .select('role')
@@ -25,6 +34,16 @@ export const fetchUserRole = async (userId: string) => {
     .single();
 
   if (error) throw error;
+
+  if (data?.role) {
+    // Update app_metadata with the role
+    const { error: updateError } = await supabase.auth.updateUser({
+      data: { role: data.role }
+    });
+
+    if (updateError) throw updateError;
+  }
+
   return data?.role;
 };
 
@@ -55,10 +74,12 @@ export const signIn = async (email: string, password: string) => {
   // Fetch user role if sign in successful
   if (data.user) {
     const role = await fetchUserRole(data.user.id);
-    data.user.user_metadata = {
-      ...data.user.user_metadata,
-      role
-    };
+    // Store role in app_metadata
+    if (role) {
+      await supabase.auth.updateUser({
+        data: { role }
+      });
+    }
   }
 
   return data;
@@ -88,10 +109,11 @@ export const getCurrentUser = async () => {
   // Fetch and attach role if user exists
   if (user) {
     const role = await fetchUserRole(user.id);
-    user.user_metadata = {
-      ...user.user_metadata,
-      role
-    };
+    if (role) {
+      await supabase.auth.updateUser({
+        data: { role }
+      });
+    }
   }
 
   return user;
@@ -104,10 +126,11 @@ export const getSession = async () => {
   // Fetch and attach role if session exists
   if (session?.user) {
     const role = await fetchUserRole(session.user.id);
-    session.user.user_metadata = {
-      ...session.user.user_metadata,
-      role
-    };
+    if (role) {
+      await supabase.auth.updateUser({
+        data: { role }
+      });
+    }
   }
 
   return session;
