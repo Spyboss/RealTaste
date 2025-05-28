@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User } from '@supabase/supabase-js';
-import { supabase, signIn, signUp, signOut } from '@/services/supabase';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase, signIn, signUp, signOut, resetPassword, updatePassword } from '@/services/supabase';
 
 interface AuthState {
   user: User | null;
+  session: Session | null;
   loading: boolean;
   isAuthenticated: boolean;
+  error: string | null;
 
   // Actions
   initialize: () => Promise<void>;
@@ -14,124 +16,192 @@ interface AuthState {
   register: (email: string, password: string, firstName?: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
+  setSession: (session: Session | null) => void;
   setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
+      session: null,
       loading: true,
       isAuthenticated: false,
+      error: null,
 
       initialize: async () => {
         try {
           set({ loading: true });
-
-          // Get current session
-          const { data: { session } } = await supabase.auth.getSession();
-
-          if (session?.user) {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (error) throw error;
+          
+          if (session) {
             set({
               user: session.user,
+              session,
               isAuthenticated: true,
-              loading: false
-            });
-
-            // Store token for API requests
-            localStorage.setItem('supabase.auth.token', session.access_token);
-          } else {
-            set({
-              user: null,
-              isAuthenticated: false,
-              loading: false
+              error: null
             });
           }
-
-          // Listen for auth changes
-          supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' && session?.user) {
-              set({
-                user: session.user,
-                isAuthenticated: true
-              });
-              localStorage.setItem('supabase.auth.token', session.access_token);
-            } else if (event === 'SIGNED_OUT') {
-              set({
-                user: null,
-                isAuthenticated: false
-              });
-              localStorage.removeItem('supabase.auth.token');
-            }
-          });
-        } catch (error) {
-          console.error('Auth initialization error:', error);
-          set({
-            user: null,
-            isAuthenticated: false,
-            loading: false
-          });
+        } catch (error: any) {
+          set({ error: error.message });
+        } finally {
+          set({ loading: false });
         }
       },
 
       login: async (email: string, password: string) => {
         try {
-          set({ loading: true });
-          const { user } = await signIn(email, password);
+          set({ loading: true, error: null });
+          const { data, error } = await signIn(email, password);
+          if (error) throw error;
           set({
-            user,
+            user: data.user,
+            session: data.session,
             isAuthenticated: true,
-            loading: false
+            error: null
           });
-        } catch (error) {
+        } catch (error: any) {
+          set({ error: error.message });
+        } finally {
           set({ loading: false });
-          throw error;
         }
       },
 
       register: async (email: string, password: string, firstName?: string) => {
         try {
-          set({ loading: true });
-          const { user } = await signUp(email, password, firstName);
+          set({ loading: true, error: null });
+          const { data, error } = await signUp(email, password, firstName);
+          if (error) throw error;
           set({
-            user,
-            isAuthenticated: !!user,
-            loading: false
+            user: data.user,
+            session: data.session,
+            isAuthenticated: true,
+            error: null
           });
-        } catch (error) {
+        } catch (error: any) {
+          set({ error: error.message });
+        } finally {
           set({ loading: false });
-          throw error;
         }
       },
 
       logout: async () => {
         try {
-          await signOut();
+          set({ loading: true, error: null });
+          const { error } = await signOut();
+          if (error) throw error;
           set({
             user: null,
+            session: null,
             isAuthenticated: false,
-            loading: false
+            error: null
           });
-        } catch (error) {
-          console.error('Logout error:', error);
-          // Force logout even if API call fails
-          set({
-            user: null,
-            isAuthenticated: false,
-            loading: false
-          });
+        } catch (error: any) {
+          set({ error: error.message });
+        } finally {
+          set({ loading: false });
         }
       },
 
-      setUser: (user: User | null) => {
-        set({
-          user,
-          isAuthenticated: !!user
-        });
+      setUser: (user) => {
+        set({ user, isAuthenticated: !!user });
       },
 
-      setLoading: (loading: boolean) => {
+      setSession: (session) => {
+        set({ session, isAuthenticated: !!session });
+      },
+
+      setLoading: (loading) => {
         set({ loading });
+      },
+
+      setError: (error) => {
+        set({ error });
+      },
+
+      signIn: async (email: string, password: string) => {
+        try {
+          set({ loading: true, error: null });
+          const { data, error } = await signIn(email, password);
+          if (error) throw error;
+          set({
+            user: data.user,
+            session: data.session,
+            isAuthenticated: true,
+            error: null
+          });
+        } catch (error: any) {
+          set({ error: error.message });
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      signUp: async (email: string, password: string) => {
+        try {
+          set({ loading: true, error: null });
+          const { data, error } = await signUp(email, password);
+          if (error) throw error;
+          set({
+            user: data.user,
+            session: data.session,
+            isAuthenticated: true,
+            error: null
+          });
+        } catch (error: any) {
+          set({ error: error.message });
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      signOut: async () => {
+        try {
+          set({ loading: true, error: null });
+          const { error } = await signOut();
+          if (error) throw error;
+          set({
+            user: null,
+            session: null,
+            isAuthenticated: false,
+            error: null
+          });
+        } catch (error: any) {
+          set({ error: error.message });
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      resetPassword: async (email: string) => {
+        try {
+          set({ loading: true, error: null });
+          const { error } = await resetPassword(email);
+          if (error) throw error;
+        } catch (error: any) {
+          set({ error: error.message });
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      updatePassword: async (newPassword: string) => {
+        try {
+          set({ loading: true, error: null });
+          const { error } = await updatePassword(newPassword);
+          if (error) throw error;
+        } catch (error: any) {
+          set({ error: error.message });
+        } finally {
+          set({ loading: false });
+        }
       },
     }),
     {

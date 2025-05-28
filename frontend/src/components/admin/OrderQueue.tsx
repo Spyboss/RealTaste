@@ -11,6 +11,7 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
   MouseSensor,
   TouchSensor,
 } from '@dnd-kit/core';
@@ -21,6 +22,76 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { DropTarget } from './DropTarget';
+import { SortableOrderCard as OrderCard } from './SortableOrderCard';
+
+interface OrderCardProps {
+  order: Order;
+  isSelected: boolean;
+  onToggleSelect: (orderId: string) => void;
+  onStatusUpdate: (orderId: string, newStatus: string) => void;
+  onPriorityChange?: (orderId: string, newPriority: number) => void;
+}
+
+const OrderCard: React.FC<OrderCardProps> = ({
+  order,
+  isSelected,
+  onToggleSelect,
+  onStatusUpdate,
+  onPriorityChange,
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: order.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`p-4 bg-white rounded-lg shadow-sm border ${
+        isSelected ? 'border-primary' : 'border-gray-200'
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Order #{order.id}</h3>
+          <p className="text-gray-600">{order.status}</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => onToggleSelect(order.id)}
+            className={`p-2 rounded ${
+              isSelected ? 'bg-primary text-white' : 'bg-gray-100'
+            }`}
+          >
+            {isSelected ? 'Selected' : 'Select'}
+          </button>
+          <select
+            value={order.status}
+            onChange={(e) => onStatusUpdate(order.id, e.target.value)}
+            className="p-2 border rounded"
+          >
+            <option value="received">Received</option>
+            <option value="preparing">Preparing</option>
+            <option value="ready">Ready</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface OrderQueueProps {
   orders: Order[];
@@ -47,176 +118,6 @@ const getPriorityBadge = (priority: string) => {
       <Star className="w-3 h-3 mr-1" />
       {option.label}
     </span>
-  );
-};
-
-// Define props type for SortableOrderCard directly
-interface SortableOrderCardProps {
-  order: Order;
-  isSelected: boolean;
-  onToggleSelect: () => void;
-  onStatusUpdate: (orderId: string, status: string) => void;
-  onPriorityChange: (orderId: string, priority: string) => void;
-}
-
-const SortableOrderCard: React.FC<SortableOrderCardProps> = (props) => { // Removed React.forwardRef and ref parameter
-  const { order, isSelected, onToggleSelect, onStatusUpdate, onPriorityChange } = props; // Destructure props
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: order.id });
-  const [showActions, setShowActions] = useState(false);
-  const [showPriorityMenu, setShowPriorityMenu] = useState(false);
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.8 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef} // This should still work as useSortable is in this component's scope
-      style={style}
-      {...attributes}
-      className={`bg-white rounded-lg border-2 p-4 transition-all duration-200 ${
-        isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-      }`}
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center space-x-3">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={onToggleSelect}
-            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-          />
-          <div>
-            <h3 className="font-semibold text-gray-900">
-              Order #{order.id.slice(-8).toUpperCase()}
-            </h3>
-            <div className="flex items-center space-x-2 mt-1">
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getOrderStatusColor(order.status)}`}>
-                {getStatusIcon(order.status)}
-                <span className="ml-1 capitalize">{order.status.replace('_', ' ')}</span>
-              </span>
-              {getPriorityBadge(order.priority || 'normal')}
-              <span className="text-xs text-gray-500">
-                {formatDateTime(order.created_at)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <span className="font-bold text-lg text-gray-900">
-            {formatPrice(order.total_amount)}
-          </span>
-          <div className="relative">
-            <button
-              onClick={() => setShowActions(!showActions)}
-              className="p-1 rounded-full hover:bg-gray-100"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </button>
-
-            {showActions && (
-              <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
-                <div className="py-1">
-                  <button
-                    onClick={() => {
-                      onStatusUpdate(order.id, getNextStatus(order.status));
-                      setShowActions(false);
-                    }}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    {getNextStatusLabel(order.status)}
-                  </button>
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowPriorityMenu(!showPriorityMenu)}
-                      className="flex items-center justify-between w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <span>Set Priority</span>
-                      <ChevronDown className={`w-4 h-4 transition-transform ${showPriorityMenu ? 'rotate-180' : ''}`} />
-                    </button>
-                    {showPriorityMenu && (
-                      <div className="absolute left-full top-0 ml-1 w-32 bg-white rounded-md shadow-lg border border-gray-200 z-20">
-                        {priorityOptions.map(option => (
-                          <button
-                            key={option.value}
-                            onClick={() => {
-                              onPriorityChange(order.id, option.value);
-                              setShowPriorityMenu(false);
-                              setShowActions(false);
-                            }}
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => {
-                      onStatusUpdate(order.id, 'cancelled');
-                      setShowActions(false);
-                    }}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                  >
-                    Cancel Order
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Drag handle */}
-      <div
-        {...listeners}
-        className="absolute left-4 top-4 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
-      >
-        <Menu className="w-4 h-4 text-gray-400" />
-      </div>
-
-      {/* Customer Info */}
-      <div className="flex items-center space-x-4 mb-3 text-sm text-gray-600">
-        <div className="flex items-center space-x-1">
-          <Phone className="w-4 h-4" />
-          <span>{order.customer_phone}</span>
-        </div>
-        {order.customer_name && (
-          <span>{order.customer_name}</span>
-        )}
-      </div>
-
-      {/* Order Items */}
-      <div className="space-y-2">
-        {order.order_items?.slice(0, 3).map((item, index) => (
-          <div key={index} className="flex justify-between text-sm">
-            <span className="text-gray-700">
-              {item.quantity}x {item.menu_item?.name}
-              {item.variant && ` (${item.variant.name})`}
-            </span>
-            <span className="text-gray-900 font-medium">
-              {formatPrice(item.total_price)}
-            </span>
-          </div>
-        ))}
-        {order.order_items && order.order_items.length > 3 && (
-          <div className="text-xs text-gray-500">
-            +{order.order_items.length - 3} more items
-          </div>
-        )}
-      </div>
-
-      {/* Notes */}
-      {order.notes && (
-        <div className="mt-3 p-2 bg-yellow-50 rounded text-sm text-gray-700">
-          <strong>Note:</strong> {order.notes}
-        </div>
-      )}
-    </div>
   );
 };
 
@@ -331,7 +232,7 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
               <SortableContext items={ordersByStatus[column.id] || []} strategy={verticalListSortingStrategy}>
                 <div className="space-y-4">
                   {ordersByStatus[column.id]?.map(order => (
-                    <SortableOrderCard
+                    <OrderCard
                       key={order.id}
                       order={order}
                       isSelected={selectedOrders.includes(order.id)}
