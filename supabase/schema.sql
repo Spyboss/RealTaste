@@ -111,15 +111,15 @@ CREATE TABLE order_item_addons (
 
 -- Create indexes for better performance
 CREATE INDEX idx_menu_items_category_id ON menu_items(category_id);
-CREATE INDEX idx_menu_items_is_available ON menu_items(is_available);
 CREATE INDEX idx_menu_variants_menu_item_id ON menu_variants(menu_item_id);
 CREATE INDEX idx_menu_addons_menu_item_id ON menu_addons(menu_item_id);
 CREATE INDEX idx_orders_customer_id ON orders(customer_id);
-CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_orders_created_at ON orders(created_at);
-CREATE INDEX idx_orders_customer_phone ON orders(customer_phone);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_order_items_menu_item_id ON public.order_items(menu_item_id);
+CREATE INDEX idx_order_items_variant_id ON public.order_items(variant_id);
 CREATE INDEX idx_order_item_addons_order_item_id ON order_item_addons(order_item_id);
+CREATE INDEX idx_order_item_addons_addon_id ON public.order_item_addons(addon_id);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -153,7 +153,7 @@ ALTER TABLE order_item_addons ENABLE ROW LEVEL SECURITY;
 -- Users policies
 CREATE POLICY "Users can view their own profile" ON users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update their own profile" ON users FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Admins can view all users" ON users FOR SELECT USING (((SELECT auth.jwt() ->> 'role') = 'admin'));
+CREATE POLICY "Admins can view all users" ON users FOR SELECT USING ((SELECT auth.jwt() ->> 'role') = 'admin');
 
 -- Menu Policies (now using *_access_policy)
 CREATE POLICY categories_access_policy ON public.categories FOR ALL 
