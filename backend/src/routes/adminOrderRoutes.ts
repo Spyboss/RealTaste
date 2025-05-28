@@ -1,25 +1,23 @@
 import { Router } from 'express';
-// Potentially import your adminOrderService here later
-// import * as adminOrderController from '../services/adminOrderService'; 
-// Potentially import auth middleware here later
-// import { isAdmin } from '../middleware/authMiddleware'; 
+import * as adminOrderController from '../services/adminOrderService';
+import { authenticateToken, requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
-// Placeholder: GET /api/admin/orders
-// router.get('/orders', isAdmin, adminOrderController.getAllOrders);
+// GET /api/admin/orders - Fetches all orders for admin
+router.get(
+  '/', // Path is relative to where this router is mounted (/api/admin/orders)
+  authenticateToken, 
+  requireAdmin, 
+  adminOrderController.getAllOrdersHandler // Expecting this handler in adminOrderService
+);
 
-// Example placeholder route without actual controller/middleware yet
-router.get('/orders', (req, res) => {
-  res.json({ message: 'Admin orders endpoint placeholder' });
-});
-
-// Placeholder: PUT /api/admin/orders/:orderId/status
-// router.put('/orders/:orderId/status', isAdmin, adminOrderController.updateOrderStatus);
-
-router.put('/orders/:orderId/status', (req, res) => {
-  const { orderId } = req.params;
-  res.json({ message: `Admin update order ${orderId} status placeholder`, newStatus: req.body.status });
-});
+// PUT /api/admin/orders/:orderId/status - Updates order status
+router.put(
+  '/:orderId/status', // Path is relative to where this router is mounted
+  authenticateToken, 
+  requireAdmin, 
+  adminOrderController.updateOrderStatusHandler // Expecting this handler in adminOrderService
+);
 
 export default router; 
