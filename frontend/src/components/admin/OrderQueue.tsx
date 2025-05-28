@@ -48,6 +48,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
     transition,
   };
 
+  const handlePriorityChangeClick = (newPriority: number) => {
+    if (onPriorityChange) {
+      onPriorityChange(order.id, newPriority);
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -83,6 +89,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
+          <button 
+            onClick={() => handlePriorityChangeClick(Number(order.priority || 0) + 1)} 
+            className="p-2 bg-gray-200 rounded"
+          >
+            Inc Priority
+          </button>
         </div>
       </div>
     </div>
