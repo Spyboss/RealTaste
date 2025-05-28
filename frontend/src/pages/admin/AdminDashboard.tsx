@@ -1,92 +1,121 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from 'react-query';
 import { useAdminStore } from '@/stores/adminStore';
-import { fetchDashboardStats, fetchOrderQueue } from '@/services/adminService';
 import { useUpdateOrderPriority } from '@/hooks/useAdmin';
 import DashboardStats from '@/components/admin/DashboardStats';
 import OrderQueue from '@/components/admin/OrderQueue';
 import Layout from '@/components/layout/Layout';
-import { LayoutGrid, BarChart2, Clock, Wifi, WifiOff, RefreshCw } from 'lucide-react';
-import { Order } from '@/types/shared';
-// import Analytics from '@/components/admin/Analytics'; // Removed
-// import LoadingSpinner from '@/components/ui/LoadingSpinner'; // Removed
+import { LayoutGrid, BarChart2, Clock } from 'lucide-react';
+import { Order, DashboardStats as DashboardStatsType } from '@/types/shared';
+import AnalyticsSummary from '@/components/admin/AnalyticsSummary';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const AdminDashboard: React.FC = () => {
   const {
-    dashboardStats,
     orderQueue,
+    dailySummary,
+    topItems,
+    trendsData,
+    isLoading: adminStoreLoading,
+    error: adminStoreError,
+    fetchDailySummary: storeFetchDailySummary,
+    fetchTopItems: storeFetchTopItems,
+    fetchTrendsData: storeFetchTrendsData,
+    subscribeToOrders: storeSubscribeToOrders,
     lastUpdated,
     isRealtimeConnected,
-    isPollingFallback,
-    setOrderQueue,
-    subscribeToOrders,
-    fetchDailySummary,
-    fetchTopItems,
-    fetchTrendsData
-  } = useAdminStore();
+  } = useAdminStore(
+    (state) => ({
+      orderQueue: state.orderQueue,
+      dailySummary: state.dailySummary,
+      topItems: state.topItems,
+      trendsData: state.trendsData,
+      isLoading: state.isLoading,
+      error: state.error,
+      fetchDailySummary: state.fetchDailySummary,
+      fetchTopItems: state.fetchTopItems,
+      fetchTrendsData: state.fetchTrendsData,
+      subscribeToOrders: state.subscribeToOrders,
+      lastUpdated: state.lastUpdated,
+      isRealtimeConnected: state.isRealtimeConnected,
+    })
+  );
   
-  const [selectedTab, setSelectedTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const isQueueLoading = useAdminStore(state => state.isLoading);
 
-  // Initialize realtime subscription
+  const { mutate: updatePriority } = useUpdateOrderPriority();
+
   useEffect(() => {
-    const unsubscribe = subscribeToOrders();
-    return unsubscribe;
-  }, [subscribeToOrders]);
-
-  // Fetch initial order queue
-  const { isLoading: isInitialQueueLoading } = useQuery(
-    'orderQueue',
-    () => {
-      return fetchOrderQueue().then((orders: Order[]) => {
-        setOrderQueue(orders);
-        return orders;
-      });
-    },
-    { enabled: orderQueue.length === 0 }
-  );
-
-  const { data: dashboardStatsData, isLoading: isDashboardLoading } = useQuery(
-    'dashboardStats',
-    fetchDashboardStats
-  );
-
-  // Fetch analytics data when tab is selected
-  useEffect(() => {
-    if (selectedTab === 'analytics') {
-      fetchDailySummary();
-      fetchTopItems();
-      fetchTrendsData();
+    if (activeTab === 'dashboard' || activeTab === 'analytics') {
+      storeFetchDailySummary();
+      storeFetchTopItems();
+      storeFetchTrendsData();
     }
-  }, [selectedTab, fetchDailySummary, fetchTopItems, fetchTrendsData]);
-  
-  const updatePriorityMutation = useUpdateOrderPriority();
-  
-  const handlePriorityChange = (orderId: string, priority: string) => {
-    updatePriorityMutation.mutate({ orderId, priority });
+    const unsubscribe = storeSubscribeToOrders();
+
+    return () => {
+      unsubscribe();
+    };
+  }, [
+    activeTab,
+    storeFetchDailySummary,
+    storeFetchTopItems,
+    storeFetchTrendsData,
+    storeSubscribeToOrders,
+  ]);
+
+  const handlePriorityChange = (orderId: string, priority: number) => {
+    updatePriority({ orderId, priority: String(priority) });
   };
 
-  // Status indicator component
+  const dashboardStatsData: DashboardStatsType | null =
+    dailySummary && topItems && trendsData ? {
+      timeframe: 'today',
+      stats: {
+        total_revenue: dailySummary.total_revenue || 0,
+        total_orders: dailySummary.total_orders || 0,
+        avg_order_value: dailySummary.avg_order_value || 0,
+        completed_orders: 0,
+        avg_prep_time: 0,
+        popular_items: topItems.map(item => ({ name: item.name, count: item.quantity, revenue: item.revenue })),
+      },
+      chart_data: trendsData.map(td => ({ label: td.date, orders: td.orders, revenue: td.revenue })),
+      pending_orders: orderQueue.filter(o => o.status === 'received' || o.status === 'preparing'),
+      queue_length: orderQueue.filter(o => o.status === 'received' || o.status === 'preparing').length,
+    } : null;
+
   const renderStatusIndicator = () => {
-    if (isPollingFallback) {
+    if (isRealtimeConnected) {
+      return <div className="flex items-center text-green-600"><Clock className="w-4 h-4 mr-1" /> Real-time Active</div>;
+    }
+    return <div className="flex items-center text-red-600"><Clock className="w-4 h-4 mr-1" /> Real-time Disconnected</div>;
+  };
+
+  const renderContent = () => {
+    if (adminStoreLoading && activeTab !== 'orderQueue') {
       return (
-        <div className="flex items-center text-yellow-600">
-          <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
-          <span>Polling</span>
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner size="lg" />
         </div>
       );
     }
-    return isRealtimeConnected ? (
-      <div className="flex items-center text-green-600">
-        <Wifi className="w-4 h-4 mr-1" />
-        <span>Realtime</span>
-      </div>
-    ) : (
-      <div className="flex items-center text-red-600">
-        <WifiOff className="w-4 h-4 mr-1" />
-        <span>Disconnected</span>
-      </div>
-    );
+
+    if (adminStoreError) {
+      return (
+        <div className="text-red-500 p-4 bg-red-100 rounded-md">
+          Error: {adminStoreError}
+        </div>
+      );
+    }
+
+    switch (activeTab) {
+      case 'dashboard':
+        return <DashboardStats stats={dashboardStatsData} isLoading={adminStoreLoading && !dailySummary} />;
+      case 'analytics':
+        return <AnalyticsSummary />;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -107,9 +136,9 @@ const AdminDashboard: React.FC = () => {
 
         <div className="mb-4 flex flex-wrap gap-2">
           <button
-            onClick={() => setSelectedTab('dashboard')}
+            onClick={() => setActiveTab('dashboard')}
             className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              selectedTab === 'dashboard'
+              activeTab === 'dashboard'
                 ? 'bg-blue-100 text-blue-700'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
@@ -118,9 +147,9 @@ const AdminDashboard: React.FC = () => {
             Dashboard
           </button>
           <button
-            onClick={() => setSelectedTab('analytics')}
+            onClick={() => setActiveTab('analytics')}
             className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              selectedTab === 'analytics'
+              activeTab === 'analytics'
                 ? 'bg-blue-100 text-blue-700'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
@@ -129,9 +158,9 @@ const AdminDashboard: React.FC = () => {
             Analytics
           </button>
           <button
-            onClick={() => setSelectedTab('orderQueue')}
+            onClick={() => setActiveTab('orderQueue')}
             className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              selectedTab === 'orderQueue'
+              activeTab === 'orderQueue'
                 ? 'bg-blue-100 text-blue-700'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
@@ -141,40 +170,23 @@ const AdminDashboard: React.FC = () => {
           </button>
         </div>
 
-        {selectedTab === 'dashboard' && (
-          <DashboardStats
-            stats={dashboardStats || dashboardStatsData || null}
-            isLoading={isDashboardLoading}
-          />
-        )}
-
-        {selectedTab === 'analytics' && (
-          <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-              <h3 className="text-lg font-medium text-blue-800 mb-2">Analytics Dashboard</h3>
-              <p className="text-blue-600">Analytics features coming soon!</p>
-              <p className="text-sm text-blue-500 mt-2">
-                We're working on bringing you detailed sales analytics and performance metrics.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {selectedTab === 'orderQueue' && (
+        {activeTab === 'orderQueue' ? (
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            {(isQueueLoading || isInitialQueueLoading) ? (
+            {isQueueLoading ? (
               <div className="p-8 flex flex-col items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
                 <p className="text-gray-600">Loading order queue...</p>
               </div>
             ) : (
               <OrderQueue
-                orders={orderQueue}
-                isLoading={false}
+                orders={orderQueue as Order[]}
+                isLoading={isQueueLoading}
                 onPriorityChange={handlePriorityChange}
               />
             )}
           </div>
+        ) : (
+          renderContent()
         )}
       </div>
     </Layout>
