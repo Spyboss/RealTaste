@@ -3,6 +3,7 @@ import { useAdminStore } from '@/stores/adminStore';
 import { useUpdateOrderPriority } from '@/hooks/useAdmin';
 import DashboardStats from '@/components/admin/DashboardStats';
 import OrderQueue from '@/components/admin/OrderQueue';
+import NotificationCenter from '@/components/admin/NotificationCenter';
 import Layout from '@/components/layout/Layout';
 import { LayoutGrid, BarChart2, Clock, ListOrdered } from 'lucide-react';
 import { Order, DashboardStats as DashboardStatsType } from '@/types/shared';
@@ -40,7 +41,7 @@ const AdminDashboard: React.FC = () => {
       isRealtimeConnected: state.isRealtimeConnected,
     })
   );
-  
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const isQueueLoading = useAdminStore(state => state.isLoading);
 
@@ -126,7 +127,7 @@ const AdminDashboard: React.FC = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          
+
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             {renderStatusIndicator()}
             {lastUpdated && (
@@ -134,6 +135,7 @@ const AdminDashboard: React.FC = () => {
                 Last updated: {new Date(lastUpdated).toLocaleTimeString()}
               </div>
             )}
+            <NotificationCenter />
           </div>
         </div>
 

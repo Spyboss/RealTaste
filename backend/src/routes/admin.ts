@@ -638,7 +638,7 @@ router.get('/queue', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { status, staff_id } = req.query;
     const statuses = status ? (status as string).split(',') : ['received', 'preparing'];
-    
+
     let query = supabaseAdmin
       .from(tables.orders)
       .select(`
@@ -1185,6 +1185,217 @@ router.post('/orders/status-update', authenticateToken, requireAdmin, async (req
     res.status(500).json({
       success: false,
       error: 'Failed to trigger order status update'
+    });
+  }
+});
+
+// GET /api/admin/daily-summary - Get daily analytics summary
+router.get('/daily-summary', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { date } = req.query;
+    const targetDate = date ? new Date(date as string) : new Date();
+
+    const dateStr = targetDate.toISOString().split('T')[0];
+    const startDate = `${dateStr}T00:00:00.000Z`;
+    const endDate = `${dateStr}T23:59:59.999Z`;
+
+    // Fetch orders for this day
+    const { data: orders, error: ordersError } = await supabaseAdmin
+      .from(tables.orders)
+      .select('id, total_amount, created_at, payment_status, status')
+      .gte('created_at', startDate)
+      .lte('created_at', endDate)
+      .eq('payment_status', 'completed');
+
+    if (ordersError) throw ordersError;
+
+    const total_orders = orders.length;
+    const total_revenue = orders.reduce((sum, order) => sum + order.total_amount, 0);
+    const avg_order_value = total_orders > 0 ? total_revenue / total_orders : 0;
+    const completed_orders = orders.filter(o => o.status === 'completed').length;
+
+    const dailyData = {
+      date: dateStr,
+      total_orders,
+      total_revenue,
+      avg_order_value,
+      completed_orders
+    };
+
+    const response: ApiResponse<typeof dailyData> = {
+      success: true,
+      data: dailyData
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error fetching daily summary:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch daily summary'
+    });
+  }
+});
+
+// GET /api/admin/top-items - Get top selling items
+router.get('/top-items', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { days = 7 } = req.query;
+    const daysCount = Math.min(Number(days), 30);
+
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - daysCount);
+
+    const { data: orderItems, error } = await supabaseAdmin
+      .from(tables.order_items)
+      .select(`
+        quantity,
+        price,
+        menu_item:menu_items(name),
+        order:orders!inner(created_at, payment_status)
+      `)
+      .gte('order.created_at', startDate.toISOString())
+      .lte('order.created_at', endDate.toISOString())
+      .eq('order.payment_status', 'completed');
+
+    if (error) throw error;
+
+    // Aggregate by menu item
+    const itemStats: { [key: string]: { name: string; quantity: number; revenue: number } } = {};
+
+    orderItems?.forEach(item => {
+      const name = item.menu_item?.name || 'Unknown Item';
+      if (!itemStats[name]) {
+        itemStats[name] = { name, quantity: 0, revenue: 0 };
+      }
+      itemStats[name].quantity += item.quantity;
+      itemStats[name].revenue += item.price * item.quantity;
+    });
+
+    const topItems = Object.values(itemStats)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10);
+
+    const response: ApiResponse<typeof topItems> = {
+      success: true,
+      data: topItems
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error fetching top items:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch top items'
+    });
+  }
+});
+
+// GET /api/admin/trends - Get trends data
+router.get('/trends', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { days = 7 } = req.query;
+    const daysCount = Math.min(Number(days), 30);
+
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - daysCount);
+
+    const { data: orders, error } = await supabaseAdmin
+      .from(tables.orders)
+      .select('total_amount, created_at')
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString())
+      .eq('payment_status', 'completed')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    // Group by date
+    const dailyStats: { [key: string]: { orders: number; revenue: number } } = {};
+
+    orders?.forEach(order => {
+      const date = order.created_at.split('T')[0];
+      if (!dailyStats[date]) {
+        dailyStats[date] = { orders: 0, revenue: 0 };
+      }
+      dailyStats[date].orders += 1;
+      dailyStats[date].revenue += order.total_amount;
+    });
+
+    const trendsData = Object.entries(dailyStats).map(([date, stats]) => ({
+      date,
+      orders: stats.orders,
+      revenue: stats.revenue
+    }));
+
+    const response: ApiResponse<typeof trendsData> = {
+      success: true,
+      data: trendsData
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error fetching trends data:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch trends data'
+    });
+  }
+});
+
+// PUT /api/admin/orders/bulk-update - Bulk update order status
+router.put('/orders/bulk-update', authenticateToken, requireAdmin, adminLimiter, async (req, res) => {
+  try {
+    const { orderIds, status } = req.body;
+
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Order IDs array is required'
+      });
+    }
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        error: 'Status is required'
+      });
+    }
+
+    // Validate status
+    const validStatuses = ['received', 'confirmed', 'preparing', 'ready_for_pickup', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid status'
+      });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from(tables.orders)
+      .update({
+        status,
+        updated_at: new Date().toISOString()
+      })
+      .in('id', orderIds)
+      .select();
+
+    if (error) throw error;
+
+    const response: ApiResponse<typeof data> = {
+      success: true,
+      data: data || [],
+      message: `${orderIds.length} orders updated successfully`
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error bulk updating orders:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to bulk update orders'
     });
   }
 });
