@@ -153,7 +153,7 @@ ALTER TABLE order_item_addons ENABLE ROW LEVEL SECURITY;
 -- Users policies
 CREATE POLICY "Users can view their own profile" ON users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update their own profile" ON users FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Admins can view all users" ON users FOR SELECT USING (((auth.jwt() ->> 'role'::text) = 'admin'::text));
+CREATE POLICY "Admins can view all users" ON users FOR SELECT USING (((SELECT auth.jwt() ->> 'role'::text) = 'admin'::text));
 
 -- Menu policies (public read access)
 CREATE POLICY "Anyone can view active categories" ON categories FOR SELECT USING (is_active = true);
@@ -162,18 +162,10 @@ CREATE POLICY "Anyone can view available variants" ON menu_variants FOR SELECT U
 CREATE POLICY "Anyone can view available addons" ON menu_addons FOR SELECT USING (is_available = true);
 
 -- Admin policies for menu management
-CREATE POLICY "Admins can manage categories" ON categories FOR ALL USING (
-  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
-);
-CREATE POLICY "Admins can manage menu items" ON menu_items FOR ALL USING (
-  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
-);
-CREATE POLICY "Admins can manage variants" ON menu_variants FOR ALL USING (
-  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
-);
-CREATE POLICY "Admins can manage addons" ON menu_addons FOR ALL USING (
-  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
-);
+CREATE POLICY "Admins can manage categories" ON categories FOR ALL USING (((SELECT auth.jwt() ->> 'role'::text) = 'admin'::text));
+CREATE POLICY "Admins can manage menu items" ON menu_items FOR ALL USING (((SELECT auth.jwt() ->> 'role'::text) = 'admin'::text));
+CREATE POLICY "Admins can manage variants" ON menu_variants FOR ALL USING (((SELECT auth.jwt() ->> 'role'::text) = 'admin'::text));
+CREATE POLICY "Admins can manage addons" ON menu_addons FOR ALL USING (((SELECT auth.jwt() ->> 'role'::text) = 'admin'::text));
 
 -- Order policies
 CREATE POLICY "Users can view their own orders" ON orders FOR SELECT USING (
