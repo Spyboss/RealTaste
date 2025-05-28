@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase, signIn, signUp, signOut, resetPassword, updatePassword } from '@/services/supabase';
+import { supabase, signIn as supabaseSignIn, signUp as supabaseSignUp, signOut, resetPassword, updatePassword, fetchUserRole } from '@/services/supabase';
 
 interface AuthState {
   user: User | null;
@@ -41,16 +41,20 @@ export const useAuthStore = create<AuthState>()(
           const { data: { session }, error } = await supabase.auth.getSession();
           if (error) throw error;
           
-          if (session) {
+          if (session?.user) {
+            await fetchUserRole(session.user.id);
+            const { data: { user: refreshedUser } } = await supabase.auth.getUser();
             set({
-              user: session.user,
+              user: refreshedUser,
               session,
               isAuthenticated: true,
               error: null
             });
+          } else {
+            set({ user: null, session: null, isAuthenticated: false });
           }
         } catch (error: any) {
-          set({ error: error.message });
+          set({ error: error.message, user: null, session: null, isAuthenticated: false });
         } finally {
           set({ loading: false });
         }
@@ -59,16 +63,22 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         try {
           set({ loading: true, error: null });
-          const { data, error } = await signIn(email, password);
+          const { data, error } = await supabaseSignIn(email, password);
           if (error) throw error;
-          set({
-            user: data.user,
-            session: data.session,
-            isAuthenticated: true,
-            error: null
-          });
+          if (data.user && data.session) {
+            await fetchUserRole(data.user.id);
+            const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+            set({
+              user: refreshedUser,
+              session: data.session,
+              isAuthenticated: true,
+              error: null
+            });
+          } else {
+            throw new Error("Login did not return a user and session.");
+          }
         } catch (error: any) {
-          set({ error: error.message });
+          set({ error: error.message, user: null, session: null, isAuthenticated: false });
         } finally {
           set({ loading: false });
         }
@@ -77,16 +87,26 @@ export const useAuthStore = create<AuthState>()(
       register: async (email: string, password: string) => {
         try {
           set({ loading: true, error: null });
-          const { data, error } = await signUp(email, password);
+          const { data, error } = await supabaseSignUp(email, password);
           if (error) throw error;
-          set({
-            user: data.user,
-            session: data.session,
-            isAuthenticated: true,
-            error: null
-          });
+          if (data.user && data.session) {
+            await fetchUserRole(data.user.id);
+            const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+            set({
+              user: refreshedUser,
+              session: data.session,
+              isAuthenticated: true,
+              error: null
+            });
+          } else {
+            if (data.user) {
+              set({ user: data.user, session: null, isAuthenticated: false });
+            } else {
+              throw new Error("Registration did not return a user.");
+            }
+          }
         } catch (error: any) {
-          set({ error: error.message });
+          set({ error: error.message, user: null, session: null, isAuthenticated: false });
         } finally {
           set({ loading: false });
         }
@@ -129,16 +149,22 @@ export const useAuthStore = create<AuthState>()(
       signIn: async (email: string, password: string) => {
         try {
           set({ loading: true, error: null });
-          const { data, error } = await signIn(email, password);
+          const { data, error } = await supabaseSignIn(email, password);
           if (error) throw error;
-          set({
-            user: data.user,
-            session: data.session,
-            isAuthenticated: true,
-            error: null
-          });
+          if (data.user && data.session) {
+            await fetchUserRole(data.user.id);
+            const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+            set({
+              user: refreshedUser,
+              session: data.session,
+              isAuthenticated: true,
+              error: null
+            });
+          } else {
+            throw new Error("Login did not return a user and session.");
+          }
         } catch (error: any) {
-          set({ error: error.message });
+          set({ error: error.message, user: null, session: null, isAuthenticated: false });
         } finally {
           set({ loading: false });
         }
@@ -147,16 +173,26 @@ export const useAuthStore = create<AuthState>()(
       signUp: async (email: string, password: string) => {
         try {
           set({ loading: true, error: null });
-          const { data, error } = await signUp(email, password);
+          const { data, error } = await supabaseSignUp(email, password);
           if (error) throw error;
-          set({
-            user: data.user,
-            session: data.session,
-            isAuthenticated: true,
-            error: null
-          });
+          if (data.user && data.session) {
+            await fetchUserRole(data.user.id);
+            const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+            set({
+              user: refreshedUser,
+              session: data.session,
+              isAuthenticated: true,
+              error: null
+            });
+          } else {
+            if (data.user) {
+              set({ user: data.user, session: null, isAuthenticated: false });
+            } else {
+              throw new Error("Registration did not return a user.");
+            }
+          }
         } catch (error: any) {
-          set({ error: error.message });
+          set({ error: error.message, user: null, session: null, isAuthenticated: false });
         } finally {
           set({ loading: false });
         }
