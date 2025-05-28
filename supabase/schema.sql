@@ -151,54 +151,62 @@ ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_item_addons ENABLE ROW LEVEL SECURITY;
 
 -- Users policies
-CREATE POLICY "Users can view their own profile" ON users FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Users can update their own profile" ON users FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Admins can view all users" ON users FOR SELECT USING ((SELECT auth.jwt() ->> 'role') = 'admin');
+CREATE POLICY users_select_policy ON users 
+FOR SELECT 
+USING (
+    id = (SELECT auth.uid()) OR 
+    (SELECT auth.jwt() ->> 'role') = 'admin'
+);
+CREATE POLICY users_update_policy ON users FOR UPDATE USING (id = (SELECT auth.uid()));
 
--- Menu Policies (now using *_access_policy)
-CREATE POLICY categories_access_policy ON public.categories FOR ALL 
-USING (is_active = true OR (SELECT auth.jwt()->>'role') = 'admin') 
-WITH CHECK ((SELECT auth.jwt()->>'role') = 'admin');
+-- Menu Policies (using optimized syntax)
+CREATE POLICY categories_access_policy ON categories FOR ALL 
+USING (is_active = true OR (SELECT auth.jwt() ->> 'role') = 'admin') 
+WITH CHECK ((SELECT auth.jwt() ->> 'role') = 'admin');
 
-CREATE POLICY menu_items_access_policy ON public.menu_items FOR ALL 
-USING (is_available = true OR (SELECT auth.jwt()->>'role') = 'admin') 
-WITH CHECK ((SELECT auth.jwt()->>'role') = 'admin');
+CREATE POLICY menu_items_access_policy ON menu_items FOR ALL 
+USING (is_available = true OR (SELECT auth.jwt() ->> 'role') = 'admin') 
+WITH CHECK ((SELECT auth.jwt() ->> 'role') = 'admin');
 
-CREATE POLICY menu_variants_access_policy ON public.menu_variants FOR ALL 
-USING (is_available = true OR (SELECT auth.jwt()->>'role') = 'admin') 
-WITH CHECK ((SELECT auth.jwt()->>'role') = 'admin');
+CREATE POLICY menu_variants_access_policy ON menu_variants FOR ALL 
+USING (is_available = true OR (SELECT auth.jwt() ->> 'role') = 'admin') 
+WITH CHECK ((SELECT auth.jwt() ->> 'role') = 'admin');
 
-CREATE POLICY menu_addons_access_policy ON public.menu_addons FOR ALL 
-USING (is_available = true OR (SELECT auth.jwt()->>'role') = 'admin') 
-WITH CHECK ((SELECT auth.jwt()->>'role') = 'admin');
+CREATE POLICY menu_addons_access_policy ON menu_addons FOR ALL 
+USING (is_available = true OR (SELECT auth.jwt() ->> 'role') = 'admin') 
+WITH CHECK ((SELECT auth.jwt() ->> 'role') = 'admin');
 
 -- Order policies
-CREATE POLICY "Users can view their own orders" ON orders FOR SELECT USING (
-  customer_id = auth.uid() OR
-  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin') -- This still uses EXISTS, may need update if linter flags it
+CREATE POLICY orders_view_policy ON orders FOR SELECT USING (
+  customer_id = (SELECT auth.uid()) OR 
+  (SELECT auth.jwt() ->> 'role') = 'admin'
 );
+
 CREATE POLICY "Anyone can create orders" ON orders FOR INSERT WITH CHECK (true);
-CREATE POLICY "Admins can update orders" ON orders FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin') -- This still uses EXISTS, may need update
+
+CREATE POLICY orders_admin_policy ON orders FOR UPDATE USING (
+  (SELECT auth.jwt() ->> 'role') = 'admin'
 );
 
 -- Order items policies
-CREATE POLICY "Users can view order items for their orders" ON order_items FOR SELECT USING (
+CREATE POLICY order_items_view_policy ON order_items FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM orders
     WHERE orders.id = order_items.order_id
-    AND (orders.customer_id = auth.uid() OR EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')) -- This still uses EXISTS
+    AND (orders.customer_id = (SELECT auth.uid()) OR (SELECT auth.jwt() ->> 'role') = 'admin')
   )
 );
+
 CREATE POLICY "Anyone can create order items" ON order_items FOR INSERT WITH CHECK (true);
 
 -- Order item addons policies
-CREATE POLICY "Users can view addons for their order items" ON order_item_addons FOR SELECT USING (
+CREATE POLICY order_item_addons_view_policy ON order_item_addons FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM order_items
     JOIN orders ON orders.id = order_items.order_id
     WHERE order_items.id = order_item_addons.order_item_id
-    AND (orders.customer_id = auth.uid() OR EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')) -- This still uses EXISTS
+    AND (orders.customer_id = (SELECT auth.uid()) OR (SELECT auth.jwt() ->> 'role') = 'admin')
   )
 );
+
 CREATE POLICY "Anyone can create order item addons" ON order_item_addons FOR INSERT WITH CHECK (true);
