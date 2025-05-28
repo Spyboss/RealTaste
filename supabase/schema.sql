@@ -153,9 +153,7 @@ ALTER TABLE order_item_addons ENABLE ROW LEVEL SECURITY;
 -- Users policies
 CREATE POLICY "Users can view their own profile" ON users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update their own profile" ON users FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Admins can view all users" ON users FOR SELECT USING (
-  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
-);
+CREATE POLICY "Admins can view all users" ON users FOR SELECT USING (((auth.jwt() ->> 'role'::text) = 'admin'::text));
 
 -- Menu policies (public read access)
 CREATE POLICY "Anyone can view active categories" ON categories FOR SELECT USING (is_active = true);
