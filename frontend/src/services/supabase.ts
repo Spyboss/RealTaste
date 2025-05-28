@@ -16,6 +16,57 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
+// Fetch user role from app_metadata
+export const getUserRole = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.app_metadata?.role || 'customer';
+};
+
+// Check if user is admin
+export const isAdmin = async () => {
+  const role = await getUserRole();
+  return role === 'admin';
+};
+
+// Auth helpers
+export const signUp = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        role: 'customer' // Default role
+      }
+    }
+  });
+  return { data, error };
+};
+
+export const signIn = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+  return { data, error };
+};
+
+export const signOut = async () => {
+  const { error } = await supabase.auth.signOut();
+  return { error };
+};
+
+export const resetPassword = async (email: string) => {
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+  return { data, error };
+};
+
+export const updatePassword = async (newPassword: string) => {
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+  return { data, error };
+};
+
 // Fetch user role from the users table
 export const fetchUserRole = async (userId: string) => {
   // First try to get role from app_metadata
@@ -45,61 +96,6 @@ export const fetchUserRole = async (userId: string) => {
   }
 
   return data?.role;
-};
-
-// Auth helpers
-export const signUp = async (email: string, password: string, firstName?: string) => {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        first_name: firstName,
-      }
-    }
-  });
-
-  if (error) throw error;
-  return data;
-};
-
-export const signIn = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) throw error;
-
-  // Fetch user role if sign in successful
-  if (data.user) {
-    const role = await fetchUserRole(data.user.id);
-    // Store role in app_metadata
-    if (role) {
-      await supabase.auth.updateUser({
-        data: { role }
-      });
-    }
-  }
-
-  return data;
-};
-
-export const signInWithGoogle = async () => {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`
-    }
-  });
-
-  if (error) throw error;
-  return data;
-};
-
-export const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
 };
 
 export const getCurrentUser = async () => {

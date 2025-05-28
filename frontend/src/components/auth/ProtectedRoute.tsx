@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { getUserRole } from '@/services/supabase';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,10 +13,24 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requireAdmin = false 
 }) => {
-  const { isAuthenticated, user, loading } = useAuthStore();
+  const { isAuthenticated, loading } = useAuthStore();
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [checkingRole, setCheckingRole] = useState<boolean>(true);
   const location = useLocation();
 
-  if (loading) {
+  useEffect(() => {
+    const checkRole = async () => {
+      if (isAuthenticated && requireAdmin) {
+        const role = await getUserRole();
+        setIsAdmin(role === 'admin');
+      }
+      setCheckingRole(false);
+    };
+
+    checkRole();
+  }, [isAuthenticated, requireAdmin]);
+
+  if (loading || (requireAdmin && checkingRole)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -28,18 +43,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check admin requirement
-  if (requireAdmin && user?.app_metadata?.role !== 'admin') {
-    return (
-      <div className="text-center py-12">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
-          Access Denied
-        </h1>
-        <p className="text-gray-600">
-          You don't have permission to access this page.
-        </p>
-      </div>
-    );
+  if (requireAdmin && !isAdmin) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
