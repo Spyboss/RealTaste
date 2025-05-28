@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
-import { Clock, Package, CheckCircle, Phone, MoreVertical, Menu, Star, ChevronDown } from 'lucide-react';
+import React from 'react';
 import { Order } from '@/types/shared';
-import { formatPrice, formatDateTime, getOrderStatusColor } from '@/utils/tempUtils';
 import { useAdminStore } from '@/stores/adminStore';
 import { useBulkUpdateOrders } from '@/hooks/useAdmin';
 import Button from '@/components/ui/Button';
@@ -11,7 +9,6 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-  DragStartEvent,
   MouseSensor,
   TouchSensor,
 } from '@dnd-kit/core';
@@ -22,7 +19,6 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { DropTarget } from './DropTarget';
-import { SortableOrderCard as OrderCard } from './SortableOrderCard';
 
 interface OrderCardProps {
   order: Order;
@@ -96,7 +92,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
 interface OrderQueueProps {
   orders: Order[];
   isLoading: boolean;
-  onPriorityChange?: (orderId: string, priority: string) => void;
+  onPriorityChange?: (orderId: string, priority: number) => void;
 }
 
 const statusColumns = [
@@ -104,22 +100,6 @@ const statusColumns = [
   { id: 'preparing', title: 'Preparing' },
   { id: 'ready_for_pickup', title: 'Ready' }
 ];
-
-const priorityOptions = [
-  { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-800' },
-  { value: 'normal', label: 'Normal', color: 'bg-blue-100 text-blue-800' },
-  { value: 'low', label: 'Low', color: 'bg-gray-100 text-gray-800' }
-];
-
-const getPriorityBadge = (priority: string) => {
-  const option = priorityOptions.find(opt => opt.value === priority) || priorityOptions[1];
-  return (
-    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${option.color}`}>
-      <Star className="w-3 h-3 mr-1" />
-      {option.label}
-    </span>
-  );
-};
 
 const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityChange }) => {
   const {
@@ -159,7 +139,7 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
     });
   };
 
-  const handlePriorityChangeLocal = (orderId: string, priority: string) => {
+  const handlePriorityChangeLocal = (orderId: string, priority: number) => {
     if (onPriorityChange) {
       onPriorityChange(orderId, priority);
     }
@@ -209,7 +189,6 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
     );
   }
 
-  // Group orders by status
   const ordersByStatus: Record<string, Order[]> = {
     received: [],
     preparing: [],
@@ -248,7 +227,6 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
         ))}
       </div>
 
-      {/* Bulk Actions */}
       {selectedOrders.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
           <div className="flex items-center justify-between">
@@ -285,41 +263,6 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
       )}
     </DndContext>
   );
-};
-
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'received':
-      return <Clock className="w-4 h-4" />;
-    case 'preparing':
-      return <Package className="w-4 h-4" />;
-    case 'ready_for_pickup':
-      return <CheckCircle className="w-4 h-4" />;
-    default:
-      return <Clock className="w-4 h-4" />;
-  }
-};
-
-const getNextStatus = (currentStatus: string) => {
-  switch (currentStatus) {
-    case 'received':
-      return 'preparing';
-    case 'preparing':
-      return 'ready_for_pickup';
-    default:
-      return currentStatus;
-  }
-};
-
-const getNextStatusLabel = (currentStatus: string) => {
-  switch (currentStatus) {
-    case 'received':
-      return 'Start Preparing';
-    case 'preparing':
-      return 'Mark Ready';
-    default:
-      return 'Update';
-  }
 };
 
 export default OrderQueue;

@@ -13,7 +13,7 @@ interface AuthState {
   // Actions
   initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, firstName?: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
@@ -28,7 +28,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       session: null,
       loading: true,
@@ -74,10 +74,10 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async (email: string, password: string, firstName?: string) => {
+      register: async (email: string, password: string) => {
         try {
           set({ loading: true, error: null });
-          const { data, error } = await signUp(email, password, firstName);
+          const { data, error } = await signUp(email, password);
           if (error) throw error;
           set({
             user: data.user,
