@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Order, DashboardStats } from '../types/shared';
 import { subscribeToOrderQueue } from '@/services/supabase';
+import { useAuthStore } from './authStore';
 
 import { DailyAnalytics, TopItem, TrendData } from '../types/shared';
 
@@ -50,6 +51,10 @@ interface AdminState {
   fetchDailySummary: (date?: string) => Promise<void>;
   fetchTopItems: (days?: number) => Promise<void>;
   fetchTrendsData: (days?: number) => Promise<void>;
+  
+  // New actions for admin order management
+  fetchAllAdminOrders: () => Promise<void>;
+  updateAdminOrderStatus: (orderId: string, status: Order['status']) => Promise<boolean>;
   
   // Real-time updates
   addNewOrder: (order: Order) => void;
@@ -146,10 +151,83 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       // Actual API call would go here
       // const data = await adminService.getTrendsData(days);
       // set({ trendsData: data });
-    } catch (error) {
-      set({ error: 'Failed to fetch trends data' });
+    } catch (error: any) {
+      set({ error: 'Failed to fetch trends data: ' + error.message });
     } finally {
       set({ loadingTrends: false });
+    }
+  },
+
+  // New actions for admin order management
+  fetchAllAdminOrders: async () => {
+    set({ isLoading: true, error: null });
+    const token = useAuthStore.getState().session?.access_token;
+
+    if (!token) {
+      set({ isLoading: false, error: 'Authentication token not found.' });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/orders', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        set({ orderQueue: result.data, isLoading: false, lastUpdated: new Date() });
+      } else {
+        throw new Error(result.error || 'Failed to fetch orders: Invalid response structure');
+      }
+    } catch (error: any) {
+      console.error('fetchAllAdminOrders error:', error);
+      set({ isLoading: false, error: error.message || 'Failed to fetch orders' });
+    }
+  },
+
+  updateAdminOrderStatus: async (orderId: string, status: Order['status']) => {
+    set({ isLoading: true, error: null });
+    const token = useAuthStore.getState().session?.access_token;
+
+    if (!token) {
+      set({ isLoading: false, error: 'Authentication token not found.' });
+      return false;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        get().updateOrder(orderId, { ...result.data, status: result.data.status, updated_at: result.data.updated_at || new Date().toISOString() });
+        set({ isLoading: false, lastUpdated: new Date() });
+        return true;
+      } else {
+        throw new Error(result.error || 'Failed to update order status: Invalid response structure');
+      }
+    } catch (error: any) {
+      console.error('updateAdminOrderStatus error:', error);
+      set({ isLoading: false, error: error.message || 'Failed to update order status' });
+      return false;
     }
   },
 

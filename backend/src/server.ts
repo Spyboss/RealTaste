@@ -11,6 +11,7 @@ import orderRoutes from './routes/orders';
 import adminRoutes from './routes/admin';
 import businessRoutes from './routes/business';
 import paymentRoutes from './routes/payments';
+import adminOrderRoutes from './routes/adminOrderRoutes';
 
 const app = express();
 
@@ -58,6 +59,7 @@ app.get('/health', (req, res) => {
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/orders', adminOrderRoutes);
 app.use('/api/business', businessRoutes);
 app.use('/api/payments', paymentRoutes);
 

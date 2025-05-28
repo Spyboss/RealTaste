@@ -4,10 +4,11 @@ import { useUpdateOrderPriority } from '@/hooks/useAdmin';
 import DashboardStats from '@/components/admin/DashboardStats';
 import OrderQueue from '@/components/admin/OrderQueue';
 import Layout from '@/components/layout/Layout';
-import { LayoutGrid, BarChart2, Clock } from 'lucide-react';
+import { LayoutGrid, BarChart2, Clock, ListOrdered } from 'lucide-react';
 import { Order, DashboardStats as DashboardStatsType } from '@/types/shared';
 import AnalyticsSummary from '@/components/admin/AnalyticsSummary';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import OrderManagementPage from '@/pages/admin/OrderManagementPage';
 
 const AdminDashboard: React.FC = () => {
   const {
@@ -113,6 +114,8 @@ const AdminDashboard: React.FC = () => {
         return <DashboardStats stats={dashboardStatsData} isLoading={adminStoreLoading && !dailySummary} />;
       case 'analytics':
         return <AnalyticsSummary />;
+      case 'orderManagement':
+        return <OrderManagementPage />;
       default:
         return null;
     }
@@ -167,6 +170,17 @@ const AdminDashboard: React.FC = () => {
           >
             <Clock className="w-4 h-4 mr-2" />
             Order Queue
+          </button>
+          <button
+            onClick={() => setActiveTab('orderManagement')}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'orderManagement'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <ListOrdered className="w-4 h-4 mr-2" />
+            Order Management
           </button>
         </div>
 
