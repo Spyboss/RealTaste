@@ -6,6 +6,7 @@ import { formatTime } from '@/utils/tempUtils';
 import MenuCard from '@/components/menu/MenuCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Input from '@/components/ui/Input';
+import { MenuItem, MenuCategory } from '@/types/shared';
 
 const HomePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,9 +37,9 @@ const HomePage: React.FC = () => {
   }
 
   // Filter categories and items based on search
-  const filteredCategories = categories?.map(category => ({
+  const filteredCategories = categories?.map((category: MenuCategory) => ({
     ...category,
-    menu_items: category.menu_items?.filter(item =>
+    menu_items: category.menu_items?.filter((item: MenuItem) =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase())
     ) || []
@@ -123,7 +124,7 @@ const HomePage: React.FC = () => {
           >
             All Categories
           </button>
-          {categories?.map((category) => (
+          {categories?.map((category: MenuCategory) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
@@ -140,7 +141,7 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* Menu Categories */}
-      {filteredCategories?.map((category) => (
+      {filteredCategories?.map((category: MenuCategory) => (
         <div key={category.id} className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -156,7 +157,7 @@ const HomePage: React.FC = () => {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {category.menu_items?.map((item) => (
+            {category.menu_items?.map((item: MenuItem) => (
               <MenuCard key={item.id} item={item} />
             ))}
           </div>

@@ -1,11 +1,17 @@
 import React from 'react';
 import { TrendingUp, Clock, DollarSign, Package, Users } from 'lucide-react';
 import { formatPrice } from '@/utils/tempUtils';
-import { DashboardStats as DashboardStatsType } from '@/services/adminService';
+import { DashboardStats as DashboardStatsType, Order } from '@/types/shared';
 
 interface DashboardStatsProps {
   stats: DashboardStatsType | null;
   isLoading: boolean;
+}
+
+interface PopularItem {
+  name: string;
+  count: number;
+  revenue: number;
 }
 
 const StatCard: React.FC<{
@@ -115,13 +121,13 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats, isLoading }) => 
           <div className="flex items-center space-x-2">
             <Users className="w-5 h-5 text-gray-400" />
             <span className="text-sm text-gray-600">
-              {stats.pending_orders.filter(o => o.status === 'received').length} received
+              {stats.pending_orders.filter((o: Order) => o.status === 'received').length} received
             </span>
           </div>
           <div className="flex items-center space-x-2">
             <Clock className="w-5 h-5 text-gray-400" />
             <span className="text-sm text-gray-600">
-              {stats.pending_orders.filter(o => o.status === 'preparing').length} preparing
+              {stats.pending_orders.filter((o: Order) => o.status === 'preparing').length} preparing
             </span>
           </div>
         </div>
@@ -132,7 +138,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats, isLoading }) => 
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Popular Items</h3>
           <div className="space-y-3">
-            {data.popular_items.slice(0, 5).map((item, index) => (
+            {data.popular_items.slice(0, 5).map((item: PopularItem, index: number) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <span className="flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full text-xs font-medium text-gray-600">

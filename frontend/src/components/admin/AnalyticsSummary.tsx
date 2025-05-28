@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const AnalyticsSummary: React.FC = () => {
-  const { dailySummary, loading } = useAdminStore();
+  const { dailySummary, loadingDaily } = useAdminStore();
 
-  if (loading) {
+  if (loadingDaily) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[1, 2, 3].map((i) => (

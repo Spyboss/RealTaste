@@ -5,8 +5,20 @@ import { formatPrice, formatDateTime, getOrderStatusColor } from '@/utils/tempUt
 import { useAdminStore } from '@/stores/adminStore';
 import { useBulkUpdateOrders } from '@/hooks/useAdmin';
 import Button from '@/components/ui/Button';
-import { DndContext, useSensor, useSensors, MouseSensor, TouchSensor, closestCenter, DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, rectSortingStrategy, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import {
+  DndContext,
+  closestCenter,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  MouseSensor,
+  TouchSensor,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { DropTarget } from './DropTarget';
 
@@ -38,13 +50,17 @@ const getPriorityBadge = (priority: string) => {
   );
 };
 
-const SortableOrderCard = React.forwardRef<HTMLDivElement, {
+// Define props type for SortableOrderCard directly
+interface SortableOrderCardProps {
   order: Order;
   isSelected: boolean;
   onToggleSelect: () => void;
   onStatusUpdate: (orderId: string, status: string) => void;
   onPriorityChange: (orderId: string, priority: string) => void;
-}>(({ order, isSelected, onToggleSelect, onStatusUpdate, onPriorityChange }, ref) => {
+}
+
+const SortableOrderCard: React.FC<SortableOrderCardProps> = (props) => { // Removed React.forwardRef and ref parameter
+  const { order, isSelected, onToggleSelect, onStatusUpdate, onPriorityChange } = props; // Destructure props
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: order.id });
   const [showActions, setShowActions] = useState(false);
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
@@ -57,7 +73,7 @@ const SortableOrderCard = React.forwardRef<HTMLDivElement, {
 
   return (
     <div
-      ref={setNodeRef}
+      ref={setNodeRef} // This should still work as useSortable is in this component's scope
       style={style}
       {...attributes}
       className={`bg-white rounded-lg border-2 p-4 transition-all duration-200 ${
@@ -202,13 +218,17 @@ const SortableOrderCard = React.forwardRef<HTMLDivElement, {
       )}
     </div>
   );
-});
+};
 
 const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityChange }) => {
-  const { selectedOrders, toggleOrderSelection, selectAllOrders, clearSelection } = useAdminStore();
-  const bulkUpdateMutation = useBulkUpdateOrders();
-  const [showActions, setShowActions] = useState(false);
+  const {
+    selectedOrders,
+    toggleOrderSelection,
+    clearSelection,
+  } = useAdminStore();
   
+  const bulkUpdateMutation = useBulkUpdateOrders();
+
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor)
@@ -238,7 +258,7 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
     });
   };
 
-  const handlePriorityChange = (orderId: string, priority: string) => {
+  const handlePriorityChangeLocal = (orderId: string, priority: string) => {
     if (onPriorityChange) {
       onPriorityChange(orderId, priority);
     }
@@ -317,7 +337,7 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
                       isSelected={selectedOrders.includes(order.id)}
                       onToggleSelect={() => toggleOrderSelection(order.id)}
                       onStatusUpdate={handleStatusUpdate}
-                      onPriorityChange={handlePriorityChange}
+                      onPriorityChange={handlePriorityChangeLocal}
                     />
                   ))}
                 </div>

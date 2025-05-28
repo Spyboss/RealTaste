@@ -114,7 +114,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   setPollingFallback: (isPolling) => set({ isPollingFallback: isPolling }),
 
   // Analytics actions
-  fetchDailySummary: async (date) => {
+  fetchDailySummary: async (_date?: string) => {
     set({ loadingDaily: true, error: null });
     try {
       // Actual API call would go here
@@ -127,7 +127,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
   
-  fetchTopItems: async (days = 1) => {
+  fetchTopItems: async (_days?: number) => {
     set({ loadingItems: true, error: null });
     try {
       // Actual API call would go here
@@ -140,7 +140,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
   
-  fetchTrendsData: async (days = 7) => {
+  fetchTrendsData: async (_days?: number) => {
     set({ loadingTrends: true, error: null });
     try {
       // Actual API call would go here
@@ -216,6 +216,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       setPollingFallback(true);
       if (fallbackPolling) clearInterval(fallbackPolling);
       // Implement actual polling logic here (not shown for brevity)
+      // For example, periodically call fetchOrderQueue()
     };
     
     // Cleanup function
@@ -226,8 +227,9 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     
     // Realtime subscription handler
     const initRealtime = () => {
+      let channel: any; // Declare channel here to be accessible in return cleanup
       try {
-        const subscription = subscribeToOrderQueue((payload) => {
+        channel = subscribeToOrderQueue((payload) => { // subscribeToOrderQueue returns the channel
           if (payload.eventType === 'INSERT') {
             addNewOrder(payload.new);
           } else if (payload.eventType === 'UPDATE') {
@@ -237,33 +239,56 @@ export const useAdminStore = create<AdminState>((set, get) => ({
           }
         });
         
-        subscription.on('SUBSCRIBED', () => {
-          setRealtimeStatus(true);
-          reconnectAttempts = 0;
-          if (fallbackPolling) {
-            clearInterval(fallbackPolling);
-            setPollingFallback(false);
-          }
-        });
-        
-        subscription.on('ERROR', (err: any) => {
-          console.error('Realtime connection error:', err);
-          setRealtimeStatus(false);
-          if (reconnectAttempts < 5) {
-            reconnect();
-          } else {
-            startPolling();
+        channel.subscribe((status: string, err?: Error) => {
+          if (status === 'SUBSCRIBED') {
+            setRealtimeStatus(true);
+            reconnectAttempts = 0;
+            if (fallbackPolling) {
+              clearInterval(fallbackPolling);
+              setPollingFallback(false);
+            }
+            console.log('Realtime: SUBSCRIBED');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('Realtime: CHANNEL_ERROR', err);
+            setRealtimeStatus(false);
+            if (reconnectAttempts < 5) {
+              reconnect();
+            } else {
+              startPolling();
+            }
+          } else if (status === 'TIMED_OUT') {
+            console.error('Realtime: TIMED_OUT', err);
+            setRealtimeStatus(false);
+            if (reconnectAttempts < 5) {
+              reconnect();
+            } else {
+              startPolling();
+            }
+          } else if (status === 'CLOSED') {
+            console.log('Realtime: CLOSED');
+            setRealtimeStatus(false);
+            // Optionally attempt to reconnect or just wait for next manual init/app refresh
           }
         });
         
         return () => {
-          subscription.unsubscribe();
+          if (channel) {
+            // Supabase client might handle removal differently,
+            // but channel.unsubscribe() is standard for a specific channel.
+            // Or use supabase.removeChannel(channel) if channel object and supabase client are in scope.
+            channel.unsubscribe(); 
+          }
           cleanup();
         };
       } catch (error) {
         console.error('Error initializing realtime:', error);
-        startPolling();
-        return cleanup;
+        startPolling(); // Fallback to polling on initial setup error
+        return () => { // Ensure cleanup is returned even if setup fails
+            if (channel) {
+              channel.unsubscribe();
+            }
+            cleanup();
+        };
       }
     };
     

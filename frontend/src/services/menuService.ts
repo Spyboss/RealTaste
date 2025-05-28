@@ -1,9 +1,9 @@
 import { api, handleApiResponse } from './api';
-import { Category, MenuItem } from '../types/shared';
+import { MenuCategory, MenuItem } from '../types/shared';
 
 export const menuService = {
   // Get full menu with categories and items
-  getMenu: async (): Promise<Category[]> => {
+  getMenu: async (): Promise<MenuCategory[]> => {
     const response = await api.get('/menu');
     return handleApiResponse(response);
   },
@@ -15,13 +15,13 @@ export const menuService = {
   },
 
   // Admin: Get all categories
-  getCategories: async (): Promise<Category[]> => {
+  getCategories: async (): Promise<MenuCategory[]> => {
     const response = await api.get('/menu/categories');
     return handleApiResponse(response);
   },
 
   // Admin: Create category
-  createCategory: async (category: Partial<Category>): Promise<Category> => {
+  createCategory: async (category: Partial<MenuCategory>): Promise<MenuCategory> => {
     const response = await api.post('/menu/categories', category);
     return handleApiResponse(response);
   },

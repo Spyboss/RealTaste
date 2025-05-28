@@ -1,7 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { adminService, BulkUpdateRequest } from '@/services/adminService';
+import * as adminService from '@/services/adminService';
 import { useAdminStore } from '@/stores/adminStore';
 import toast from 'react-hot-toast';
+import { Order } from '@/types/shared';
+
+// Define BulkUpdateRequest locally
+interface BulkUpdateRequest {
+  orderIds: string[];
+  status: string;
+  estimated_pickup_time?: string;
+}
 
 export const useDashboardStats = (timeframe: 'today' | 'week' | 'month' = 'today') => {
   const setDashboardStats = useAdminStore(state => state.setDashboardStats);
@@ -9,7 +17,7 @@ export const useDashboardStats = (timeframe: 'today' | 'week' | 'month' = 'today
 
   return useQuery({
     queryKey: ['admin', 'dashboard', timeframe],
-    queryFn: () => adminService.getDashboardStats(timeframe),
+    queryFn: () => adminService.fetchDashboardStats(),
     staleTime: 30 * 1000, // 30 seconds
     refetchInterval: 60 * 1000, // Refetch every minute
     onSuccess: (data) => {
@@ -28,10 +36,10 @@ export const useOrderQueue = () => {
 
   return useQuery({
     queryKey: ['admin', 'orderQueue'],
-    queryFn: adminService.getOrderQueue,
+    queryFn: adminService.fetchOrderQueue,
     staleTime: 10 * 1000, // 10 seconds
     refetchInterval: 15 * 1000, // Refetch every 15 seconds
-    onSuccess: (data) => {
+    onSuccess: (data: Order[]) => {
       setOrderQueue(data);
       setError(null);
     },
@@ -46,9 +54,9 @@ export const useBulkUpdateOrders = () => {
   const clearSelection = useAdminStore(state => state.clearSelection);
 
   return useMutation(
-    (data: BulkUpdateRequest) => adminService.bulkUpdateOrders(data),
+    (data: BulkUpdateRequest) => adminService.bulkUpdateOrders(data.orderIds, data.status, data.estimated_pickup_time),
     {
-      onSuccess: (data, variables) => {
+      onSuccess: (_data, variables) => {
         queryClient.invalidateQueries(['admin', 'orderQueue']);
         queryClient.invalidateQueries(['admin', 'dashboard']);
         clearSelection();
@@ -61,10 +69,28 @@ export const useBulkUpdateOrders = () => {
   );
 };
 
+export const useUpdateOrderPriority = () => {
+  const queryClient = useQueryClient();
+  return useMutation(
+    ({ orderId, priority }: { orderId: string; priority: string }) => 
+      adminService.updateOrderPriority(orderId, priority),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['admin', 'orderQueue']);
+        queryClient.invalidateQueries(['admin', 'dashboard']);
+        toast.success('Order priority updated!');
+      },
+      onError: (error: any) => {
+        toast.error(error.message || 'Failed to update priority');
+      },
+    }
+  );
+};
+
 export const useAnalytics = (days: number = 7) => {
   return useQuery({
     queryKey: ['admin', 'analytics', days],
-    queryFn: () => adminService.getAnalytics(days),
+    queryFn: () => adminService.fetchAnalytics(days ? days.toString() : '7'),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

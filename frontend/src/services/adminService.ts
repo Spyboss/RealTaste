@@ -1,5 +1,5 @@
 import { api, handleApiResponse } from './api';
-import { ApiResponse, Order, DashboardStats, AnalyticsData, DailyAnalytics, TopItem, TrendData } from '@/types/shared';
+import { Order, DashboardStats, AnalyticsData, DailyAnalytics, TopItem, TrendData } from '@/types/shared';
 
 export const fetchDashboardStats = async (): Promise<DashboardStats> => {
   const response = await api.get('/admin/dashboard');

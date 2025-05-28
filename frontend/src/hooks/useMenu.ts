@@ -1,9 +1,9 @@
 import { useQuery } from 'react-query';
 import { menuService } from '@/services/menuService';
-import { Category } from '../types/shared';
+import { MenuCategory /*, MenuItem */ } from '../types/shared';
 
 export const useMenu = () => {
-  return useQuery<Category[], Error>({
+  return useQuery<MenuCategory[], Error>({
     queryKey: ['menu'],
     queryFn: menuService.getMenu,
     staleTime: 5 * 60 * 1000, // 5 minutes

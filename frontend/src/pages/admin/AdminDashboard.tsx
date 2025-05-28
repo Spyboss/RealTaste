@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from 'react-query';
 import { useAdminStore } from '@/stores/adminStore';
-import { fetchDashboardStats, fetchOrderQueue, fetchDailyAnalytics, fetchTopItems, fetchTrendsData } from '@/services/adminService';
-import { useBulkUpdateOrders } from '@/hooks/useAdmin';
+import { fetchDashboardStats, fetchOrderQueue } from '@/services/adminService';
+import { useUpdateOrderPriority } from '@/hooks/useAdmin';
 import DashboardStats from '@/components/admin/DashboardStats';
 import OrderQueue from '@/components/admin/OrderQueue';
 import Layout from '@/components/layout/Layout';
 import { LayoutGrid, BarChart2, Clock, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { Order } from '@/types/shared';
-import AnalyticsSummary from '@/components/admin/AnalyticsSummary';
-import SalesChart from '@/components/admin/SalesChart';
-import ItemPerformance from '@/components/admin/ItemPerformance';
+// import Analytics from '@/components/admin/Analytics'; // Removed
+// import LoadingSpinner from '@/components/ui/LoadingSpinner'; // Removed
 
 const AdminDashboard: React.FC = () => {
   const {
@@ -61,13 +60,10 @@ const AdminDashboard: React.FC = () => {
     }
   }, [selectedTab, fetchDailySummary, fetchTopItems, fetchTrendsData]);
   
-  const bulkUpdateMutation = useBulkUpdateOrders();
+  const updatePriorityMutation = useUpdateOrderPriority();
   
   const handlePriorityChange = (orderId: string, priority: string) => {
-    bulkUpdateMutation.mutate({
-      orderIds: [orderId],
-      priority,
-    });
+    updatePriorityMutation.mutate({ orderId, priority });
   };
 
   // Status indicator component
@@ -147,7 +143,7 @@ const AdminDashboard: React.FC = () => {
 
         {selectedTab === 'dashboard' && (
           <DashboardStats
-            stats={dashboardStats || dashboardStatsData}
+            stats={dashboardStats || dashboardStatsData || null}
             isLoading={isDashboardLoading}
           />
         )}
