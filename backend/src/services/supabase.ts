@@ -39,6 +39,18 @@ export const getUserFromToken = async (token: string) => {
     return user;
   } catch (error) {
     console.error('Error getting user from token:', error);
+    
+    // Diagnostic logging for token expiration
+    try {
+      // Decode token without verification to get expiration
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      const expiration = new Date(payload.exp * 1000);
+      console.error(`Token expiration: ${expiration}, Current time: ${new Date()}`);
+      console.error(`Token expired: ${expiration < new Date()}`);
+    } catch (e) {
+      console.error('Failed to decode token for diagnostics:', e);
+    }
+    
     return null;
   }
 };

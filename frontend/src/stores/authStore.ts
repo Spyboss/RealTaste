@@ -42,6 +42,17 @@ export const useAuthStore = create<AuthState>()(
           if (error) throw error;
           
           if (session?.user) {
+            // Diagnostic logging for token expiration
+            try {
+              const token = session.access_token;
+              const payload = JSON.parse(atob(token.split('.')[1]));
+              const expiration = new Date(payload.exp * 1000);
+              console.log(`Token expiration: ${expiration}, Current time: ${new Date()}`);
+              console.log(`Token will expire in: ${(expiration.getTime() - Date.now()) / 1000} seconds`);
+            } catch (e) {
+              console.error('Failed to decode token for diagnostics:', e);
+            }
+            
             await fetchUserRole(session.user.id);
             const { data: { user: refreshedUser } } = await supabase.auth.getUser();
             set({

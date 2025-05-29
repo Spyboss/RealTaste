@@ -9,7 +9,7 @@ async function testProductionAPI() {
 
     // Test health
     console.log('🏥 Testing health endpoint...');
-    const healthResponse = await axios.get('https://realtaste-api.fly.dev/health');
+    const healthResponse = await axios.get('https://realtaste.fly.dev/health');
     console.log('Health:', healthResponse.data.message);
 
     // Test menu
