@@ -1,40 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { getUserRole } from '@/services/supabase';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  requireAdmin = false 
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requireAdmin = false
 }) => {
-  const { isAuthenticated, loading } = useAuthStore();
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [checkingRole, setCheckingRole] = useState<boolean>(true);
+  const { user, isAuthenticated, loading: authLoading } = useAuthStore(state => ({
+    user: state.user,
+    isAuthenticated: state.isAuthenticated,
+    loading: state.loading,
+  }));
   const location = useLocation();
 
-  useEffect(() => {
-    const checkRole = async () => {
-      if (isAuthenticated && requireAdmin) {
-        console.time('getUserRole');
-        const role = await getUserRole();
-        console.timeEnd('getUserRole');
-        console.log(`Admin role check: ${role === 'admin' ? 'admin' : 'not admin'}`);
-        setIsAdmin(role === 'admin');
-      }
-      setCheckingRole(false);
-    };
-
-    console.log('ProtectedRoute: Checking role...');
-    checkRole();
-  }, [isAuthenticated, requireAdmin]);
-
-  if (loading || (requireAdmin && checkingRole)) {
+  if (authLoading) {
+    console.log('ProtectedRoute: Auth store is loading...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -43,12 +29,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated) {
-    // Redirect to login page with return url
+    console.log('ProtectedRoute: Not authenticated, redirecting to login.');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requireAdmin && !isAdmin) {
-    return <Navigate to="/" replace />;
+  if (requireAdmin) {
+    const userRole = user?.app_metadata?.role;
+    console.log(`ProtectedRoute: Admin check. User role from store: ${userRole}`);
+    if (userRole !== 'admin') {
+      console.log('ProtectedRoute: User is not admin, redirecting to home.');
+      return <Navigate to="/" replace />;
+    }
+    console.log('ProtectedRoute: User is admin, proceeding.');
   }
 
   return <>{children}</>;
