@@ -46,25 +46,6 @@ const handleRealtimeError = (err: Error) => {
   }, 5000); // Try to reconnect every 5 seconds
 };
 
-// Add error handler to each channel
-const wrapChannelSubscribe = (originalSubscribe: (topic: string, params?: RealtimeChannelOptions) => RealtimeChannel) => {
-  return (topic: string, params?: RealtimeChannelOptions) => {
-    const channel = originalSubscribe(topic, params);
-
-    // Add error handler to this channel
-    channel.on('error', handleRealtimeError);
-
-    return channel;
-  };
-};
-
-// Override the channel creation method to add error handling
-const originalChannel = supabase.realtime.channel;
-supabase.realtime.channel = {
-  ...supabase.realtime.channel,
-  subscribe: wrapChannelSubscribe(originalChannel.subscribe)
-};
-
 // Fetch user role from app_metadata
 export const getUserRole = async (): Promise<string> => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -192,8 +173,8 @@ export const getSession = async (): Promise<Session | null> => {
 };
 
 // Realtime helpers
-export const subscribeToOrderUpdates = (orderId: string, callback: (payload: any) => void): RealtimeChannel => {
-  return supabase
+export const subscribeToOrderUpdates = (orderId: string, onChange: (payload: any) => void, onStatus?: (status: string) => void): RealtimeChannel => {
+  const channel = supabase
     .channel(`order-${orderId}`)
     .on(
       'postgres_changes',
@@ -203,13 +184,14 @@ export const subscribeToOrderUpdates = (orderId: string, callback: (payload: any
         table: 'orders',
         filter: `id=eq.${orderId}`
       },
-      callback
-    )
-    .subscribe();
+      onChange
+    );
+  channel.subscribe(onStatus);
+  return channel;
 };
 
-export const subscribeToOrderQueue = (callback: (payload: any) => void): RealtimeChannel => {
-  return supabase
+export const subscribeToOrderQueue = (onChange: (payload: any) => void, onStatus?: (status: string) => void): RealtimeChannel => {
+  const channel = supabase
     .channel('order-queue')
     .on(
       'postgres_changes',
@@ -219,7 +201,8 @@ export const subscribeToOrderQueue = (callback: (payload: any) => void): Realtim
         table: 'orders',
         filter: 'status=in.(received,preparing)'
       },
-      callback
-    )
-    .subscribe();
+      onChange
+    );
+  channel.subscribe(onStatus);
+  return channel;
 };
