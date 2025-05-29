@@ -28,7 +28,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set: (state: Partial<AuthState>) => void, get: () => AuthState) => ({
+    (set: (state: Partial<AuthState>) => void) => ({
       user: null,
       session: null,
       loading: true,
