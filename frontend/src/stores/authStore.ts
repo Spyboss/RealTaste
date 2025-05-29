@@ -60,11 +60,9 @@ export const useAuthStore = create<AuthState>()(
               console.log(`Token expiration: ${expiration}, Current time: ${new Date()}`);
               console.log(`Token will expire in: ${timeUntilExpire} seconds`);
               
-              // Log token expiration status
               if (timeUntilExpire <= 0) {
                 console.warn('Token has expired!');
-                // Reset auth state if token expired
-                await supabase.auth.signOut(); // Ensure logout on expired token
+                await supabase.auth.signOut();
                 set({ user: null, session: null, isAuthenticated: false, error: 'Token expired. Please log in again.', loading: false });
                 return;
               }
@@ -72,8 +70,18 @@ export const useAuthStore = create<AuthState>()(
               console.error('Failed to decode token for diagnostics:', e);
             }
             
-            await fetchUserRole(session.user.id);
-            const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+            const role = await fetchUserRole(session.user.id);
+            let { data: { user: refreshedUser }, error: userError } = await supabase.auth.getUser();
+            if (userError) throw userError;
+
+            if (refreshedUser) {
+              if (!refreshedUser.app_metadata) {
+                refreshedUser.app_metadata = {};
+              }
+              refreshedUser.app_metadata.role = role; 
+              console.log('[AuthStore:Initialize] User role set in store:', role, 'User object:', refreshedUser);
+            }
+
             set({
               user: refreshedUser,
               session,
@@ -84,7 +92,6 @@ export const useAuthStore = create<AuthState>()(
             set({ user: null, session: null, isAuthenticated: false });
           }
         } catch (error: any) {
-          // Also handle potential "bad_jwt" or "invalid JWT" errors caught here
           if (error.message.includes('bad_jwt') || error.message.includes('invalid JWT')) {
             await supabase.auth.signOut();
             set({ error: 'Invalid session. Please log in again.', user: null, session: null, isAuthenticated: false, loading: false });
@@ -102,15 +109,24 @@ export const useAuthStore = create<AuthState>()(
           const { data, error } = await supabaseSignIn(email, password);
           if (error) throw error;
           if (data.user && data.session) {
-            await fetchUserRole(data.user.id);
-            const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+            const role = await fetchUserRole(data.user.id);
+            let { data: { user: refreshedUser }, error: userError } = await supabase.auth.getUser();
+            if (userError) throw userError;
+
+            if (refreshedUser) {
+              if (!refreshedUser.app_metadata) {
+                refreshedUser.app_metadata = {};
+              }
+              refreshedUser.app_metadata.role = role;
+              console.log('[AuthStore:Login] User role set in store:', role, 'User object:', refreshedUser);
+            }
+
             set({
               user: refreshedUser,
               session: data.session,
               isAuthenticated: true,
               error: null
             });
-            console.log('Login successful. User role:', refreshedUser?.app_metadata?.role);
           } else {
             throw new Error("Login did not return a user and session.");
           }
@@ -127,8 +143,18 @@ export const useAuthStore = create<AuthState>()(
           const { data, error } = await supabaseSignUp(email, password);
           if (error) throw error;
           if (data.user && data.session) {
-            await fetchUserRole(data.user.id);
-            const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+            const role = await fetchUserRole(data.user.id);
+            let { data: { user: refreshedUser }, error: userError } = await supabase.auth.getUser();
+            if (userError) throw userError;
+
+            if (refreshedUser) {
+              if (!refreshedUser.app_metadata) {
+                refreshedUser.app_metadata = {};
+              }
+              refreshedUser.app_metadata.role = role;
+              console.log('[AuthStore:Register] User role set in store:', role, 'User object:', refreshedUser);
+            }
+            
             set({
               user: refreshedUser,
               session: data.session,
@@ -137,7 +163,13 @@ export const useAuthStore = create<AuthState>()(
             });
           } else {
             if (data.user) {
-              set({ user: data.user, session: null, isAuthenticated: false });
+              // Handle case where sign up might not immediately return a session (e.g. email confirmation)
+              const role = await fetchUserRole(data.user.id);
+              let userToSet = { ...data.user };
+              if (!userToSet.app_metadata) userToSet.app_metadata = {};
+              (userToSet.app_metadata as any).role = role;
+              console.log('[AuthStore:Register] User role set in store (no session):', role, 'User object:', userToSet);
+              set({ user: userToSet, session: null, isAuthenticated: false });
             } else {
               throw new Error("Registration did not return a user.");
             }
@@ -202,8 +234,18 @@ export const useAuthStore = create<AuthState>()(
           const { data, error } = await supabaseSignIn(email, password);
           if (error) throw error;
           if (data.user && data.session) {
-            await fetchUserRole(data.user.id);
-            const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+            const role = await fetchUserRole(data.user.id);
+            let { data: { user: refreshedUser }, error: userError } = await supabase.auth.getUser();
+            if (userError) throw userError;
+
+            if (refreshedUser) {
+              if (!refreshedUser.app_metadata) {
+                refreshedUser.app_metadata = {};
+              }
+              refreshedUser.app_metadata.role = role;
+              console.log('[AuthStore:SignIn] User role set in store:', role, 'User object:', refreshedUser);
+            }
+
             set({
               user: refreshedUser,
               session: data.session,
@@ -226,8 +268,18 @@ export const useAuthStore = create<AuthState>()(
           const { data, error } = await supabaseSignUp(email, password);
           if (error) throw error;
           if (data.user && data.session) {
-            await fetchUserRole(data.user.id);
-            const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+            const role = await fetchUserRole(data.user.id);
+            let { data: { user: refreshedUser }, error: userError } = await supabase.auth.getUser();
+            if (userError) throw userError;
+
+            if (refreshedUser) {
+              if (!refreshedUser.app_metadata) {
+                refreshedUser.app_metadata = {};
+              }
+              refreshedUser.app_metadata.role = role;
+              console.log('[AuthStore:SignUp] User role set in store:', role, 'User object:', refreshedUser);
+            }
+
             set({
               user: refreshedUser,
               session: data.session,
@@ -235,8 +287,14 @@ export const useAuthStore = create<AuthState>()(
               error: null
             });
           } else {
-            if (data.user) {
-              set({ user: data.user, session: null, isAuthenticated: false });
+             if (data.user) {
+              // Handle case where sign up might not immediately return a session (e.g. email confirmation)
+              const role = await fetchUserRole(data.user.id);
+              let userToSet = { ...data.user };
+              if (!userToSet.app_metadata) userToSet.app_metadata = {};
+              (userToSet.app_metadata as any).role = role;
+              console.log('[AuthStore:SignUp] User role set in store (no session):', role, 'User object:', userToSet);
+              set({ user: userToSet, session: null, isAuthenticated: false });
             } else {
               throw new Error("Registration did not return a user.");
             }
