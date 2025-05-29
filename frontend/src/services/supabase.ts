@@ -1,4 +1,4 @@
-import { createClient, RealtimeChannel, RealtimeChannelOptions, Session, User } from '@supabase/supabase-js';
+import { createClient, RealtimeChannel, Session, User } from '@supabase/supabase-js';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 interface Env {
@@ -29,22 +29,6 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
     }
   }
 });
-
-// Add global error handling for realtime connection
-const handleRealtimeError = (err: Error) => {
-  console.error('Supabase Realtime error:', err);
-  // Attempt to reconnect
-  setTimeout(() => {
-    console.log('Attempting to reconnect to Supabase Realtime...');
-    // Force reconnection by unsubscribing and resubscribing to channels
-    supabase.realtime.channels.forEach((channel: RealtimeChannel) => {
-      if (channel) {
-        channel.unsubscribe();
-        channel.subscribe();
-      }
-    });
-  }, 5000); // Try to reconnect every 5 seconds
-};
 
 // Fetch user role from app_metadata
 export const getUserRole = async (): Promise<string> => {
