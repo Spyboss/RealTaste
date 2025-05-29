@@ -602,9 +602,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
           } else if (payload.eventType === 'DELETE') {
             removeOrder(payload.old.id);
           }
-        });
-
-        channel.subscribe((status: string, err?: Error) => {
+        }, (status: string, err?: Error) => {
           if (status === 'SUBSCRIBED') {
             setRealtimeStatus(true);
             reconnectAttempts = 0;
