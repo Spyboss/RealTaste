@@ -213,6 +213,7 @@ export interface DailyAnalytics {
   total_orders: number;
   total_revenue: number;
   avg_order_value: number;
+  completed_orders: number;
 }
 
 export interface TopItem {

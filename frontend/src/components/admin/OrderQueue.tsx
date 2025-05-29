@@ -20,7 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { DropTarget } from './DropTarget';
 import OrderStatusWidget from './OrderStatusWidget';
-import { ListFilter, SortAsc, SortDesc, CheckSquare, Square, Clock, AlertCircle, CheckCircle, Users, Filter } from 'lucide-react';
+import { SortAsc, SortDesc, CheckSquare, Square, Clock, AlertCircle, CheckCircle, Filter } from 'lucide-react';
 
 interface OrderCardProps {
   order: Order;
@@ -123,12 +123,10 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
   const {
     selectedOrders,
     toggleOrderSelection,
-    clearSelection,
     updateAdminOrderStatus,
   } = useAdminStore((state) => ({
     selectedOrders: state.selectedOrders,
     toggleOrderSelection: state.toggleOrderSelection,
-    clearSelection: state.clearSelection,
     updateAdminOrderStatus: state.updateAdminOrderStatus,
   }));
 
@@ -209,13 +207,7 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
     return filtered;
   }, [orders, statusFilter, sortOrder]);
 
-  const ordersByStatus = processedOrders.reduce((acc, order) => {
-    if (!acc[order.status]) {
-      acc[order.status] = [];
-    }
-    acc[order.status].push(order);
-    return acc;
-  }, {} as Record<string, Order[]>);
+
 
   if (isLoading) {
     return (

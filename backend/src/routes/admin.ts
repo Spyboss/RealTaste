@@ -1265,7 +1265,9 @@ router.get('/top-items', authenticateToken, requireAdmin, async (req, res) => {
     const itemStats: { [key: string]: { name: string; quantity: number; revenue: number } } = {};
 
     orderItems?.forEach(item => {
-      const name = item.menu_item?.name || 'Unknown Item';
+      // Handle the case where menu_item might be an array or object
+      const menuItem = Array.isArray(item.menu_item) ? item.menu_item[0] : item.menu_item;
+      const name = menuItem?.name || 'Unknown Item';
       if (!itemStats[name]) {
         itemStats[name] = { name, quantity: 0, revenue: 0 };
       }

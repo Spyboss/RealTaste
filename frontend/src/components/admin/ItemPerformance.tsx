@@ -1,11 +1,15 @@
 import React from 'react';
-import { useAdminStore } from '@/stores/adminStore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TopItem } from '@/types/shared';
 
-const ItemPerformance: React.FC = () => {
-  const { topItems, loadingItems } = useAdminStore();
+interface ItemPerformanceProps {
+  items: TopItem[];
+  isLoading: boolean;
+}
 
-  if (loadingItems) {
+const ItemPerformance: React.FC<ItemPerformanceProps> = ({ items, isLoading }) => {
+
+  if (isLoading) {
     return (
       <div className="bg-white rounded-lg shadow p-4">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Top Selling Items</h3>
@@ -24,7 +28,7 @@ const ItemPerformance: React.FC = () => {
     );
   }
 
-  if (!topItems || topItems.length === 0) {
+  if (!items || items.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-4">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Top Selling Items</h3>
@@ -46,7 +50,7 @@ const ItemPerformance: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {topItems.map((item, index) => (
+            {items.map((item, index) => (
               <tr key={index}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.quantity}</td>

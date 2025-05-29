@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAdminStore } from '@/stores/adminStore';
 import { Bell, X, Check, AlertCircle, Package, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import Button from '@/components/ui/Button';
 
 const NotificationCenter: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);

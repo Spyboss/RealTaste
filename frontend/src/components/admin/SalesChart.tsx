@@ -1,11 +1,15 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useAdminStore } from '@/stores/adminStore';
+import { TrendData } from '@/types/shared';
 
-const SalesChart: React.FC = () => {
-  const { trendsData, loadingTrends } = useAdminStore();
+interface SalesChartProps {
+  data: TrendData[];
+  isLoading: boolean;
+}
 
-  if (loadingTrends) {
+const SalesChart: React.FC<SalesChartProps> = ({ data, isLoading }) => {
+
+  if (isLoading) {
     return (
       <div className="bg-white rounded-lg shadow p-4 h-80 flex items-center justify-center">
         <p>Loading chart data...</p>
@@ -13,7 +17,7 @@ const SalesChart: React.FC = () => {
     );
   }
 
-  if (!trendsData || trendsData.length === 0) {
+  if (!data || data.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-4 h-80 flex items-center justify-center">
         <p>No data available for the selected period</p>
@@ -26,7 +30,7 @@ const SalesChart: React.FC = () => {
       <h3 className="text-lg font-medium text-gray-900 mb-4">Revenue Trends</h3>
       <ResponsiveContainer width="100%" height="90%">
         <LineChart
-          data={trendsData}
+          data={data}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
