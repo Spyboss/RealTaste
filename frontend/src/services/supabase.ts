@@ -1,9 +1,22 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, RealtimeChannel, RealtimeChannelOptions, Session, User } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL!;
-const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY!;
+interface Env {
+  VITE_SUPABASE_URL: string;
+  VITE_SUPABASE_ANON_KEY: string;
+  VITE_API_URL?: string;
+}
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+declare global {
+  interface ImportMeta {
+    env: Env;
+  }
+}
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
+
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -11,13 +24,49 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   realtime: {
     params: {
-      eventsPerSecond: 10
+      eventsPerSecond: 10,
+      vsn: '1.0.0'
     }
   }
 });
 
+// Add global error handling for realtime connection
+const handleRealtimeError = (err: Error) => {
+  console.error('Supabase Realtime error:', err);
+  // Attempt to reconnect
+  setTimeout(() => {
+    console.log('Attempting to reconnect to Supabase Realtime...');
+    // Force reconnection by unsubscribing and resubscribing to channels
+    supabase.realtime.channels.forEach((channel: RealtimeChannel) => {
+      if (channel) {
+        channel.unsubscribe();
+        channel.subscribe();
+      }
+    });
+  }, 5000); // Try to reconnect every 5 seconds
+};
+
+// Add error handler to each channel
+const wrapChannelSubscribe = (originalSubscribe: (topic: string, params?: RealtimeChannelOptions) => RealtimeChannel) => {
+  return (topic: string, params?: RealtimeChannelOptions) => {
+    const channel = originalSubscribe(topic, params);
+
+    // Add error handler to this channel
+    channel.on('error', handleRealtimeError);
+
+    return channel;
+  };
+};
+
+// Override the channel creation method to add error handling
+const originalChannel = supabase.realtime.channel;
+supabase.realtime.channel = {
+  ...supabase.realtime.channel,
+  subscribe: wrapChannelSubscribe(originalChannel.subscribe)
+};
+
 // Fetch user role from app_metadata
-export const getUserRole = async () => {
+export const getUserRole = async (): Promise<string> => {
   const { data: { user } } = await supabase.auth.getUser();
   return user?.app_metadata?.role || 'customer';
 };
@@ -78,11 +127,11 @@ export const updatePassword = async (newPassword: string) => {
 };
 
 // Fetch user role from the users table
-export const fetchUserRole = async (userId: string) => {
+export const fetchUserRole = async (userId: string): Promise<string | undefined> => {
   // First try to get role from app_metadata
   const { data: { user } } = await supabase.auth.getUser();
   const roleFromMeta = user?.app_metadata?.role;
-  
+
   if (roleFromMeta) {
     return roleFromMeta;
   }
@@ -108,7 +157,7 @@ export const fetchUserRole = async (userId: string) => {
   return data?.role;
 };
 
-export const getCurrentUser = async () => {
+export const getCurrentUser = async (): Promise<User | null> => {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error) throw error;
 
@@ -125,7 +174,7 @@ export const getCurrentUser = async () => {
   return user;
 };
 
-export const getSession = async () => {
+export const getSession = async (): Promise<Session | null> => {
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error) throw error;
 
@@ -143,7 +192,7 @@ export const getSession = async () => {
 };
 
 // Realtime helpers
-export const subscribeToOrderUpdates = (orderId: string, callback: (payload: any) => void) => {
+export const subscribeToOrderUpdates = (orderId: string, callback: (payload: any) => void): RealtimeChannel => {
   return supabase
     .channel(`order-${orderId}`)
     .on(
@@ -159,7 +208,7 @@ export const subscribeToOrderUpdates = (orderId: string, callback: (payload: any
     .subscribe();
 };
 
-export const subscribeToOrderQueue = (callback: (payload: any) => void) => {
+export const subscribeToOrderQueue = (callback: (payload: any) => void): RealtimeChannel => {
   return supabase
     .channel('order-queue')
     .on(
@@ -171,5 +220,6 @@ export const subscribeToOrderQueue = (callback: (payload: any) => void) => {
         filter: 'status=in.(received,preparing)'
       },
       callback
-    );
+    )
+    .subscribe();
 };

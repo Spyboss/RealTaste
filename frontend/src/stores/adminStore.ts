@@ -91,6 +91,8 @@ interface AdminState {
   subscribeToOrders: () => () => void;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://realtaste.fly.dev/api';
+
 export const useAdminStore = create<AdminState>((set, get) => ({
   // Initial state
   dashboardStats: null,
@@ -122,11 +124,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   // Actions
   setDashboardStats: (stats) => set({ dashboardStats: stats, lastUpdated: new Date() }),
-
   setOrderQueue: (orders) => set({ orderQueue: orders, lastUpdated: new Date() }),
-
   setSelectedOrders: (orderIds) => set({ selectedOrders: orderIds }),
-
   toggleOrderSelection: (orderId) => {
     const { selectedOrders } = get();
     const newSelection = selectedOrders.includes(orderId)
@@ -134,24 +133,16 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       : [...selectedOrders, orderId];
     set({ selectedOrders: newSelection });
   },
-
   selectAllOrders: () => {
     const { orderQueue } = get();
     set({ selectedOrders: orderQueue.map(order => order.id) });
   },
-
   clearSelection: () => set({ selectedOrders: [] }),
-
   setLoading: (loading) => set({ isLoading: loading }),
-
   setError: (error) => set({ error }),
-
   setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
-
   updateLastUpdated: () => set({ lastUpdated: new Date() }),
-
   setRealtimeStatus: (connected) => set({ isRealtimeConnected: connected }),
-
   setPollingFallback: (isPolling) => set({ isPollingFallback: isPolling }),
 
   // Analytics actions
@@ -166,7 +157,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
     try {
       const targetDate = date || new Date().toISOString().split('T')[0];
-      const response = await fetch(`/api/admin/daily-summary?date=${targetDate}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/daily-summary?date=${targetDate}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -175,6 +166,12 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       if (!response.ok) {
         const errorText = await response.text();
         console.error('fetchDailySummary API !response.ok. Status:', response.status, 'Response text:', errorText.substring(0, 500));
+
+        // Check if response is HTML
+        if (errorText.includes('<!doctype html>')) {
+          throw new Error('Server returned an unexpected HTML response. Please try again later.');
+        }
+
         try {
           const errorData = JSON.parse(errorText);
           throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -213,15 +210,27 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
 
     try {
-      const response = await fetch(`/api/admin/top-items?days=${days}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/top-items?days=${days}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('fetchTopItems API !response.ok. Status:', response.status, 'Response text:', errorText.substring(0, 500));
+
+        // Check if response is HTML
+        if (errorText.includes('<!doctype html>')) {
+          throw new Error('Server returned an unexpected HTML response. Please try again later.');
+        }
+
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`HTTP error! status: ${response.status}. Response: ${errorText.substring(0, 200)}...`);
+        }
       }
 
       const result = await response.json();
@@ -246,15 +255,27 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
 
     try {
-      const response = await fetch(`/api/admin/trends?days=${days}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/trends?days=${days}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('fetchTrendsData API !response.ok. Status:', response.status, 'Response text:', errorText.substring(0, 500));
+
+        // Check if response is HTML
+        if (errorText.includes('<!doctype html>')) {
+          throw new Error('Server returned an unexpected HTML response. Please try again later.');
+        }
+
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`HTTP error! status: ${response.status}. Response: ${errorText.substring(0, 200)}...`);
+        }
       }
 
       const result = await response.json();
@@ -280,15 +301,27 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
 
     try {
-      const response = await fetch('/api/admin/orders', {
+      const response = await fetch(`${API_BASE_URL}/admin/orders`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('fetchAllAdminOrders API !response.ok. Status:', response.status, 'Response text:', errorText.substring(0, 500));
+
+        // Check if response is HTML
+        if (errorText.includes('<!doctype html>')) {
+          throw new Error('Server returned an unexpected HTML response. Please try again later.');
+        }
+
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`HTTP error! status: ${response.status}. Response: ${errorText.substring(0, 200)}...`);
+        }
       }
 
       const result = await response.json();
@@ -313,7 +346,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
 
     try {
-      const response = await fetch(`/api/admin/orders/${orderId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -323,8 +356,20 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('updateAdminOrderStatus API !response.ok. Status:', response.status, 'Response text:', errorText.substring(0, 500));
+
+        // Check if response is HTML
+        if (errorText.includes('<!doctype html>')) {
+          throw new Error('Server returned an unexpected HTML response. Please try again later.');
+        }
+
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`HTTP error! status: ${response.status}. Response: ${errorText.substring(0, 200)}...`);
+        }
       }
 
       const result = await response.json();
@@ -410,15 +455,27 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
 
     try {
-      const response = await fetch('/api/admin/orders/queue', {
+      const response = await fetch(`${API_BASE_URL}/admin/orders/queue`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('fetchOrderQueue API !response.ok. Status:', response.status, 'Response text:', errorText.substring(0, 500));
+
+        // Check if response is HTML
+        if (errorText.includes('<!doctype html>')) {
+          throw new Error('Server returned an unexpected HTML response. Please try again later.');
+        }
+
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`HTTP error! status: ${response.status}. Response: ${errorText.substring(0, 200)}...`);
+        }
       }
 
       const result = await response.json();
@@ -443,7 +500,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
 
     try {
-      const response = await fetch('/api/admin/orders/bulk-update', {
+      const response = await fetch(`${API_BASE_URL}/admin/orders/bulk-update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -453,8 +510,20 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('bulkUpdateOrderStatus API !response.ok. Status:', response.status, 'Response text:', errorText.substring(0, 500));
+
+        // Check if response is HTML
+        if (errorText.includes('<!doctype html>')) {
+          throw new Error('Server returned an unexpected HTML response. Please try again later.');
+        }
+
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`HTTP error! status: ${response.status}. Response: ${errorText.substring(0, 200)}...`);
+        }
       }
 
       const result = await response.json();
