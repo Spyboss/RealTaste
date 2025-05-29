@@ -186,7 +186,14 @@ export const subscribeToOrderQueue = (onChange: (payload: any) => void, onStatus
         filter: 'status=in.(received,preparing)'
       },
       onChange
-    );
-  channel.subscribe(onStatus);
+    )
+    .subscribe((status) => {
+      if (onStatus) {
+        onStatus(status);
+      } else {
+        console.log('Realtime: SUBSCRIBED to order-queue');
+      }
+    });
+
   return channel;
 };

@@ -573,28 +573,45 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     const { setRealtimeStatus, setPollingFallback, addNewOrder, updateOrder, removeOrder } = get();
     let reconnectAttempts = 0;
     let fallbackPolling: NodeJS.Timeout | null = null;
+    let currentChannel: any = null; // Track current channel
+
+    console.log('subscribeToOrders called - checking for existing subscription');
 
     const reconnect = () => {
       reconnectAttempts++;
       const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+      console.log(`Reconnect attempt #${reconnectAttempts} in ${delay}ms`);
       setTimeout(initRealtime, delay);
     };
 
     const startPolling = () => {
+      console.warn('Falling back to polling due to realtime connection issues');
       setPollingFallback(true);
       if (fallbackPolling) clearInterval(fallbackPolling);
       // Polling logic would go here
     };
 
     const generalCleanup = () => {
+      console.log('General cleanup - resetting realtime status');
       setRealtimeStatus(false);
       if (fallbackPolling) clearInterval(fallbackPolling);
     };
 
+    const cleanupExistingChannel = () => {
+      if (currentChannel) {
+        console.log('Cleaning up existing channel:', currentChannel.topic);
+        supabase.removeChannel(currentChannel)
+          .then(status => console.log('Channel removal status for', currentChannel.topic, '-', status))
+          .catch(error => console.error('Error removing channel', currentChannel.topic, '-', error));
+        currentChannel = null;
+      }
+    };
+
     const initRealtime = () => {
-      let channel: any;
+      cleanupExistingChannel(); // Clean up before creating new subscription
+
       try {
-        channel = subscribeToOrderQueue((payload) => {
+        const channel = subscribeToOrderQueue((payload) => {
           if (payload.eventType === 'INSERT') {
             addNewOrder(payload.new);
           } else if (payload.eventType === 'UPDATE') {
@@ -604,13 +621,14 @@ export const useAdminStore = create<AdminState>((set, get) => ({
           }
         }, (status: string, err?: Error) => {
           if (status === 'SUBSCRIBED') {
+            console.log('Realtime: SUBSCRIBED to', channel.topic);
             setRealtimeStatus(true);
             reconnectAttempts = 0;
             if (fallbackPolling) {
               clearInterval(fallbackPolling);
               setPollingFallback(false);
             }
-            console.log('Realtime: SUBSCRIBED to', channel.topic);
+            currentChannel = channel; // Update current channel reference
           } else if (status === 'CHANNEL_ERROR') {
             console.error('Realtime: CHANNEL_ERROR on', channel.topic, err);
             setRealtimeStatus(false);
@@ -622,28 +640,21 @@ export const useAdminStore = create<AdminState>((set, get) => ({
           } else if (status === 'CLOSED') {
             console.log('Realtime: CLOSED for', channel.topic);
             setRealtimeStatus(false);
+            currentChannel = null; // Clear reference when channel is closed
           }
         });
 
         return () => {
-          if (channel) {
-            console.log('Realtime: Attempting to remove channel:', channel.topic);
-            supabase.removeChannel(channel)
-              .then(status => console.log('Realtime: Channel removal status for', channel.topic, '-', status))
-              .catch(error => console.error('Realtime: Error removing channel', channel.topic, '-', error));
-          }
+          console.log('Cleanup function called for channel:', channel.topic);
+          cleanupExistingChannel();
           generalCleanup();
         };
       } catch (error) {
         console.error('Error initializing realtime subscription process:', error);
         startPolling();
         return () => {
-          if (channel) {
-            console.log('Realtime (init error cleanup): Attempting to remove channel:', channel.topic);
-            supabase.removeChannel(channel)
-              .then(status => console.log('Realtime (init error cleanup): Channel removal status for', channel.topic, '-', status))
-              .catch(error => console.error('Realtime (init error cleanup): Error removing channel', channel.topic, '-', error));
-          }
+          console.log('Cleanup function called (error path)');
+          cleanupExistingChannel();
           generalCleanup();
         };
       }

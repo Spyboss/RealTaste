@@ -53,18 +53,15 @@ const AdminDashboard: React.FC = () => {
       storeFetchTopItems();
       storeFetchTrendsData();
     }
+
+    // Initialize realtime subscription
     const unsubscribe = storeSubscribeToOrders();
 
     return () => {
+      console.log('AdminDashboard unmounting - cleaning up realtime subscription');
       unsubscribe();
     };
-  }, [
-    activeTab,
-    storeFetchDailySummary,
-    storeFetchTopItems,
-    storeFetchTrendsData,
-    storeSubscribeToOrders,
-  ]);
+  }, []);
 
   const handlePriorityChange = (orderId: string, priority: number) => {
     updatePriority({ orderId, priority: String(priority) });
