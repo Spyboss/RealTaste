@@ -104,6 +104,16 @@ const AdminDashboard: React.FC = () => {
 
     if (adminStoreError) {
       console.error('AdminDashboard API error:', adminStoreError);
+
+      // Check if error is HTML content
+      if (typeof adminStoreError === 'string' && adminStoreError.includes('<!doctype html>')) {
+        return (
+          <div className="text-red-500 p-4 bg-red-100 rounded-md">
+            Error: Server returned an unexpected response. Please try again later.
+          </div>
+        );
+      }
+
       return (
         <div className="text-red-500 p-4 bg-red-100 rounded-md">
           Error: {adminStoreError}
