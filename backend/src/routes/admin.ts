@@ -549,7 +549,8 @@ router.get('/analytics/items', authenticateToken, requireAdmin, async (req, res)
     const itemMap: Record<string, { name: string; quantity: number; revenue: number }> = {};
 
     orderItems.forEach(item => {
-      const itemName = item.menu_item?.name || 'Unknown';
+      const menuItem = Array.isArray(item.menu_item) ? item.menu_item[0] : item.menu_item;
+      const itemName = menuItem?.name || 'Unknown';
       if (!itemMap[itemName]) {
         itemMap[itemName] = { name: itemName, quantity: 0, revenue: 0 };
       }
@@ -1263,14 +1264,13 @@ router.get('/top-items', authenticateToken, requireAdmin, async (req, res) => {
     const itemStats: { [key: string]: { name: string; quantity: number; revenue: number } } = {};
 
     orderItems?.forEach(item => {
-      // Handle the case where menu_item might be an array or object
       const menuItem = Array.isArray(item.menu_item) ? item.menu_item[0] : item.menu_item;
-      const name = menuItem?.name || 'Unknown Item';
-      if (!itemStats[name]) {
-        itemStats[name] = { name, quantity: 0, revenue: 0 };
+      const itemName = menuItem?.name || 'Unknown';
+      if (!itemStats[itemName]) {
+        itemStats[itemName] = { name: itemName, quantity: 0, revenue: 0 };
       }
-      itemStats[name].quantity += item.quantity;
-      itemStats[name].revenue += item.total_price;
+      itemStats[itemName].quantity += item.quantity;
+      itemStats[itemName].revenue += item.total_price;
     });
 
     const topItems = Object.values(itemStats)
