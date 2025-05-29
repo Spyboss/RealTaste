@@ -104,6 +104,7 @@ const AdminDashboard: React.FC = () => {
     }
 
     if (adminStoreError) {
+      console.error('AdminDashboard API error:', adminStoreError);
       return (
         <div className="text-red-500 p-4 bg-red-100 rounded-md">
           Error: {adminStoreError}

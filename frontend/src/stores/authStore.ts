@@ -21,14 +21,14 @@ interface AuthState {
   setError: (error: string | null) => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updatePassword: (newPassword: string) => Promise<void>;
+  signOutAction: () => Promise<void>;
+  resetPasswordAction: (email: string) => Promise<void>;
+  updatePasswordAction: (newPassword: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set: (state: Partial<AuthState>) => void, get: () => AuthState) => ({
       user: null,
       session: null,
       loading: true,
@@ -39,7 +39,16 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ loading: true });
           const { data: { session }, error } = await supabase.auth.getSession();
-          if (error) throw error;
+
+          if (error) {
+            // If the error is due to an invalid JWT, sign out the user
+            if (error.message.includes('bad_jwt') || error.message.includes('invalid JWT')) {
+              await supabase.auth.signOut();
+              set({ user: null, session: null, isAuthenticated: false, error: 'Invalid session. Please log in again.', loading: false });
+              return;
+            }
+            throw error;
+          }
           
           if (session?.user) {
             // Diagnostic logging for token expiration
@@ -47,8 +56,18 @@ export const useAuthStore = create<AuthState>()(
               const token = session.access_token;
               const payload = JSON.parse(atob(token.split('.')[1]));
               const expiration = new Date(payload.exp * 1000);
+              const timeUntilExpire = (expiration.getTime() - Date.now()) / 1000;
               console.log(`Token expiration: ${expiration}, Current time: ${new Date()}`);
-              console.log(`Token will expire in: ${(expiration.getTime() - Date.now()) / 1000} seconds`);
+              console.log(`Token will expire in: ${timeUntilExpire} seconds`);
+              
+              // Log token expiration status
+              if (timeUntilExpire <= 0) {
+                console.warn('Token has expired!');
+                // Reset auth state if token expired
+                await supabase.auth.signOut(); // Ensure logout on expired token
+                set({ user: null, session: null, isAuthenticated: false, error: 'Token expired. Please log in again.', loading: false });
+                return;
+              }
             } catch (e) {
               console.error('Failed to decode token for diagnostics:', e);
             }
@@ -65,7 +84,13 @@ export const useAuthStore = create<AuthState>()(
             set({ user: null, session: null, isAuthenticated: false });
           }
         } catch (error: any) {
-          set({ error: error.message, user: null, session: null, isAuthenticated: false });
+          // Also handle potential "bad_jwt" or "invalid JWT" errors caught here
+          if (error.message.includes('bad_jwt') || error.message.includes('invalid JWT')) {
+            await supabase.auth.signOut();
+            set({ error: 'Invalid session. Please log in again.', user: null, session: null, isAuthenticated: false, loading: false });
+          } else {
+            set({ error: error.message, user: null, session: null, isAuthenticated: false, loading: false });
+          }
         } finally {
           set({ loading: false });
         }
@@ -85,6 +110,7 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               error: null
             });
+            console.log('Login successful. User role:', refreshedUser?.app_metadata?.role);
           } else {
             throw new Error("Login did not return a user and session.");
           }
@@ -141,9 +167,22 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      reset: () => {
+        set({
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          error: null,
+          loading: false
+        });
+      },
+
       setUser: (user) => {
         set({ user, isAuthenticated: !!user });
       },
+
+      // Add event listener for token expiration
+      // ... existing methods ...
 
       setSession: (session) => {
         set({ session, isAuthenticated: !!session });
@@ -209,7 +248,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      signOut: async () => {
+      signOutAction: async () => {
         try {
           set({ loading: true, error: null });
           const { error } = await signOut();
@@ -227,36 +266,37 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      resetPassword: async (email: string) => {
+      resetPasswordAction: async (email: string) => {
         try {
           set({ loading: true, error: null });
-          const { error } = await resetPassword(email);
+          const { data, error } = await resetPassword(email);
           if (error) throw error;
+          // Optionally handle success (e.g., set a success message)
+          console.log('Password reset email sent:', data);
         } catch (error: any) {
-          set({ error: error.message });
+          set({ error: error.message, loading: false });
         } finally {
           set({ loading: false });
         }
       },
 
-      updatePassword: async (newPassword: string) => {
+      updatePasswordAction: async (newPassword: string) => {
         try {
           set({ loading: true, error: null });
-          const { error } = await updatePassword(newPassword);
+          const { data, error } = await updatePassword(newPassword);
           if (error) throw error;
+          // Optionally handle success (e.g., update user state, set a success message)
+          console.log('Password updated successfully:', data);
         } catch (error: any) {
-          set({ error: error.message });
+          set({ error: error.message, loading: false });
         } finally {
           set({ loading: false });
         }
       },
     }),
     {
-      name: 'auth-storage',
-      partialize: (state) => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated
-      }),
+      name: 'auth-storage', // name of the item in the storage (must be unique)
+      // getStorage: () => localStorage, // (optional) by default, 'localStorage' is used - Using default
     }
   )
 );

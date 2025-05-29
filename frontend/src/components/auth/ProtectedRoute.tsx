@@ -21,12 +21,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   useEffect(() => {
     const checkRole = async () => {
       if (isAuthenticated && requireAdmin) {
+        console.time('getUserRole');
         const role = await getUserRole();
+        console.timeEnd('getUserRole');
+        console.log(`Admin role check: ${role === 'admin' ? 'admin' : 'not admin'}`);
         setIsAdmin(role === 'admin');
       }
       setCheckingRole(false);
     };
 
+    console.log('ProtectedRoute: Checking role...');
     checkRole();
   }, [isAuthenticated, requireAdmin]);
 

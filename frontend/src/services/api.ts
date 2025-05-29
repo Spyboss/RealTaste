@@ -30,9 +30,11 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Clear auth token on 401
+      // Clear auth token and reset auth state on 401
       localStorage.removeItem('supabase.auth.token');
-      // Optionally redirect to login
+      // Reset auth store state by dispatching a custom event
+      window.dispatchEvent(new CustomEvent('auth-reset'));
+      // Redirect to login
       window.location.href = '/login';
     }
 
