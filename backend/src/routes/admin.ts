@@ -530,34 +530,31 @@ router.get('/analytics/items', authenticateToken, requireAdmin, async (req, res)
     endDate.setHours(23, 59, 59, 999);
 
     // Fetch orders and their items for the period
-    const { data: orders, error: ordersError } = await supabaseAdmin
-      .from(tables.orders)
+    const { data: orderItems, error: ordersError } = await supabaseAdmin
+      .from(tables.order_items)
       .select(`
-        id,
-        order_items:order_items!order_id (
-          quantity,
-          price,
-          menu_item:menu_items (name)
-        )
+        quantity,
+        unit_price,
+        total_price,
+        menu_item:menu_items(name),
+        order:orders!inner(created_at, payment_status)
       `)
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString())
-      .eq('payment_status', 'completed');
+      .gte('order.created_at', startDate.toISOString())
+      .lte('order.created_at', endDate.toISOString())
+      .eq('order.payment_status', 'completed');
 
     if (ordersError) throw ordersError;
 
     // Aggregate items
     const itemMap: Record<string, { name: string; quantity: number; revenue: number }> = {};
 
-    orders.forEach(order => {
-      order.order_items.forEach((item: any) => {
-        const itemName = item.menu_item?.name || 'Unknown';
-        if (!itemMap[itemName]) {
-          itemMap[itemName] = { name: itemName, quantity: 0, revenue: 0 };
-        }
-        itemMap[itemName].quantity += item.quantity;
-        itemMap[itemName].revenue += item.price * item.quantity;
-      });
+    orderItems.forEach(item => {
+      const itemName = item.menu_item?.name || 'Unknown';
+      if (!itemMap[itemName]) {
+        itemMap[itemName] = { name: itemName, quantity: 0, revenue: 0 };
+      }
+      itemMap[itemName].quantity += item.quantity;
+      itemMap[itemName].revenue += item.total_price;
     });
 
     const itemsArray = Object.values(itemMap);
@@ -1251,7 +1248,8 @@ router.get('/top-items', authenticateToken, requireAdmin, async (req, res) => {
       .from(tables.order_items)
       .select(`
         quantity,
-        price,
+        unit_price,
+        total_price,
         menu_item:menu_items(name),
         order:orders!inner(created_at, payment_status)
       `)
@@ -1272,7 +1270,7 @@ router.get('/top-items', authenticateToken, requireAdmin, async (req, res) => {
         itemStats[name] = { name, quantity: 0, revenue: 0 };
       }
       itemStats[name].quantity += item.quantity;
-      itemStats[name].revenue += item.price * item.quantity;
+      itemStats[name].revenue += item.total_price;
     });
 
     const topItems = Object.values(itemStats)
