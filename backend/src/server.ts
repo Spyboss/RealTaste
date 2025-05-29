@@ -42,9 +42,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Compression middleware
 app.use(compression());
 
-// Rate limiting
-app.use('/api', apiLimiter);
-
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({
