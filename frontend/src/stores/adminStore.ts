@@ -173,18 +173,32 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('fetchDailySummary API !response.ok. Status:', response.status, 'Response text:', errorText.substring(0, 500));
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`HTTP error! status: ${response.status}. Response: ${errorText.substring(0, 200)}...`);
+        }
       }
 
-      const result = await response.json();
+      const responseText = await response.text();
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        console.error('fetchDailySummary JSON parse error. Response text:', responseText.substring(0, 500));
+        throw new Error('Failed to parse server response as JSON. Content: ' + responseText.substring(0, 200) + '...');
+      }
+
       if (result.success && result.data) {
         set({ dailySummary: result.data, loadingDaily: false });
       } else {
         throw new Error(result.error || 'Failed to fetch daily summary: Invalid response structure');
       }
     } catch (error: any) {
-      console.error('fetchDailySummary error:', error);
+      console.error('fetchDailySummary caught error:', error);
       set({ loadingDaily: false, error: error.message || 'Failed to fetch daily summary' });
     }
   },
