@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Order, DashboardStats } from '../types/shared';
-import { subscribeToOrderQueue } from '@/services/supabase';
+import { supabase, subscribeToOrderQueue } from '@/services/supabase';
 import { useAuthStore } from './authStore';
 
 import { DailyAnalytics, TopItem, TrendData } from '../types/shared';
@@ -505,32 +505,27 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     let reconnectAttempts = 0;
     let fallbackPolling: NodeJS.Timeout | null = null;
 
-    // Exponential backoff function
     const reconnect = () => {
       reconnectAttempts++;
-      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Max 30s delay
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
       setTimeout(initRealtime, delay);
     };
 
-    // Fallback to polling
     const startPolling = () => {
       setPollingFallback(true);
       if (fallbackPolling) clearInterval(fallbackPolling);
-      // Implement actual polling logic here (not shown for brevity)
-      // For example, periodically call fetchOrderQueue()
+      // Polling logic would go here
     };
 
-    // Cleanup function
-    const cleanup = () => {
+    const generalCleanup = () => {
       setRealtimeStatus(false);
       if (fallbackPolling) clearInterval(fallbackPolling);
     };
 
-    // Realtime subscription handler
     const initRealtime = () => {
-      let channel: any; // Declare channel here to be accessible in return cleanup
+      let channel: any;
       try {
-        channel = subscribeToOrderQueue((payload) => { // subscribeToOrderQueue returns the channel
+        channel = subscribeToOrderQueue((payload) => {
           if (payload.eventType === 'INSERT') {
             addNewOrder(payload.new);
           } else if (payload.eventType === 'UPDATE') {
@@ -548,52 +543,45 @@ export const useAdminStore = create<AdminState>((set, get) => ({
               clearInterval(fallbackPolling);
               setPollingFallback(false);
             }
-            console.log('Realtime: SUBSCRIBED');
+            console.log('Realtime: SUBSCRIBED to', channel.topic);
           } else if (status === 'CHANNEL_ERROR') {
-            console.error('Realtime: CHANNEL_ERROR', err);
+            console.error('Realtime: CHANNEL_ERROR on', channel.topic, err);
             setRealtimeStatus(false);
-            if (reconnectAttempts < 5) {
-              reconnect();
-            } else {
-              startPolling();
-            }
+            if (reconnectAttempts < 5) reconnect(); else startPolling();
           } else if (status === 'TIMED_OUT') {
-            console.error('Realtime: TIMED_OUT', err);
+            console.error('Realtime: TIMED_OUT on', channel.topic, err);
             setRealtimeStatus(false);
-            if (reconnectAttempts < 5) {
-              reconnect();
-            } else {
-              startPolling();
-            }
+            if (reconnectAttempts < 5) reconnect(); else startPolling();
           } else if (status === 'CLOSED') {
-            console.log('Realtime: CLOSED');
+            console.log('Realtime: CLOSED for', channel.topic);
             setRealtimeStatus(false);
-            // Optionally attempt to reconnect or just wait for next manual init/app refresh
           }
         });
 
         return () => {
           if (channel) {
-            // Supabase client might handle removal differently,
-            // but channel.unsubscribe() is standard for a specific channel.
-            // Or use supabase.removeChannel(channel) if channel object and supabase client are in scope.
-            channel.unsubscribe();
+            console.log('Realtime: Attempting to remove channel:', channel.topic);
+            supabase.removeChannel(channel)
+              .then(status => console.log('Realtime: Channel removal status for', channel.topic, '-', status))
+              .catch(error => console.error('Realtime: Error removing channel', channel.topic, '-', error));
           }
-          cleanup();
+          generalCleanup();
         };
       } catch (error) {
-        console.error('Error initializing realtime:', error);
-        startPolling(); // Fallback to polling on initial setup error
-        return () => { // Ensure cleanup is returned even if setup fails
-            if (channel) {
-              channel.unsubscribe();
-            }
-            cleanup();
+        console.error('Error initializing realtime subscription process:', error);
+        startPolling();
+        return () => {
+          if (channel) {
+            console.log('Realtime (init error cleanup): Attempting to remove channel:', channel.topic);
+            supabase.removeChannel(channel)
+              .then(status => console.log('Realtime (init error cleanup): Channel removal status for', channel.topic, '-', status))
+              .catch(error => console.error('Realtime (init error cleanup): Error removing channel', channel.topic, '-', error));
+          }
+          generalCleanup();
         };
       }
     };
 
-    // Initialize realtime
     return initRealtime();
   },
 }));
