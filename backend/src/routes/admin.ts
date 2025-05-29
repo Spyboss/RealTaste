@@ -334,7 +334,6 @@ router.get('/orders/queue', authenticateToken, requireAdmin, async (req, res) =>
 router.patch('/orders/bulk-update',
   authenticateToken,
   requireAdmin,
-  adminLimiter,
   async (req, res) => {
     try {
       const { orderIds, status, estimated_pickup_time } = req.body;
@@ -1346,7 +1345,7 @@ router.get('/trends', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // PUT /api/admin/orders/bulk-update - Bulk update order status
-router.put('/orders/bulk-update', authenticateToken, requireAdmin, adminLimiter, async (req, res) => {
+router.put('/orders/bulk-update', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { orderIds, status } = req.body;
 
