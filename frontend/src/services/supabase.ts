@@ -171,6 +171,5 @@ export const subscribeToOrderQueue = (callback: (payload: any) => void) => {
         filter: 'status=in.(received,preparing)'
       },
       callback
-    )
-    .subscribe();
+    );
 };
