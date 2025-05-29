@@ -3,8 +3,10 @@ import { useAdminStore } from '@/stores/adminStore';
 import { useUpdateOrderPriority } from '@/hooks/useAdmin';
 import DashboardStats from '@/components/admin/DashboardStats';
 import OrderQueue from '@/components/admin/OrderQueue';
+import NotificationCenter from '@/components/admin/NotificationCenter';
+import PerformanceMonitor from '@/components/admin/PerformanceMonitor';
 import Layout from '@/components/layout/Layout';
-import { LayoutGrid, BarChart2, Clock, ListOrdered } from 'lucide-react';
+import { LayoutGrid, BarChart2, Clock, ListOrdered, Activity } from 'lucide-react';
 import { Order, DashboardStats as DashboardStatsType } from '@/types/shared';
 import AnalyticsSummary from '@/components/admin/AnalyticsSummary';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -40,7 +42,7 @@ const AdminDashboard: React.FC = () => {
       isRealtimeConnected: state.isRealtimeConnected,
     })
   );
-  
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const isQueueLoading = useAdminStore(state => state.isLoading);
 
@@ -116,6 +118,8 @@ const AdminDashboard: React.FC = () => {
         return <AnalyticsSummary />;
       case 'orderManagement':
         return <OrderManagementPage />;
+      case 'performance':
+        return <PerformanceMonitor />;
       default:
         return null;
     }
@@ -126,7 +130,7 @@ const AdminDashboard: React.FC = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          
+
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             {renderStatusIndicator()}
             {lastUpdated && (
@@ -134,6 +138,7 @@ const AdminDashboard: React.FC = () => {
                 Last updated: {new Date(lastUpdated).toLocaleTimeString()}
               </div>
             )}
+            <NotificationCenter />
           </div>
         </div>
 
@@ -181,6 +186,17 @@ const AdminDashboard: React.FC = () => {
           >
             <ListOrdered className="w-4 h-4 mr-2" />
             Order Management
+          </button>
+          <button
+            onClick={() => setActiveTab('performance')}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'performance'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Activity className="w-4 h-4 mr-2" />
+            Performance
           </button>
         </div>
 
