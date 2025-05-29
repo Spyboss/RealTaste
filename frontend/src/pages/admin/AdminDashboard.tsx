@@ -5,7 +5,6 @@ import DashboardStats from '@/components/admin/DashboardStats';
 import OrderQueue from '@/components/admin/OrderQueue';
 import NotificationCenter from '@/components/admin/NotificationCenter';
 import PerformanceMonitor from '@/components/admin/PerformanceMonitor';
-import Layout from '@/components/layout/Layout';
 import { LayoutGrid, BarChart2, Clock, ListOrdered, Activity } from 'lucide-react';
 import { Order, DashboardStats as DashboardStatsType } from '@/types/shared';
 import AnalyticsSummary from '@/components/admin/AnalyticsSummary';
