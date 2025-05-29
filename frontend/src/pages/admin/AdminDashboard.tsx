@@ -127,100 +127,98 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-            {renderStatusIndicator()}
-            {lastUpdated && (
-              <div className="text-sm text-gray-500">
-                Last updated: {new Date(lastUpdated).toLocaleTimeString()}
-              </div>
-            )}
-            <NotificationCenter />
-          </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+          {renderStatusIndicator()}
+          {lastUpdated && (
+            <div className="text-sm text-gray-500">
+              Last updated: {new Date(lastUpdated).toLocaleTimeString()}
+            </div>
+          )}
+          <NotificationCenter />
         </div>
-
-        <div className="mb-4 flex flex-wrap gap-2">
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'dashboard'
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <LayoutGrid className="w-4 h-4 mr-2" />
-            Dashboard
-          </button>
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'analytics'
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <BarChart2 className="w-4 h-4 mr-2" />
-            Analytics
-          </button>
-          <button
-            onClick={() => setActiveTab('orderQueue')}
-            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'orderQueue'
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Clock className="w-4 h-4 mr-2" />
-            Order Queue
-          </button>
-          <button
-            onClick={() => setActiveTab('orderManagement')}
-            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'orderManagement'
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <ListOrdered className="w-4 h-4 mr-2" />
-            Order Management
-          </button>
-          <button
-            onClick={() => setActiveTab('performance')}
-            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'performance'
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Activity className="w-4 h-4 mr-2" />
-            Performance
-          </button>
-        </div>
-
-        {activeTab === 'orderQueue' ? (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            {isQueueLoading ? (
-              <div className="p-8 flex flex-col items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-                <p className="text-gray-600">Loading order queue...</p>
-              </div>
-            ) : (
-              <OrderQueue
-                orders={orderQueue as Order[]}
-                isLoading={isQueueLoading}
-                onPriorityChange={handlePriorityChange}
-              />
-            )}
-          </div>
-        ) : (
-          renderContent()
-        )}
       </div>
-    </Layout>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'dashboard'
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <LayoutGrid className="w-4 h-4 mr-2" />
+          Dashboard
+        </button>
+        <button
+          onClick={() => setActiveTab('analytics')}
+          className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'analytics'
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <BarChart2 className="w-4 h-4 mr-2" />
+          Analytics
+        </button>
+        <button
+          onClick={() => setActiveTab('orderQueue')}
+          className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'orderQueue'
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Clock className="w-4 h-4 mr-2" />
+          Order Queue
+        </button>
+        <button
+          onClick={() => setActiveTab('orderManagement')}
+          className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'orderManagement'
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <ListOrdered className="w-4 h-4 mr-2" />
+          Order Management
+        </button>
+        <button
+          onClick={() => setActiveTab('performance')}
+          className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'performance'
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Activity className="w-4 h-4 mr-2" />
+          Performance
+        </button>
+      </div>
+
+      {activeTab === 'orderQueue' ? (
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {isQueueLoading ? (
+            <div className="p-8 flex flex-col items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+              <p className="text-gray-600">Loading order queue...</p>
+            </div>
+          ) : (
+            <OrderQueue
+              orders={orderQueue as Order[]}
+              isLoading={isQueueLoading}
+              onPriorityChange={handlePriorityChange}
+            />
+          )}
+        </div>
+      ) : (
+        renderContent()
+      )}
+    </div>
   );
 };
 
