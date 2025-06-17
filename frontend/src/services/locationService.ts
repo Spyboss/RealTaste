@@ -11,10 +11,10 @@ export interface LocationPermissionResult {
   error?: string;
 }
 
-// Restaurant location in Colombo, Sri Lanka
+// Restaurant location (Real Taste, Rawatawatta Rd, Moratuwa 10400)
 export const RESTAURANT_LOCATION: Location = {
-  lat: 6.9271,
-  lng: 79.8612
+  lat: 6.788071, // Moratuwa, Sri Lanka - Rawatawatta Road area
+  lng: 79.891281
 };
 
 export const DELIVERY_RADIUS_KM = 5;
