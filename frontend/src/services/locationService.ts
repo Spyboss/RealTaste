@@ -13,8 +13,8 @@ export interface LocationPermissionResult {
 
 // Restaurant location (Real Taste, Rawatawatta Rd, Moratuwa 10400)
 export const RESTAURANT_LOCATION: Location = {
-  lat: 6.788071, // Moratuwa, Sri Lanka - Rawatawatta Road area
-  lng: 79.891281
+  latitude: 6.261449,
+  longitude: 80.906462,
 };
 
 export const DELIVERY_RADIUS_KM = 5;
