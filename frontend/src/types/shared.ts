@@ -159,6 +159,8 @@ export interface CreateOrderRequest {
   customer_name?: string;
   customer_phone: string;
   payment_method: 'payhere' | 'cash' | 'card';
+  order_type: 'pickup' | 'delivery';
+  delivery_address?: string;
   notes?: string;
   items: {
     menu_item_id: string;
