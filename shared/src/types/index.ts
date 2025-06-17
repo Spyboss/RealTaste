@@ -113,6 +113,8 @@ export interface CreateOrderRequest {
   customer_phone: string;
   customer_name?: string;
   payment_method: PaymentMethod;
+  order_type: 'pickup' | 'delivery';
+  delivery_address?: string;
   notes?: string;
   items: CreateOrderItemRequest[];
 }

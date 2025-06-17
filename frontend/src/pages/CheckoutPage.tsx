@@ -1,12 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { CreditCard, Banknote, ShoppingBag } from 'lucide-react';
+import { CreditCard, Banknote, ShoppingBag, MapPin, Truck } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useDeliveryStore, getGlobalDeliveryInfo } from '@/stores/deliveryStore';
 import { useCreateOrder } from '@/hooks/useOrders';
 import { CreateOrderRequest } from '../types/shared';
 import { formatPrice, validatePhoneNumber } from '@/utils/tempUtils';
+import { getAddressFromLocation } from '@/services/locationService';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import toast from 'react-hot-toast';
@@ -27,6 +29,8 @@ interface CheckoutForm {
   customerPhone: string;
   customerName?: string;
   paymentMethod: 'card' | 'cash';
+  orderType: 'pickup' | 'delivery';
+  deliveryAddress?: string;
   notes?: string;
 }
 
@@ -34,7 +38,13 @@ const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { items, getTotalPrice, getItemPrice, clearCart } = useCartStore();
   const { isAuthenticated, user } = useAuthStore();
+  const { deliveryInfo, getDeliveryFee } = useDeliveryStore();
   const createOrderMutation = useCreateOrder();
+  
+  // Get delivery info from global state or store
+  const globalDeliveryInfo = getGlobalDeliveryInfo();
+  const currentDeliveryInfo = deliveryInfo || globalDeliveryInfo;
+  const [userAddress, setUserAddress] = React.useState<string>('');
 
   const {
     register,
@@ -46,11 +56,33 @@ const CheckoutPage: React.FC = () => {
       customerPhone: '',
       customerName: user?.user_metadata?.first_name || '',
       paymentMethod: 'cash',
+      orderType: 'pickup',
+      deliveryAddress: '',
+      notes: ''
     },
   });
+  
+  // Get user address on component mount
+  React.useEffect(() => {
+    const fetchAddress = async () => {
+      if (currentDeliveryInfo?.location) {
+        try {
+          const address = await getAddressFromLocation(currentDeliveryInfo.location);
+          setUserAddress(address);
+        } catch (error) {
+          console.error('Error fetching address:', error);
+        }
+      }
+    };
+    fetchAddress();
+  }, [currentDeliveryInfo]);
 
   const paymentMethod = watch('paymentMethod');
-  const totalPrice = getTotalPrice();
+   const orderType = watch('orderType');
+  const subtotal = getTotalPrice();
+  const deliveryFee = orderType === 'delivery' ? (currentDeliveryInfo?.deliveryFee || getDeliveryFee()) : 0;
+  const onlinePaymentFee = paymentMethod === 'card' ? Math.round(subtotal * 0.02) : 0; // 2% online payment fee
+  const totalPrice = subtotal + deliveryFee + onlinePaymentFee;
 
   // PayHere payment initiation function
   const initiatePayHerePayment = (paymentData: any) => {
@@ -116,6 +148,8 @@ const CheckoutPage: React.FC = () => {
         customer_phone: data.customerPhone,
         customer_name: data.customerName || undefined,
         payment_method: data.paymentMethod,
+        order_type: data.orderType,
+        delivery_address: data.orderType === 'delivery' ? (data.deliveryAddress || userAddress) : undefined,
         notes: data.notes || undefined,
         items: items.map(item => ({
           menu_item_id: item.menu_item?.id || item.menu_item_id,
@@ -202,8 +236,27 @@ const CheckoutPage: React.FC = () => {
             ))}
           </div>
 
-          <div className="border-t pt-4">
-            <div className="flex justify-between items-center text-lg font-semibold">
+          <div className="border-t pt-4 space-y-2">
+            <div className="flex justify-between items-center">
+              <span>Subtotal:</span>
+              <span>{formatPrice(subtotal)}</span>
+            </div>
+            {orderType === 'delivery' && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="flex items-center">
+                  <Truck className="w-4 h-4 mr-1" />
+                  Delivery Fee ({currentDeliveryInfo?.distance.toFixed(1)}km):
+                </span>
+                <span>{formatPrice(deliveryFee)}</span>
+              </div>
+            )}
+            {paymentMethod === 'card' && (
+              <div className="flex justify-between items-center text-sm">
+                <span>Online Payment Fee (2%):</span>
+                <span>{formatPrice(onlinePaymentFee)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center text-lg font-semibold border-t pt-2">
               <span>Total:</span>
               <span className="text-primary-600">{formatPrice(totalPrice)}</span>
             </div>
@@ -246,6 +299,82 @@ const CheckoutPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Order Type */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-gray-900">Order Type</h3>
+              
+              <div className="space-y-3">
+                <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    value="pickup"
+                    {...register('orderType')}
+                    className="mr-3 text-primary-600"
+                  />
+                  <ShoppingBag className="w-5 h-5 mr-3 text-gray-600" />
+                  <div>
+                    <span className="font-medium">Pickup</span>
+                    <p className="text-sm text-gray-600">Collect from restaurant</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    value="delivery"
+                    {...register('orderType')}
+                    className="mr-3 text-primary-600"
+                  />
+                  <Truck className="w-5 h-5 mr-3 text-gray-600" />
+                  <div className="flex-1">
+                    <span className="font-medium">Delivery</span>
+                    <p className="text-sm text-gray-600">
+                      Delivered to your location
+                      {currentDeliveryInfo && (
+                        <span className="block text-xs text-green-600">
+                          {currentDeliveryInfo.distance.toFixed(1)}km • {formatPrice(currentDeliveryInfo.deliveryFee || 0)} delivery fee
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Delivery Address */}
+            {orderType === 'delivery' && (
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-900">Delivery Address</h3>
+                
+                {currentDeliveryInfo && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <MapPin className="w-5 h-5 text-green-600 mr-2 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-green-800">Current Location</p>
+                        <p className="text-sm text-green-700">{userAddress || 'Getting address...'}</p>
+                        <p className="text-xs text-green-600 mt-1">
+                          Distance: {currentDeliveryInfo.distance.toFixed(1)}km from restaurant
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div>
+                  <Input
+                    label="Delivery Address (Optional)"
+                    type="text"
+                    placeholder="Apartment, floor, building details..."
+                    {...register('deliveryAddress')}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Add specific details to help our delivery person find you
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Payment Method */}
             <div className="space-y-4">
               <h3 className="font-medium text-gray-900">Payment Method</h3>
@@ -260,8 +389,12 @@ const CheckoutPage: React.FC = () => {
                   />
                   <Banknote className="w-5 h-5 mr-3 text-gray-600" />
                   <div>
-                    <span className="font-medium">Cash on Pickup</span>
-                    <p className="text-sm text-gray-600">Pay when you collect your order</p>
+                    <span className="font-medium">
+                       {orderType === 'delivery' ? 'Cash on Delivery' : 'Cash on Pickup'}
+                     </span>
+                     <p className="text-sm text-gray-600">
+                       {orderType === 'delivery' ? 'Pay when your order is delivered' : 'Pay when you collect your order'}
+                     </p>
                   </div>
                 </label>
 
