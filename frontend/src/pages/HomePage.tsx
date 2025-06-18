@@ -55,10 +55,10 @@ const HomePage: React.FC = () => {
       <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg p-6 text-white">
         <div className="max-w-2xl">
           <h1 className="text-3xl font-bold mb-2">
-            Welcome to RealTaste
+            Welcome to {import.meta.env.VITE_RESTAURANT_NAME || import.meta.env.VITE_APP_NAME || 'RealTaste'}
           </h1>
           <p className="text-primary-100 mb-4">
-            Authentic Sri Lankan cuisine made fresh daily. Order now for quick pickup!
+            Chinese foods take away specialists in outdoor catering. Order now for quick pickup!
           </p>
 
           <div className="flex flex-wrap items-center gap-4 text-sm">
