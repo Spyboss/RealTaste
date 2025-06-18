@@ -32,6 +32,24 @@ export const schemas = {
       }),
     customer_name: Joi.string().min(1).max(100).optional(),
     payment_method: Joi.string().valid('card', 'cash').required(),
+    order_type: Joi.string().valid('pickup', 'delivery').default('pickup'),
+    delivery_address: Joi.string().max(500).when('order_type', {
+      is: 'delivery',
+      then: Joi.required(),
+      otherwise: Joi.optional()
+    }),
+    delivery_latitude: Joi.number().when('order_type', {
+      is: 'delivery',
+      then: Joi.required(),
+      otherwise: Joi.optional()
+    }),
+    delivery_longitude: Joi.number().when('order_type', {
+      is: 'delivery',
+      then: Joi.required(),
+      otherwise: Joi.optional()
+    }),
+    delivery_notes: Joi.string().max(500).optional(),
+    customer_gps_location: Joi.string().max(200).optional(),
     notes: Joi.string().max(500).optional(),
     items: Joi.array().items(
       Joi.object({
