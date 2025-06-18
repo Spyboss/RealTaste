@@ -39,12 +39,23 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Clear auth storage and reset auth state on 401
-      localStorage.removeItem('auth-storage');
-      // Reset auth store state by dispatching a custom event
-      window.dispatchEvent(new CustomEvent('auth-reset'));
-      // Redirect to login
-      window.location.href = '/login';
+      // Only redirect to login for protected endpoints, not public ones
+      const url = error.config?.url || '';
+      const isPublicEndpoint = url.includes('/menu') || url.includes('/business');
+      const currentPath = window.location.pathname;
+      const isOnPublicPage = ['/', '/login', '/register'].includes(currentPath);
+      
+      if (!isPublicEndpoint && !isOnPublicPage) {
+        // Clear auth storage and reset auth state on 401 for protected endpoints
+        localStorage.removeItem('auth-storage');
+        // Reset auth store state by dispatching a custom event
+        window.dispatchEvent(new CustomEvent('auth-reset'));
+        // Redirect to login only if not already on a public page
+        window.location.href = '/login';
+      } else {
+        // For public endpoints or when on public pages, just log the error
+        console.warn('401 error on public endpoint or public page:', url, currentPath);
+      }
     } else if (error.response?.data) {
       // Log API errors with response details
       console.error('API Error:', {
