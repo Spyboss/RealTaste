@@ -168,7 +168,7 @@ const LocationPermission: React.FC<LocationPermissionProps> = ({
           {error?.includes('deliver within') ? (
             <div className="bg-red-50 rounded-lg p-4 mb-4">
               <p className="text-sm text-red-700">
-                We currently serve customers within {getDeliveryRadius()}km of our restaurant in Colombo.
+                We currently serve customers within {getDeliveryRadius()}km of our restaurant in Moratuwa.
               </p>
             </div>
           ) : (
