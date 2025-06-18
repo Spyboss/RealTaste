@@ -11,13 +11,13 @@ export interface LocationPermissionResult {
   error?: string;
 }
 
-// Restaurant location (Real Taste, Rawatawatta Rd, Moratuwa 10400)
-export const RESTAURANT_LOCATION: Location = {
-  lat: 6.261449,
-  lng: 80.906462,
-};
+import { getRestaurantCoordinates, getDeliveryRadius } from '../config/locationConfig';
 
-export const DELIVERY_RADIUS_KM = 5;
+// Get restaurant location from configuration
+const getRestaurantLocation = (): Location => getRestaurantCoordinates();
+
+// Get delivery radius from configuration
+const getConfiguredDeliveryRadius = (): number => getDeliveryRadius();
 
 /**
  * Calculate distance between two points using Haversine formula
@@ -49,8 +49,8 @@ function toRadians(degrees: number): number {
  * @returns true if within radius, false otherwise
  */
 export function isWithinDeliveryRadius(userLocation: Location): boolean {
-  const distance = calculateDistance(userLocation, RESTAURANT_LOCATION);
-  return distance <= DELIVERY_RADIUS_KM;
+  const distance = calculateDistance(userLocation, getRestaurantLocation());
+  return distance <= getConfiguredDeliveryRadius();
 }
 
 /**
@@ -124,6 +124,18 @@ export function calculateDeliveryFee(distance: number): number {
   
   const extraDistance = distance - FREE_DELIVERY_THRESHOLD;
   return BASE_FEE + (extraDistance * PER_KM_FEE);
+}
+
+export function getDeliveryInfo(userLocation: Location) {
+  const distance = calculateDistance(userLocation, getRestaurantLocation());
+  const deliveryFee = calculateDeliveryFee(distance);
+  const isWithinRadius = distance <= getConfiguredDeliveryRadius();
+
+  return {
+    distance,
+    deliveryFee,
+    isWithinRadius
+  };
 }
 
 /**

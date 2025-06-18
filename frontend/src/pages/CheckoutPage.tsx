@@ -5,12 +5,14 @@ import { CreditCard, Banknote, ShoppingBag, MapPin, Truck } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useDeliveryStore, getGlobalDeliveryInfo } from '@/stores/deliveryStore';
+import { calculateDeliveryFee } from '@/services/locationService';
 import { useCreateOrder } from '@/hooks/useOrders';
 import { CreateOrderRequest } from '../types/shared';
 import { formatPrice, validatePhoneNumber } from '@/utils/tempUtils';
-import { getAddressFromLocation } from '@/services/locationService';
+import { getAddressFromLocation, type Location } from '@/services/locationService';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import LocationCheckModal from '@/components/LocationCheckModal';
 import toast from 'react-hot-toast';
 
 // PayHere JavaScript SDK types
@@ -38,13 +40,16 @@ const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { items, getTotalPrice, getItemPrice, clearCart } = useCartStore();
   const { isAuthenticated, user } = useAuthStore();
-  const { deliveryInfo, getDeliveryFee } = useDeliveryStore();
+  const { deliveryInfo } = useDeliveryStore();
   const createOrderMutation = useCreateOrder();
   
   // Get delivery info from global state or store
   const globalDeliveryInfo = getGlobalDeliveryInfo();
   const currentDeliveryInfo = deliveryInfo || globalDeliveryInfo;
   const [userAddress, setUserAddress] = React.useState<string>('');
+  const [showLocationModal, setShowLocationModal] = React.useState(false);
+  const [deliveryLocation, setDeliveryLocation] = React.useState<Location | null>(null);
+  const [deliveryDistance, setDeliveryDistance] = React.useState<number>(0);
 
   const {
     register,
@@ -80,7 +85,7 @@ const CheckoutPage: React.FC = () => {
   const paymentMethod = watch('paymentMethod');
    const orderType = watch('orderType');
   const subtotal = getTotalPrice();
-  const deliveryFee = orderType === 'delivery' ? (currentDeliveryInfo?.deliveryFee || getDeliveryFee()) : 0;
+  const deliveryFee = orderType === 'delivery' ? (currentDeliveryInfo?.deliveryFee || (deliveryDistance ? calculateDeliveryFee(deliveryDistance) : 0)) : 0;
   const onlinePaymentFee = paymentMethod === 'card' ? Math.round(subtotal * 0.02) : 0; // 2% online payment fee
   const totalPrice = subtotal + deliveryFee + onlinePaymentFee;
 
@@ -142,7 +147,32 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
+  const handleLocationVerified = (location: Location, distance: number, address: string) => {
+    setDeliveryLocation(location);
+    setDeliveryDistance(distance);
+    setUserAddress(address);
+    setShowLocationModal(false);
+    
+    // Store location data globally for delivery calculations
+    window.userDeliveryInfo = {
+      location,
+      distance,
+      verified: true
+    };
+  };
+
+  const handleLocationDenied = (error: string) => {
+    setShowLocationModal(false);
+    toast.error(error);
+  };
+
   const onSubmit = async (data: CheckoutForm) => {
+    // Check if delivery is selected but location is not verified
+    if (data.orderType === 'delivery' && !deliveryLocation && !currentDeliveryInfo?.location) {
+      setShowLocationModal(true);
+      return;
+    }
+
     try {
       const orderData: CreateOrderRequest = {
         customer_phone: data.customerPhone,
@@ -245,7 +275,7 @@ const CheckoutPage: React.FC = () => {
               <div className="flex justify-between items-center text-sm">
                 <span className="flex items-center">
                   <Truck className="w-4 h-4 mr-1" />
-                  Delivery Fee ({currentDeliveryInfo?.distance.toFixed(1)}km):
+                  Delivery Fee ({(currentDeliveryInfo?.distance || deliveryDistance).toFixed(1)}km):
                 </span>
                 <span>{formatPrice(deliveryFee)}</span>
               </div>
@@ -332,8 +362,8 @@ const CheckoutPage: React.FC = () => {
                       Delivered to your location
                       {currentDeliveryInfo && (
                         <span className="block text-xs text-green-600">
-                          {currentDeliveryInfo.distance.toFixed(1)}km • {formatPrice(currentDeliveryInfo.deliveryFee || 0)} delivery fee
-                        </span>
+                      {(currentDeliveryInfo?.distance || deliveryDistance).toFixed(1)}km • {formatPrice(deliveryFee)} delivery fee
+                    </span>
                       )}
                     </p>
                   </div>
@@ -346,7 +376,7 @@ const CheckoutPage: React.FC = () => {
               <div className="space-y-4">
                 <h3 className="font-medium text-gray-900">Delivery Address</h3>
                 
-                {currentDeliveryInfo && (
+                {(currentDeliveryInfo || deliveryLocation) && (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div className="flex items-start">
                       <MapPin className="w-5 h-5 text-green-600 mr-2 mt-0.5" />
@@ -354,8 +384,20 @@ const CheckoutPage: React.FC = () => {
                         <p className="text-sm font-medium text-green-800">Current Location</p>
                         <p className="text-sm text-green-700">{userAddress || 'Getting address...'}</p>
                         <p className="text-xs text-green-600 mt-1">
-                          Distance: {currentDeliveryInfo.distance.toFixed(1)}km from restaurant
+                          Distance: {(currentDeliveryInfo?.distance || deliveryDistance).toFixed(1)}km from restaurant
                         </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {!currentDeliveryInfo && !deliveryLocation && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <MapPin className="w-5 h-5 text-blue-600 mr-2 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">Location Required</p>
+                        <p className="text-sm text-blue-700">We'll ask for your location when you place the order to calculate delivery fees.</p>
                       </div>
                     </div>
                   </div>
@@ -465,6 +507,14 @@ const CheckoutPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Location Check Modal */}
+      <LocationCheckModal
+        isOpen={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        onLocationVerified={handleLocationVerified}
+        onLocationDenied={handleLocationDenied}
+      />
     </div>
   );
 };

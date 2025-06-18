@@ -5,6 +5,11 @@ interface Env {
   VITE_SUPABASE_URL: string;
   VITE_SUPABASE_ANON_KEY: string;
   VITE_API_URL?: string;
+  VITE_RESTAURANT_LAT?: string;
+  VITE_RESTAURANT_LNG?: string;
+  VITE_RESTAURANT_NAME?: string;
+  VITE_RESTAURANT_ADDRESS?: string;
+  VITE_DELIVERY_RADIUS?: string;
 }
 
 declare global {
