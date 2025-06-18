@@ -11,6 +11,12 @@ interface DeliveryAddressInputProps {
   onGpsLocationChange: (location: string) => void;
   notes: string;
   onNotesChange: (notes: string) => void;
+  customerGpsLocation: string;
+  onCustomerGpsLocationChange: (location: string) => void;
+  deliveryFee: number;
+  isWithinRange: boolean;
+  onDeliveryFeeChange: (fee: number) => void;
+  onRangeStatusChange: (isWithinRange: boolean) => void;
 }
 
 interface DeliveryCalculation {
@@ -28,7 +34,13 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
   gpsLocation,
   onGpsLocationChange,
   notes,
-  onNotesChange
+  onNotesChange,
+  customerGpsLocation,
+  onCustomerGpsLocationChange,
+  deliveryFee,
+  isWithinRange,
+  onDeliveryFeeChange,
+  onRangeStatusChange
 }) => {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -47,9 +59,11 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
   const calculateDeliveryFee = async (lat: number, lng: number) => {
     setIsCalculating(true);
     try {
-      const response = await deliveryApi.calculateFee(lat, lng);
+      const response = await deliveryApi.calculateFee(lat, lng) as any;
       if (response.success) {
         setDeliveryCalculation(response.data);
+        onDeliveryFeeChange(response.data.deliveryFee);
+        onRangeStatusChange(response.data.isWithinRange);
       }
     } catch (error) {
       console.error('Error calculating delivery fee:', error);

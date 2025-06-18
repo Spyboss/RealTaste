@@ -1,15 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { CreditCard, Banknote } from 'lucide-react';
+import { CreditCard, Banknote, ShoppingBag, Truck } from 'lucide-react';
 import { useCartStore } from '../stores/cartStore';
 import { useAuthStore } from '../stores/authStore';
-import { CreateOrderRequest } from '../../../shared/types';
-import { formatPrice } from '../utils/formatters';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { OrderTypeSelector } from '../components/OrderTypeSelector';
-import { DeliveryAddressInput } from '../components/DeliveryAddressInput';
+import { CreateOrderRequest } from '../../../shared/src/types';
+import { formatPrice, validatePhoneNumber } from '../utils/tempUtils';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import OrderTypeSelector from '../components/OrderTypeSelector';
+import DeliveryAddressInput from '../components/DeliveryAddressInput';
 import { toast } from 'react-hot-toast';
 import { api } from '../services/api';
 
@@ -41,16 +41,16 @@ interface CheckoutForm {
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { items, getTotalPrice, getItemPrice, clearCart } = useCartStore();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
   // Delivery state
   const [deliveryAddress, setDeliveryAddress] = React.useState<string>('');
   const [deliveryCoordinates, setDeliveryCoordinates] = React.useState<{ lat: number; lng: number } | null>(null);
   const [deliveryNotes, setDeliveryNotes] = React.useState<string>('');
-  const [customerGpsLocation, setCustomerGpsLocation] = React.useState<string>('');
   const [deliveryFee, setDeliveryFee] = React.useState<number>(0);
   const [isWithinRange, setIsWithinRange] = React.useState<boolean>(true);
+  const [customerGpsLocation, setCustomerGpsLocation] = React.useState<string>('');
 
   const {
     register,
@@ -89,50 +89,7 @@ const CheckoutPage: React.FC = () => {
     setValue('customerGpsLocation', customerGpsLocation);
   }, [deliveryAddress, deliveryCoordinates, deliveryNotes, customerGpsLocation, setValue]);
 
-  // PayHere payment initiation function
-  const initiatePayHerePayment = (paymentData: any) => {
-    // Set up PayHere event handlers
-    window.payhere.onCompleted = function (orderId: string) {
-      console.log('Payment completed. OrderID:', orderId);
-      toast.success('Payment completed successfully!');
-      navigate(`/orders/${orderId}`);
-    };
 
-    window.payhere.onDismissed = function () {
-      console.log('Payment dismissed');
-      toast.error('Payment was cancelled. Please try again.');
-    };
-
-    window.payhere.onError = function (error: string) {
-      console.log('Payment error:', error);
-      toast.error('Payment failed. Please try again.');
-    };
-
-    // Prepare payment object for PayHere SDK
-    const payment = {
-      sandbox: true, // Use sandbox for testing
-      merchant_id: paymentData.merchant_id,
-      return_url: undefined, // Important for SDK
-      cancel_url: undefined, // Important for SDK
-      notify_url: paymentData.notify_url,
-      order_id: paymentData.order_id,
-      items: paymentData.items,
-      amount: paymentData.amount,
-      currency: paymentData.currency,
-      hash: paymentData.hash,
-      first_name: paymentData.first_name,
-      last_name: paymentData.last_name,
-      email: paymentData.email,
-      phone: paymentData.phone,
-      address: paymentData.address,
-      city: paymentData.city,
-      country: paymentData.country,
-    };
-
-    // Start PayHere payment
-    window.payhere.startPayment(payment);
-    toast.success('Opening PayHere payment...');
-  };
 
   if (items.length === 0) {
     return (
@@ -215,7 +172,7 @@ const CheckoutPage: React.FC = () => {
           const result = await api.post('/orders', orderData);
           clearCart();
           toast.success('Order placed successfully!');
-          navigate(`/order-confirmation/${result.data.id}`);
+          navigate(`/order-confirmation/${(result.data as any).id}`);
         }
       } catch (error) {
         console.error('Order creation failed:', error);
@@ -331,7 +288,7 @@ const CheckoutPage: React.FC = () => {
             {/* Order Type */}
             <OrderTypeSelector
               orderType={orderType}
-              onOrderTypeChange={(type) => setValue('orderType', type)}
+              onOrderTypeChange={(type: 'pickup' | 'delivery') => setValue('orderType', type)}
               deliveryEnabled={true}
             />
 

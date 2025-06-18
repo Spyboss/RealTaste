@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabase';
+import { supabaseAdmin as supabase } from './supabase';
 import { calculateDistance } from '../utils/geoUtils';
 
 export interface DeliverySettings {

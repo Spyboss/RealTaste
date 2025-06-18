@@ -115,6 +115,10 @@ export interface CreateOrderRequest {
   payment_method: PaymentMethod;
   order_type: 'pickup' | 'delivery';
   delivery_address?: string;
+  delivery_latitude?: number;
+  delivery_longitude?: number;
+  delivery_notes?: string;
+  customer_gps_location?: string;
   notes?: string;
   items: CreateOrderItemRequest[];
 }

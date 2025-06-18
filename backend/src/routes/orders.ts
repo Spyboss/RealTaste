@@ -127,8 +127,8 @@ router.post('/',
         const deliveryCalculation = await deliveryService.calculateDeliveryFee(
           restaurantLat,
           restaurantLng,
-          orderData.delivery_latitude!,
-          orderData.delivery_longitude!
+          orderData.delivery_latitude as number,
+          orderData.delivery_longitude as number
         );
 
         if (!deliveryCalculation.isWithinRange) {
@@ -203,8 +203,8 @@ router.post('/',
         const deliveryCalculation = await deliveryService.calculateDeliveryFee(
           restaurantLat,
           restaurantLng,
-          orderData.delivery_latitude,
-          orderData.delivery_longitude
+          orderData.delivery_latitude as number,
+          orderData.delivery_longitude as number
         );
         orderInsertData.delivery_distance_km = deliveryCalculation.distance;
         
