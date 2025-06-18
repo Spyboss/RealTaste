@@ -88,7 +88,7 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
         try {
           // Reverse geocoding to get address
           const response = await fetch(
-            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${process.env.REACT_APP_OPENCAGE_API_KEY}`
+            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${(import.meta as any).env.VITE_OPENCAGE_API_KEY}`
           );
           
           if (response.ok) {
