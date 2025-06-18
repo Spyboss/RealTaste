@@ -13,17 +13,23 @@ const OrderConfirmationPage: React.FC = () => {
   const { data: order, isLoading, error } = useQuery<Order>(
     ['order', orderId],
     async () => {
+      console.log('Fetching order with ID:', orderId);
       const response = await api.get(`/orders/${orderId}`);
       return (response.data as any).data as Order;
     },
     {
       enabled: !!orderId,
       retry: 1,
+      onError: (error) => {
+        console.error('Order fetch error:', error);
+      }
     }
   );
 
   useEffect(() => {
+    console.log('OrderConfirmationPage - orderId:', orderId);
     if (!orderId) {
+      console.log('No orderId found, redirecting to orders page');
       navigate('/orders');
     }
   }, [orderId, navigate]);

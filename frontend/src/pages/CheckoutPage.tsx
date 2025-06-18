@@ -171,9 +171,17 @@ const CheckoutPage: React.FC = () => {
         } else {
           // Cash payment - create order directly
           const result = await api.post('/orders', orderData);
+          console.log('Order creation result:', result.data);
+          const orderId = (result.data as any).data?.id;
+          console.log('Extracted order ID:', orderId);
+          
+          if (!orderId) {
+            throw new Error('Order ID not found in response');
+          }
+          
           clearCart();
           toast.success('Order placed successfully!');
-          navigate(`/order-confirmation/${(result.data as any).id}`);
+          navigate(`/order-confirmation/${orderId}`);
         }
       } catch (error) {
         console.error('Order creation failed:', error);
