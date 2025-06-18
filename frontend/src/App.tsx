@@ -40,7 +40,7 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const { initialize, loading } = useAuthStore();
+  const { initialize, loading, setupAuthResetListener } = useAuthStore();
   const { fetchBusinessInfo } = useBusinessStore();
 
   useEffect(() => {
@@ -53,7 +53,13 @@ function App() {
     };
 
     initializeApp();
-  }, [initialize, fetchBusinessInfo]);
+    
+    // Setup auth reset listener
+    const cleanup = setupAuthResetListener();
+    
+    // Cleanup on unmount
+    return cleanup;
+  }, [initialize, fetchBusinessInfo, setupAuthResetListener]);
 
   if (loading) {
     return (

@@ -12,9 +12,18 @@ export const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('supabase.auth.token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Get the session from the auth store's persisted data
+    try {
+      const authStorage = localStorage.getItem('auth-storage');
+      if (authStorage) {
+        const authData = JSON.parse(authStorage);
+        const token = authData?.state?.session?.access_token;
+        if (token && config.headers) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to get auth token from storage:', error);
     }
     return config;
   },
@@ -30,8 +39,8 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Clear auth token and reset auth state on 401
-      localStorage.removeItem('supabase.auth.token');
+      // Clear auth storage and reset auth state on 401
+      localStorage.removeItem('auth-storage');
       // Reset auth store state by dispatching a custom event
       window.dispatchEvent(new CustomEvent('auth-reset'));
       // Redirect to login

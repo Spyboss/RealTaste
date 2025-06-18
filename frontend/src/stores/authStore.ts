@@ -12,15 +12,17 @@ interface AuthState {
 
   // Actions
   initialize: () => Promise<void>;
+  setupAuthResetListener: () => () => void;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  reset: () => void;
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOutAction: () => Promise<void>;
   resetPasswordAction: (email: string) => Promise<void>;
   updatePasswordAction: (newPassword: string) => Promise<void>;
@@ -103,37 +105,59 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      // Listen for auth reset events from API interceptor
+      setupAuthResetListener: () => {
+        const handleAuthReset = () => {
+          console.log('Auth reset event received, clearing auth state');
+          set({
+            user: null,
+            session: null,
+            isAuthenticated: false,
+            error: 'Session expired. Please log in again.',
+            loading: false
+          });
+        };
+        
+        window.addEventListener('auth-reset', handleAuthReset);
+        
+        // Return cleanup function
+        return () => {
+          window.removeEventListener('auth-reset', handleAuthReset);
+        };
+      },
+
       login: async (email: string, password: string) => {
         try {
           set({ loading: true, error: null });
           const { data, error } = await supabaseSignIn(email, password);
           if (error) throw error;
+          
           if (data.user && data.session) {
             const role = await fetchUserRole(data.user.id);
-            let { data: { user: refreshedUser }, error: userError } = await supabase.auth.getUser();
-            if (userError) throw userError;
-
-            if (refreshedUser) {
-              if (!refreshedUser.app_metadata) {
-                refreshedUser.app_metadata = {};
+            
+            // Create user object with role in app_metadata
+            const userWithRole = {
+              ...data.user,
+              app_metadata: {
+                ...data.user.app_metadata,
+                role: role
               }
-              refreshedUser.app_metadata.role = role;
-              console.log('[AuthStore:Login] User role set in store:', role, 'User object:', refreshedUser);
-            }
+            };
+            
+            console.log('[AuthStore:Login] User role set in store:', role, 'User object:', userWithRole);
 
             set({
-              user: refreshedUser,
+              user: userWithRole,
               session: data.session,
               isAuthenticated: true,
-              error: null
+              error: null,
+              loading: false
             });
           } else {
             throw new Error("Login did not return a user and session.");
           }
         } catch (error: any) {
-          set({ error: error.message, user: null, session: null, isAuthenticated: false });
-        } finally {
-          set({ loading: false });
+          set({ error: error.message, user: null, session: null, isAuthenticated: false, loading: false });
         }
       },
 
@@ -142,42 +166,47 @@ export const useAuthStore = create<AuthState>()(
           set({ loading: true, error: null });
           const { data, error } = await supabaseSignUp(email, password);
           if (error) throw error;
+          
           if (data.user && data.session) {
             const role = await fetchUserRole(data.user.id);
-            let { data: { user: refreshedUser }, error: userError } = await supabase.auth.getUser();
-            if (userError) throw userError;
-
-            if (refreshedUser) {
-              if (!refreshedUser.app_metadata) {
-                refreshedUser.app_metadata = {};
+            
+            // Create user object with role in app_metadata
+            const userWithRole = {
+              ...data.user,
+              app_metadata: {
+                ...data.user.app_metadata,
+                role: role
               }
-              refreshedUser.app_metadata.role = role;
-              console.log('[AuthStore:Register] User role set in store:', role, 'User object:', refreshedUser);
-            }
+            };
+            
+            console.log('[AuthStore:Register] User role set in store:', role, 'User object:', userWithRole);
             
             set({
-              user: refreshedUser,
+              user: userWithRole,
               session: data.session,
               isAuthenticated: true,
-              error: null
+              error: null,
+              loading: false
             });
           } else {
             if (data.user) {
               // Handle case where sign up might not immediately return a session (e.g. email confirmation)
               const role = await fetchUserRole(data.user.id);
-              let userToSet = { ...data.user };
-              if (!userToSet.app_metadata) userToSet.app_metadata = {};
-              (userToSet.app_metadata as any).role = role;
-              console.log('[AuthStore:Register] User role set in store (no session):', role, 'User object:', userToSet);
-              set({ user: userToSet, session: null, isAuthenticated: false });
+              const userWithRole = {
+                ...data.user,
+                app_metadata: {
+                  ...data.user.app_metadata,
+                  role: role
+                }
+              };
+              console.log('[AuthStore:Register] User role set in store (no session):', role, 'User object:', userWithRole);
+              set({ user: userWithRole, session: null, isAuthenticated: false, loading: false });
             } else {
               throw new Error("Registration did not return a user.");
             }
           }
         } catch (error: any) {
-          set({ error: error.message, user: null, session: null, isAuthenticated: false });
-        } finally {
-          set({ loading: false });
+          set({ error: error.message, user: null, session: null, isAuthenticated: false, loading: false });
         }
       },
 
