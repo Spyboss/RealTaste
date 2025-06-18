@@ -248,10 +248,10 @@ router.post('/',
 // GET /api/orders - Get orders (admin: all orders, user: their orders)
 router.get('/',
   authenticateToken,
-  validateQuery(querySchemas.pagination),
+  validateQuery(querySchemas.pagination.concat(querySchemas.orderFilters)),
   async (req, res) => {
     try {
-      const { page = 1, limit = 20 } = req.query;
+      const { page = 1, limit = 20, status } = req.query;
       const offset = (Number(page) - 1) * Number(limit);
 
       let query = supabaseAdmin
@@ -272,6 +272,11 @@ router.get('/',
       // If not admin, only show user's orders
       if (req.user?.role !== 'admin') {
         query = query.eq('customer_id', req.user?.id);
+      }
+
+      // Apply status filter if provided
+      if (status) {
+        query = query.eq('status', status);
       }
 
       const { data, error, count } = await query
