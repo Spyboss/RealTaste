@@ -5,6 +5,8 @@ import { validate, schemas, validateQuery, querySchemas } from '../middleware/va
 import { orderLimiter, adminLimiter } from '../middleware/rateLimiter';
 import { ApiResponse, Order, CreateOrderRequest, generateOrderId } from '../types/shared';
 import { payHereService } from '../services/payhere';
+import { deliveryService } from '../services/deliveryService';
+import { validateCoordinates } from '../utils/geoUtils';
 
 const router = Router();
 
@@ -17,8 +19,33 @@ router.post('/',
     try {
       const orderData: CreateOrderRequest = req.body;
 
+      // Validate delivery data if order type is delivery
+      if (orderData.order_type === 'delivery') {
+        if (!orderData.delivery_address) {
+          return res.status(400).json({
+            success: false,
+            error: 'Delivery address is required for delivery orders'
+          });
+        }
+
+        if (!orderData.delivery_latitude || !orderData.delivery_longitude) {
+          return res.status(400).json({
+            success: false,
+            error: 'Delivery coordinates are required for delivery orders'
+          });
+        }
+
+        if (!validateCoordinates(orderData.delivery_latitude, orderData.delivery_longitude)) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid delivery coordinates'
+          });
+        }
+      }
+
       // Calculate order totals
       let subtotal = 0;
+      let deliveryFee = 0;
       const orderItems = [];
 
       for (const item of orderData.items) {
@@ -92,10 +119,32 @@ router.post('/',
         });
       }
 
+      // Calculate delivery fee if order type is delivery
+      if (orderData.order_type === 'delivery') {
+        const restaurantLat = parseFloat(process.env.RESTAURANT_LAT || '6.7964');
+        const restaurantLng = parseFloat(process.env.RESTAURANT_LNG || '79.9003');
+        
+        const deliveryCalculation = await deliveryService.calculateDeliveryFee(
+          restaurantLat,
+          restaurantLng,
+          orderData.delivery_latitude!,
+          orderData.delivery_longitude!
+        );
+
+        if (!deliveryCalculation.isWithinRange) {
+          return res.status(400).json({
+            success: false,
+            error: `Delivery location is outside our ${await deliveryService.getDeliverySettings().then(s => s.max_delivery_range_km)}km delivery range`
+          });
+        }
+
+        deliveryFee = deliveryCalculation.deliveryFee;
+      }
+
       // Calculate tax (assuming 0% for now, can be configured)
       const taxRate = 0;
       const taxAmount = subtotal * taxRate;
-      const totalAmount = subtotal + taxAmount;
+      const totalAmount = subtotal + taxAmount + deliveryFee;
 
       // Ensure user exists in users table if authenticated
       if (req.user?.id) {
@@ -125,20 +174,49 @@ router.post('/',
       }
 
       // Create order
+      const orderInsertData: any = {
+        customer_id: req.user?.id || null,
+        customer_phone: orderData.customer_phone,
+        customer_name: orderData.customer_name || null,
+        status: 'received',
+        payment_method: orderData.payment_method,
+        payment_status: orderData.payment_method === 'cash' ? 'pending' : 'pending',
+        subtotal,
+        tax_amount: taxAmount,
+        total_amount: totalAmount,
+        notes: orderData.notes || null,
+        order_type: orderData.order_type || 'pickup',
+        delivery_fee: deliveryFee
+      };
+
+      // Add delivery-specific fields if order type is delivery
+      if (orderData.order_type === 'delivery') {
+        orderInsertData.delivery_address = orderData.delivery_address;
+        orderInsertData.delivery_latitude = orderData.delivery_latitude;
+        orderInsertData.delivery_longitude = orderData.delivery_longitude;
+        orderInsertData.delivery_notes = orderData.delivery_notes || null;
+        orderInsertData.customer_gps_location = orderData.customer_gps_location || null;
+        
+        // Calculate delivery distance
+        const restaurantLat = parseFloat(process.env.RESTAURANT_LAT || '6.7964');
+        const restaurantLng = parseFloat(process.env.RESTAURANT_LNG || '79.9003');
+        const deliveryCalculation = await deliveryService.calculateDeliveryFee(
+          restaurantLat,
+          restaurantLng,
+          orderData.delivery_latitude,
+          orderData.delivery_longitude
+        );
+        orderInsertData.delivery_distance_km = deliveryCalculation.distance;
+        
+        // Set estimated delivery time
+        const estimatedDeliveryTime = new Date();
+        estimatedDeliveryTime.setMinutes(estimatedDeliveryTime.getMinutes() + deliveryCalculation.estimatedTime + 30); // 30 min prep time
+        orderInsertData.estimated_delivery_time = estimatedDeliveryTime.toISOString();
+      }
+
       const { data: order, error: orderError } = await supabaseAdmin
         .from(tables.orders)
-        .insert({
-          customer_id: req.user?.id || null,
-          customer_phone: orderData.customer_phone,
-          customer_name: orderData.customer_name || null,
-          status: 'received',
-          payment_method: orderData.payment_method,
-          payment_status: orderData.payment_method === 'cash' ? 'pending' : 'pending',
-          subtotal,
-          tax_amount: taxAmount,
-          total_amount: totalAmount,
-          notes: orderData.notes || null
-        })
+        .insert(orderInsertData)
         .select()
         .single();
 
@@ -169,6 +247,20 @@ router.post('/',
             });
 
           if (addonError) throw addonError;
+        }
+      }
+
+      // Create delivery time slot for delivery orders
+      if (orderData.order_type === 'delivery') {
+        try {
+          await deliveryService.createDeliveryTimeSlot(
+            order.id,
+            30, // 30 minutes prep time
+            20  // 20 minutes delivery time
+          );
+        } catch (error) {
+          console.error('Error creating delivery time slot:', error);
+          // Don't fail the order creation if time slot creation fails
         }
       }
 

@@ -107,3 +107,55 @@ export const handleApiError = (error: any): string => {
   }
   return 'An unexpected error occurred';
 };
+
+// Delivery API functions
+export const deliveryApi = {
+  // Calculate delivery fee based on coordinates
+  calculateFee: async (latitude: number, longitude: number) => {
+    const response = await api.post('/delivery/calculate-fee', {
+      latitude,
+      longitude
+    });
+    return response.data;
+  },
+
+  // Get delivery settings (admin only)
+  getSettings: async () => {
+    const response = await api.get('/delivery/settings');
+    return handleApiResponse(response);
+  },
+
+  // Update delivery settings (admin only)
+  updateSettings: async (settings: {
+    base_fee: number;
+    per_km_fee: number;
+    max_distance_km: number;
+    base_time_minutes: number;
+    per_km_time_minutes: number;
+  }) => {
+    const response = await api.put('/delivery/settings', settings);
+    return handleApiResponse(response);
+  },
+
+  // Get active deliveries (admin only)
+  getActiveDeliveries: async () => {
+    const response = await api.get('/delivery/active');
+    return handleApiResponse(response);
+  },
+
+  // Update delivery status (admin only)
+  updateDeliveryStatus: async (orderId: string, status: string, estimatedTime?: number, actualTime?: number) => {
+    const response = await api.put(`/delivery/status/${orderId}`, {
+      status,
+      estimated_delivery_time: estimatedTime,
+      actual_delivery_time: actualTime
+    });
+    return handleApiResponse(response);
+  },
+
+  // Get delivery time slot by order ID
+  getTimeSlot: async (orderId: string) => {
+    const response = await api.get(`/delivery/time-slot/${orderId}`);
+    return handleApiResponse(response);
+  }
+};

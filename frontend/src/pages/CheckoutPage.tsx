@@ -1,19 +1,17 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { CreditCard, Banknote, ShoppingBag, MapPin, Truck } from 'lucide-react';
-import { useCartStore } from '@/stores/cartStore';
-import { useAuthStore } from '@/stores/authStore';
-import { useDeliveryStore, getGlobalDeliveryInfo } from '@/stores/deliveryStore';
-import { calculateDeliveryFee } from '@/services/locationService';
-import { useCreateOrder } from '@/hooks/useOrders';
-import { CreateOrderRequest } from '../types/shared';
-import { formatPrice, validatePhoneNumber } from '@/utils/tempUtils';
-import { getAddressFromLocation, type Location } from '@/services/locationService';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import LocationCheckModal from '@/components/LocationCheckModal';
-import toast from 'react-hot-toast';
+import { CreditCard, Banknote } from 'lucide-react';
+import { useCartStore } from '../stores/cartStore';
+import { useAuthStore } from '../stores/authStore';
+import { CreateOrderRequest } from '../../../shared/types';
+import { formatPrice } from '../utils/formatters';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { OrderTypeSelector } from '../components/OrderTypeSelector';
+import { DeliveryAddressInput } from '../components/DeliveryAddressInput';
+import { toast } from 'react-hot-toast';
+import { api } from '../services/api';
 
 // PayHere JavaScript SDK types
 declare global {
@@ -33,28 +31,32 @@ interface CheckoutForm {
   paymentMethod: 'card' | 'cash';
   orderType: 'pickup' | 'delivery';
   deliveryAddress?: string;
+  deliveryLatitude?: number;
+  deliveryLongitude?: number;
+  deliveryNotes?: string;
+  customerGpsLocation?: string;
   notes?: string;
 }
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { items, getTotalPrice, getItemPrice, clearCart } = useCartStore();
-  const { isAuthenticated, user } = useAuthStore();
-  const { deliveryInfo } = useDeliveryStore();
-  const createOrderMutation = useCreateOrder();
+  const { user } = useAuthStore();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   
-  // Get delivery info from global state or store
-  const globalDeliveryInfo = getGlobalDeliveryInfo();
-  const currentDeliveryInfo = deliveryInfo || globalDeliveryInfo;
-  const [userAddress, setUserAddress] = React.useState<string>('');
-  const [showLocationModal, setShowLocationModal] = React.useState(false);
-  const [deliveryLocation, setDeliveryLocation] = React.useState<Location | null>(null);
-  const [deliveryDistance, setDeliveryDistance] = React.useState<number>(0);
+  // Delivery state
+  const [deliveryAddress, setDeliveryAddress] = React.useState<string>('');
+  const [deliveryCoordinates, setDeliveryCoordinates] = React.useState<{ lat: number; lng: number } | null>(null);
+  const [deliveryNotes, setDeliveryNotes] = React.useState<string>('');
+  const [customerGpsLocation, setCustomerGpsLocation] = React.useState<string>('');
+  const [deliveryFee, setDeliveryFee] = React.useState<number>(0);
+  const [isWithinRange, setIsWithinRange] = React.useState<boolean>(true);
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CheckoutForm>({
     defaultValues: {
@@ -63,31 +65,29 @@ const CheckoutPage: React.FC = () => {
       paymentMethod: 'cash',
       orderType: 'pickup',
       deliveryAddress: '',
+      deliveryLatitude: undefined,
+      deliveryLongitude: undefined,
+      deliveryNotes: '',
+      customerGpsLocation: '',
       notes: ''
     },
   });
   
-  // Get user address on component mount
-  React.useEffect(() => {
-    const fetchAddress = async () => {
-      if (currentDeliveryInfo?.location) {
-        try {
-          const address = await getAddressFromLocation(currentDeliveryInfo.location);
-          setUserAddress(address);
-        } catch (error) {
-          console.error('Error fetching address:', error);
-        }
-      }
-    };
-    fetchAddress();
-  }, [currentDeliveryInfo]);
-
   const paymentMethod = watch('paymentMethod');
-   const orderType = watch('orderType');
+  const orderType = watch('orderType');
   const subtotal = getTotalPrice();
-  const deliveryFee = orderType === 'delivery' ? (currentDeliveryInfo?.deliveryFee || (deliveryDistance ? calculateDeliveryFee(deliveryDistance) : 0)) : 0;
+  const currentDeliveryFee = orderType === 'delivery' ? deliveryFee : 0;
   const onlinePaymentFee = paymentMethod === 'card' ? Math.round(subtotal * 0.02) : 0; // 2% online payment fee
-  const totalPrice = subtotal + deliveryFee + onlinePaymentFee;
+  const totalPrice = subtotal + currentDeliveryFee + onlinePaymentFee;
+
+  // Update form values when delivery data changes
+  React.useEffect(() => {
+    setValue('deliveryAddress', deliveryAddress);
+    setValue('deliveryLatitude', deliveryCoordinates?.lat);
+    setValue('deliveryLongitude', deliveryCoordinates?.lng);
+    setValue('deliveryNotes', deliveryNotes);
+    setValue('customerGpsLocation', customerGpsLocation);
+  }, [deliveryAddress, deliveryCoordinates, deliveryNotes, customerGpsLocation, setValue]);
 
   // PayHere payment initiation function
   const initiatePayHerePayment = (paymentData: any) => {
@@ -147,30 +147,21 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  const handleLocationVerified = (location: Location, distance: number, address: string) => {
-    setDeliveryLocation(location);
-    setDeliveryDistance(distance);
-    setUserAddress(address);
-    setShowLocationModal(false);
-    
-    // Store location data globally for delivery calculations
-    window.userDeliveryInfo = {
-      location,
-      distance,
-      verified: true
-    };
-  };
-
-  const handleLocationDenied = (error: string) => {
-    setShowLocationModal(false);
-    toast.error(error);
-  };
-
   const onSubmit = async (data: CheckoutForm) => {
-    // Check if delivery is selected but location is not verified
-    if (data.orderType === 'delivery' && !deliveryLocation && !currentDeliveryInfo?.location) {
-      setShowLocationModal(true);
-      return;
+    // Check if delivery is selected but required data is missing
+    if (data.orderType === 'delivery') {
+      if (!deliveryAddress.trim()) {
+        toast.error('Please enter a delivery address');
+        return;
+      }
+      if (!deliveryCoordinates) {
+        toast.error('Please share your GPS location for delivery');
+        return;
+      }
+      if (!isWithinRange) {
+        toast.error('Sorry, delivery is not available to your location (outside 5km range)');
+        return;
+      }
     }
 
     try {
@@ -179,7 +170,11 @@ const CheckoutPage: React.FC = () => {
         customer_name: data.customerName || undefined,
         payment_method: data.paymentMethod,
         order_type: data.orderType,
-        delivery_address: data.orderType === 'delivery' ? (data.deliveryAddress || userAddress) : undefined,
+        delivery_address: data.orderType === 'delivery' ? deliveryAddress : undefined,
+        delivery_latitude: data.orderType === 'delivery' ? deliveryCoordinates?.lat : undefined,
+        delivery_longitude: data.orderType === 'delivery' ? deliveryCoordinates?.lng : undefined,
+        delivery_notes: data.orderType === 'delivery' ? deliveryNotes : undefined,
+        customer_gps_location: data.orderType === 'delivery' ? customerGpsLocation : undefined,
         notes: data.notes || undefined,
         items: items.map(item => ({
           menu_item_id: item.menu_item?.id || item.menu_item_id,
@@ -190,42 +185,46 @@ const CheckoutPage: React.FC = () => {
         })),
       };
 
-      const response = await createOrderMutation.mutateAsync(orderData);
+      setIsSubmitting(true);
+      
+      try {
+        if (data.paymentMethod === 'card') {
+          // PayHere payment
+          const payment = {
+            sandbox: true, // Set to false for production
+            merchant_id: '1228716',
+            return_url: `${window.location.origin}/payment/success`,
+            cancel_url: `${window.location.origin}/payment/cancelled`,
+            notify_url: `${window.location.origin}/api/payments/payhere/notify`,
+            order_id: `ORDER_${Date.now()}`,
+            items: 'Food Order',
+            amount: (subtotal + currentDeliveryFee + (data.paymentMethod === 'card' ? onlinePaymentFee : 0)).toFixed(2),
+            currency: 'LKR',
+            first_name: data.customerName || 'Customer',
+            last_name: '',
+            email: user?.email || 'customer@example.com',
+            phone: data.customerPhone,
+            address: data.orderType === 'delivery' ? deliveryAddress : 'Pickup',
+            city: 'Colombo',
+            country: 'Sri Lanka',
+          };
 
-      // Clear cart
-      clearCart();
-
-      // Handle different payment methods
-      if (data.paymentMethod === 'card' && 'payment' in response) {
-        // For card payments, use PayHere JavaScript SDK
-        const paymentResponse = response as any;
-
-        if (paymentResponse.payment.paymentData) {
-          // Use PayHere JavaScript SDK for onsite checkout
-          const paymentData = paymentResponse.payment.paymentData;
-
-          // Load PayHere JavaScript SDK if not already loaded
-          if (!window.payhere) {
-            const script = document.createElement('script');
-            script.src = 'https://www.payhere.lk/lib/payhere.js';
-            script.onload = () => {
-              initiatePayHerePayment(paymentData);
-            };
-            document.head.appendChild(script);
-          } else {
-            initiatePayHerePayment(paymentData);
-          }
+          window.payhere.startPayment(payment);
         } else {
-          toast.error('Payment configuration error');
+          // Cash payment - create order directly
+          const result = await api.post('/orders', orderData);
+          clearCart();
+          toast.success('Order placed successfully!');
+          navigate(`/order-confirmation/${result.data.id}`);
         }
-      } else {
-        // For cash payments, redirect to order details
-        const orderResponse = response as any;
-        navigate(`/orders/${orderResponse.id}`);
-        toast.success('Order placed successfully!');
+      } catch (error) {
+        console.error('Order creation failed:', error);
+        toast.error('Failed to place order. Please try again.');
+      } finally {
+        setIsSubmitting(false);
       }
     } catch (error) {
-      // Error is handled by the mutation
+      console.error('Form validation error:', error);
     }
   };
 
@@ -271,13 +270,13 @@ const CheckoutPage: React.FC = () => {
               <span>Subtotal:</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
-            {orderType === 'delivery' && (
+            {orderType === 'delivery' && currentDeliveryFee > 0 && (
               <div className="flex justify-between items-center text-sm">
                 <span className="flex items-center">
                   <Truck className="w-4 h-4 mr-1" />
-                  Delivery Fee ({(currentDeliveryInfo?.distance || deliveryDistance).toFixed(1)}km):
+                  Delivery Fee:
                 </span>
-                <span>{formatPrice(deliveryFee)}</span>
+                <span>{formatPrice(currentDeliveryFee)}</span>
               </div>
             )}
             {paymentMethod === 'card' && (
@@ -330,91 +329,28 @@ const CheckoutPage: React.FC = () => {
             </div>
 
             {/* Order Type */}
-            <div className="space-y-4">
-              <h3 className="font-medium text-gray-900">Order Type</h3>
-              
-              <div className="space-y-3">
-                <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    value="pickup"
-                    {...register('orderType')}
-                    className="mr-3 text-primary-600"
-                  />
-                  <ShoppingBag className="w-5 h-5 mr-3 text-gray-600" />
-                  <div>
-                    <span className="font-medium">Pickup</span>
-                    <p className="text-sm text-gray-600">Collect from restaurant</p>
-                  </div>
-                </label>
-
-                <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    value="delivery"
-                    {...register('orderType')}
-                    className="mr-3 text-primary-600"
-                  />
-                  <Truck className="w-5 h-5 mr-3 text-gray-600" />
-                  <div className="flex-1">
-                    <span className="font-medium">Delivery</span>
-                    <p className="text-sm text-gray-600">
-                      Delivered to your location
-                      {currentDeliveryInfo && (
-                        <span className="block text-xs text-green-600">
-                      {(currentDeliveryInfo?.distance || deliveryDistance).toFixed(1)}km • {formatPrice(deliveryFee)} delivery fee
-                    </span>
-                      )}
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </div>
+            <OrderTypeSelector
+              orderType={orderType}
+              onOrderTypeChange={(type) => setValue('orderType', type)}
+              deliveryEnabled={true}
+            />
 
             {/* Delivery Address */}
             {orderType === 'delivery' && (
-              <div className="space-y-4">
-                <h3 className="font-medium text-gray-900">Delivery Address</h3>
-                
-                {(currentDeliveryInfo || deliveryLocation) && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <MapPin className="w-5 h-5 text-green-600 mr-2 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-green-800">Current Location</p>
-                        <p className="text-sm text-green-700">{userAddress || 'Getting address...'}</p>
-                        <p className="text-xs text-green-600 mt-1">
-                          Distance: {(currentDeliveryInfo?.distance || deliveryDistance).toFixed(1)}km from restaurant
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {!currentDeliveryInfo && !deliveryLocation && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <MapPin className="w-5 h-5 text-blue-600 mr-2 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-blue-800">Location Required</p>
-                        <p className="text-sm text-blue-700">We'll ask for your location when you place the order to calculate delivery fees.</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                <div>
-                  <Input
-                    label="Delivery Address (Optional)"
-                    type="text"
-                    placeholder="Apartment, floor, building details..."
-                    {...register('deliveryAddress')}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Add specific details to help our delivery person find you
-                  </p>
-                </div>
-              </div>
+              <DeliveryAddressInput
+                address={deliveryAddress}
+                notes={deliveryNotes}
+                coordinates={deliveryCoordinates}
+                customerGpsLocation={customerGpsLocation}
+                deliveryFee={deliveryFee}
+                isWithinRange={isWithinRange}
+                onAddressChange={setDeliveryAddress}
+                onNotesChange={setDeliveryNotes}
+                onCoordinatesChange={setDeliveryCoordinates}
+                onCustomerGpsLocationChange={setCustomerGpsLocation}
+                onDeliveryFeeChange={setDeliveryFee}
+                onRangeStatusChange={setIsWithinRange}
+              />
             )}
 
             {/* Payment Method */}
@@ -473,11 +409,11 @@ const CheckoutPage: React.FC = () => {
             {/* Submit Button */}
             <Button
               type="submit"
-              loading={createOrderMutation.isLoading}
               className="w-full"
               size="lg"
+              disabled={isSubmitting}
             >
-              {paymentMethod === 'cash' ? 'Place Order' : 'Proceed to Payment'}
+              {isSubmitting ? 'Processing...' : (paymentMethod === 'card' ? 'Pay Now' : 'Place Order')}
             </Button>
           </form>
 
@@ -508,13 +444,7 @@ const CheckoutPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Location Check Modal */}
-      <LocationCheckModal
-        isOpen={showLocationModal}
-        onClose={() => setShowLocationModal(false)}
-        onLocationVerified={handleLocationVerified}
-        onLocationDenied={handleLocationDenied}
-      />
+
     </div>
   );
 };
