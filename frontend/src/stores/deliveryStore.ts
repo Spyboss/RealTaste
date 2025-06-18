@@ -3,9 +3,9 @@ import { persist } from 'zustand/middleware';
 import {
   type Location,
   calculateDistance,
-  calculateDeliveryFee,
-  RESTAURANT_LOCATION
+  calculateDeliveryFee
 } from '../services/locationService';
+import { getRestaurantCoordinates } from '../config/locationConfig';
 
 export interface DeliveryInfo {
   location: Location;
@@ -34,7 +34,7 @@ export const useDeliveryStore = create<DeliveryState>()(
       isDeliveryAvailable: false,
 
       setDeliveryInfo: (location: Location, address?: string) => {
-        const distance = calculateDistance(location, RESTAURANT_LOCATION);
+        const distance = calculateDistance(location, getRestaurantCoordinates());
         const deliveryFee = calculateDeliveryFee(distance);
         
         const deliveryInfo: DeliveryInfo = {

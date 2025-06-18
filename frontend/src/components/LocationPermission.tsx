@@ -7,11 +7,10 @@ import {
   getAddressFromLocation,
   storeUserLocation,
   getStoredUserLocation,
-  RESTAURANT_LOCATION,
-  DELIVERY_RADIUS_KM,
   type Location,
   type LocationPermissionResult
 } from '../services/locationService';
+import { getRestaurantCoordinates, getDeliveryRadius } from '../config/locationConfig';
 
 interface LocationPermissionProps {
   onLocationVerified: (location: Location, distance: number) => void;
@@ -34,7 +33,7 @@ const LocationPermission: React.FC<LocationPermissionProps> = ({
   const checkStoredLocation = async () => {
     const stored = getStoredUserLocation();
     if (stored) {
-      const dist = calculateDistance(stored, RESTAURANT_LOCATION);
+      const dist = calculateDistance(stored, getRestaurantCoordinates());
       if (isWithinDeliveryRadius(stored)) {
         setDistance(dist);
         setStatus('success');
@@ -71,7 +70,7 @@ const LocationPermission: React.FC<LocationPermissionProps> = ({
       }
 
       const userLoc = result.location;
-      const dist = calculateDistance(userLoc, RESTAURANT_LOCATION);
+      const dist = calculateDistance(userLoc, getRestaurantCoordinates());
       
       setDistance(dist);
 
@@ -89,7 +88,7 @@ const LocationPermission: React.FC<LocationPermissionProps> = ({
         }
       } else {
         setStatus('error');
-        const errorMsg = `Sorry, we only deliver within ${DELIVERY_RADIUS_KM}km of our restaurant. You are ${dist.toFixed(1)}km away.`;
+        const errorMsg = `Sorry, we only deliver within ${getDeliveryRadius()}km of our restaurant. You are ${dist.toFixed(1)}km away.`;
         setError(errorMsg);
         onLocationDenied(errorMsg);
       }
@@ -124,7 +123,7 @@ const LocationPermission: React.FC<LocationPermissionProps> = ({
           <MapPin className="w-12 h-12 text-orange-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Location Required</h2>
           <p className="text-gray-600 mb-4">
-            We need your location to check if you're within our {DELIVERY_RADIUS_KM}km delivery radius.
+            We need your location to check if you're within our {getDeliveryRadius()}km delivery radius.
           </p>
           <p className="text-sm text-gray-500">
             Please allow location access when prompted by your browser.
@@ -169,7 +168,7 @@ const LocationPermission: React.FC<LocationPermissionProps> = ({
           {error?.includes('deliver within') ? (
             <div className="bg-red-50 rounded-lg p-4 mb-4">
               <p className="text-sm text-red-700">
-                We currently serve customers within {DELIVERY_RADIUS_KM}km of our restaurant in Colombo.
+                We currently serve customers within {getDeliveryRadius()}km of our restaurant in Colombo.
               </p>
             </div>
           ) : (
