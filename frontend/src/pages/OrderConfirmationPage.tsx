@@ -4,7 +4,7 @@ import { CheckCircle, Clock, Phone } from 'lucide-react';
 import { useQuery } from 'react-query';
 import { api } from '../services/api';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { formatCurrency, Order } from '@/types/shared';
+import { formatCurrency, formatDate, Order } from '@/types/shared';
 
 const OrderConfirmationPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -14,7 +14,7 @@ const OrderConfirmationPage: React.FC = () => {
     ['order', orderId],
     async () => {
       const response = await api.get(`/orders/${orderId}`);
-      return response.data.data as Order;
+      return (response.data as any).data as Order;
     },
     {
       enabled: !!orderId,
@@ -57,15 +57,7 @@ const OrderConfirmationPage: React.FC = () => {
     );
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -121,9 +113,9 @@ const OrderConfirmationPage: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-1">Order Type</h3>
-              <p className="text-gray-900 capitalize">{order.order_type}</p>
-              {order.order_type === 'delivery' && order.delivery_address && (
-                <p className="text-gray-600 text-sm mt-1">{order.delivery_address}</p>
+              <p className="text-gray-900 capitalize">{(order as any).order_type || 'pickup'}</p>
+              {(order as any).order_type === 'delivery' && (order as any).delivery_address && (
+                <p className="text-gray-600 text-sm mt-1">{(order as any).delivery_address}</p>
               )}
             </div>
           </div>
@@ -135,7 +127,7 @@ const OrderConfirmationPage: React.FC = () => {
                 <Clock className="h-5 w-5 text-orange-500 mr-2" />
                 <div>
                   <p className="text-sm font-medium text-orange-800">
-                    Estimated {order.order_type === 'delivery' ? 'Delivery' : 'Pickup'} Time
+                    Estimated {(order as any).order_type === 'delivery' ? 'Delivery' : 'Pickup'} Time
                   </p>
                   <p className="text-orange-700">
                     {formatDate(order.estimated_pickup_time)}
@@ -149,9 +141,9 @@ const OrderConfirmationPage: React.FC = () => {
           <div className="mb-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Order Items</h3>
             <div className="space-y-4">
-              {order.order_items.map((item) => (
+              {order.order_items?.map((item) => (
                 <div key={item.id} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
-                  {item.menu_item.image_url && (
+                  {item.menu_item?.image_url && (
                     <img
                       src={item.menu_item.image_url}
                       alt={item.menu_item.name}
@@ -159,20 +151,20 @@ const OrderConfirmationPage: React.FC = () => {
                     />
                   )}
                   <div className="flex-1">
-                    <h4 className="font-medium text-gray-900">{item.menu_item.name}</h4>
+                    <h4 className="font-medium text-gray-900">{item.menu_item?.name}</h4>
                     {item.variant && (
                       <p className="text-sm text-gray-600">Variant: {item.variant.name}</p>
                     )}
-                    {item.order_item_addons.length > 0 && (
+                    {item.order_item_addons && item.order_item_addons.length > 0 && (
                       <p className="text-sm text-gray-600">
-                        Add-ons: {item.order_item_addons.map(addon => addon.addon.name).join(', ')}
+                        Add-ons: {item.order_item_addons.map(addon => addon.addon?.name).filter(Boolean).join(', ')}
                       </p>
                     )}
                     <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-gray-900">
-                      {formatCurrency(item.price * item.quantity)}
+                      {formatCurrency(item.unit_price * item.quantity)}
                     </p>
                   </div>
                 </div>
