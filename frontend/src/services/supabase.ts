@@ -8,6 +8,7 @@ interface Env {
   VITE_RESTAURANT_LAT?: string;
   VITE_RESTAURANT_LNG?: string;
   VITE_RESTAURANT_NAME?: string;
+  VITE_APP_NAME?: string;
   VITE_RESTAURANT_ADDRESS?: string;
   VITE_DELIVERY_RADIUS?: string;
 }
