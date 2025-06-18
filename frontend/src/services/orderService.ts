@@ -37,4 +37,10 @@ export const orderService = {
     const response = await api.patch(`/orders/${id}/status`, statusData);
     return handleApiResponse(response);
   },
+
+  // Customer: Cancel order
+  cancelOrder: async (id: string): Promise<Order> => {
+    const response = await api.patch(`/orders/${id}/cancel`);
+    return handleApiResponse(response);
+  },
 };

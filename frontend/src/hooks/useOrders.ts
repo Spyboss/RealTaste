@@ -67,3 +67,21 @@ export const useUpdateOrderStatus = () => {
     }
   );
 };
+
+export const useCancelOrder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    (id: string) => orderService.cancelOrder(id),
+    {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries(['orders']);
+        queryClient.invalidateQueries(['order', data.id]);
+        toast.success('Order cancelled successfully!');
+      },
+      onError: (error: any) => {
+        toast.error(error.message || 'Failed to cancel order');
+      },
+    }
+  );
+};

@@ -351,6 +351,71 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// PATCH /api/orders/:id/cancel - Cancel order (customer only)
+router.patch('/:id/cancel',
+  authenticateToken,
+  orderLimiter,
+  async (req, res) => {
+    try {
+      // First, get the order to check ownership and current status
+      let query = supabaseAdmin
+        .from(tables.orders)
+        .select('*')
+        .eq('id', req.params.id);
+
+      // If not admin, only allow access to own orders
+      if (req.user?.role !== 'admin') {
+        query = query.eq('customer_id', req.user?.id);
+      }
+
+      const { data: existingOrder, error: fetchError } = await query.single();
+
+      if (fetchError || !existingOrder) {
+        return res.status(404).json({
+          success: false,
+          error: 'Order not found or you do not have permission to cancel this order'
+        });
+      }
+
+      // Check if order can be cancelled
+      const cancellableStatuses = ['received', 'confirmed'];
+      if (!cancellableStatuses.includes(existingOrder.status)) {
+        return res.status(400).json({
+          success: false,
+          error: `Order cannot be cancelled. Current status: ${existingOrder.status}. Orders can only be cancelled when they are 'received' or 'confirmed'.`
+        });
+      }
+
+      // Update order status to cancelled
+      const { data, error } = await supabaseAdmin
+        .from(tables.orders)
+        .update({
+          status: 'cancelled',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', req.params.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const response: ApiResponse<Order> = {
+        success: true,
+        data,
+        message: 'Order cancelled successfully'
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to cancel order'
+      });
+    }
+  }
+);
+
 // PATCH /api/orders/:id/status - Update order status (admin only)
 router.patch('/:id/status',
   authenticateToken,

@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Clock, Package, CheckCircle, XCircle, Phone } from 'lucide-react';
-import { useOrder } from '@/hooks/useOrders';
+import { useOrder, useCancelOrder } from '@/hooks/useOrders';
 import { subscribeToOrderUpdates } from '@/services/supabase';
 import { formatPrice, formatDateTime, getOrderStatusDisplay } from '@/utils/tempUtils';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -10,6 +10,8 @@ import Button from '@/components/ui/Button';
 const OrderDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { data: order, isLoading, error, refetch } = useOrder(id!);
+  const cancelOrderMutation = useCancelOrder();
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // Subscribe to real-time order updates
   useEffect(() => {
@@ -24,6 +26,14 @@ const OrderDetailsPage: React.FC = () => {
       subscription.unsubscribe();
     };
   }, [id, refetch]);
+
+  const handleCancelOrder = () => {
+    if (!id) return;
+    cancelOrderMutation.mutate(id);
+    setShowCancelConfirm(false);
+  };
+
+  const canCancelOrder = order && ['received', 'confirmed'].includes(order.status);
 
   if (isLoading) {
     return (
@@ -209,6 +219,60 @@ const OrderDetailsPage: React.FC = () => {
                 <p className="text-sm text-gray-600">Current status</p>
               </div>
             </div>
+            
+            {/* Cancel Order Button */}
+            {canCancelOrder && (
+              <div className="mt-4 pt-4 border-t">
+                {!showCancelConfirm ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCancelConfirm(true)}
+                    className="w-full text-red-600 border-red-300 hover:bg-red-50"
+                  >
+                    Cancel Order
+                  </Button>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-600">
+                      Are you sure you want to cancel this order? This action cannot be undone.
+                    </p>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowCancelConfirm(false)}
+                        className="flex-1"
+                      >
+                        Keep Order
+                      </Button>
+                      <Button
+                        onClick={handleCancelOrder}
+                        disabled={cancelOrderMutation.isLoading}
+                        className="flex-1 bg-red-600 hover:bg-red-700"
+                        size="sm"
+                      >
+                        {cancelOrderMutation.isLoading ? 'Cancelling...' : 'Yes, Cancel'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Show message for cancelled orders */}
+            {order.status === 'cancelled' && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <XCircle className="w-5 h-5 text-red-500" />
+                  <div>
+                    <h4 className="font-medium text-red-800">Order Cancelled</h4>
+                    <p className="text-red-600 text-sm">
+                      This order has been cancelled.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Payment Summary */}
