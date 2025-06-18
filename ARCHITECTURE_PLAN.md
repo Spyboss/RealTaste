@@ -72,17 +72,6 @@
 
 #### 1.1 Database Schema Updates
 ```sql
--- Create delivery zones table
-CREATE TABLE delivery_zones (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  name TEXT NOT NULL,
-  max_distance_km DECIMAL(5,2) NOT NULL,
-  base_fee DECIMAL(10,2) NOT NULL,
-  per_km_fee DECIMAL(10,2) DEFAULT 0,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
 -- Add delivery fields to orders table
 ALTER TABLE orders ADD COLUMN order_type TEXT DEFAULT 'pickup' CHECK (order_type IN ('pickup', 'delivery'));
 ALTER TABLE orders ADD COLUMN delivery_fee DECIMAL(10,2) DEFAULT 0;
@@ -91,55 +80,116 @@ ALTER TABLE orders ADD COLUMN delivery_latitude DECIMAL(10, 8);
 ALTER TABLE orders ADD COLUMN delivery_longitude DECIMAL(11, 8);
 ALTER TABLE orders ADD COLUMN delivery_distance_km DECIMAL(5, 2);
 ALTER TABLE orders ADD COLUMN estimated_delivery_time TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders ADD COLUMN actual_delivery_time TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders ADD COLUMN delivery_notes TEXT;
+ALTER TABLE orders ADD COLUMN customer_gps_location TEXT; -- For GPS location sharing
 
--- Insert default delivery zones
-INSERT INTO delivery_zones (name, max_distance_km, base_fee, per_km_fee) VALUES
-('Zone 1 (0-2km)', 2.0, 150.00, 0),
-('Zone 2 (2-5km)', 5.0, 150.00, 50.00),
-('Zone 3 (5-10km)', 10.0, 200.00, 75.00);
+-- Create delivery settings table for admin configuration
+CREATE TABLE delivery_settings (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  base_fee DECIMAL(10,2) NOT NULL DEFAULT 180.00, -- LKR 180 for first 1km
+  per_km_fee DECIMAL(10,2) NOT NULL DEFAULT 40.00, -- LKR 40 per additional km
+  max_delivery_range_km DECIMAL(5,2) NOT NULL DEFAULT 5.0, -- 5km maximum
+  min_order_for_delivery DECIMAL(10,2) DEFAULT 0,
+  is_delivery_enabled BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Insert default delivery settings
+INSERT INTO delivery_settings (base_fee, per_km_fee, max_delivery_range_km) 
+VALUES (180.00, 40.00, 5.0);
+
+-- Create delivery time slots table for admin management
+CREATE TABLE delivery_time_slots (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+  estimated_prep_time INTEGER DEFAULT 30, -- minutes
+  estimated_delivery_time INTEGER DEFAULT 20, -- minutes
+  actual_prep_time INTEGER,
+  actual_delivery_time INTEGER,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'preparing', 'ready', 'out_for_delivery', 'delivered')),
+  updated_by UUID REFERENCES users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 ```
 
 #### 1.2 Frontend Components to Create
-- `DeliveryOptionsModal.tsx` - Choose pickup vs delivery
-- `DeliveryAddressForm.tsx` - Enter delivery address
-- `DeliveryFeeCalculator.tsx` - Show delivery costs
-- `OrderTypeSelector.tsx` - Pickup/delivery toggle
+- `OrderTypeSelector.tsx` - Pickup vs delivery selection with range validation
+- `DeliveryAddressForm.tsx` - Address input with GPS location sharing
+- `DeliveryFeeCalculator.tsx` - Real-time fee calculation (LKR 180 + LKR 40/km)
+- `LocationShareButton.tsx` - GPS location sharing for easy delivery
+- `DeliveryRangeChecker.tsx` - Validate if address is within 5km range
+- `PickupInstructions.tsx` - Pickup details and restaurant location
+- `DeliveryTimeEstimator.tsx` - Show estimated delivery time
+- `DeliveryTracker.tsx` - Order status tracking for customers
 
 #### 1.3 Backend Services to Implement
-- Delivery fee calculation API
-- Address validation service
-- Delivery time estimation
-- Order type handling in checkout
+- **Delivery Fee Calculation API**: `/api/delivery/calculate-fee`
+  - Input: customer coordinates, restaurant coordinates
+  - Output: distance, fee breakdown, within range status
+- **Address Validation Service**: `/api/delivery/validate-address`
+  - Geocoding service integration
+  - Distance calculation using Haversine formula
+  - Range validation (5km maximum)
+- **GPS Location Service**: `/api/delivery/share-location`
+  - Store customer GPS coordinates
+  - Generate shareable location links
+- **Delivery Time Management**: `/api/delivery/time-management`
+  - Admin/kitchen time updates
+  - Real-time status tracking
+  - Customer notifications
+- **Order Type Handler**: Enhanced checkout flow
+  - Pickup: No restrictions, no delivery fee
+  - Delivery: Range validation, address required, fee calculation
 
 ### 🎯 Phase 2: Enhanced Admin Features (Week 3-4)
 
-#### 2.1 Menu Management System
+#### 2.1 Delivery Management Dashboard
 - **Components to Create**:
-  - `MenuItemEditor.tsx` - Add/edit menu items
-  - `CategoryManager.tsx` - Manage food categories
-  - `ImageUploader.tsx` - Upload and manage food images
-  - `MenuItemList.tsx` - List and manage all items
+  - `DeliveryDashboard.tsx` - Overview of all delivery orders
+  - `DeliveryTimeManager.tsx` - Update estimated/actual delivery times
+  - `DeliverySettingsPanel.tsx` - Configure delivery fees and range
+  - `ActiveDeliveries.tsx` - Track ongoing deliveries
+  - `DeliveryAnalytics.tsx` - Delivery performance metrics
 
-#### 2.2 System Configuration
+#### 2.2 Kitchen Delivery Integration
+- **Components to Create**:
+  - `KitchenDeliveryQueue.tsx` - Kitchen view of delivery orders
+  - `PrepTimeTracker.tsx` - Track preparation times
+  - `DeliveryReadyNotifier.tsx` - Mark orders ready for delivery
+  - `DeliveryStatusUpdater.tsx` - Update order status from kitchen
+
+#### 2.3 System Configuration
 - **Components to Create**:
   - `RestaurantSettings.tsx` - Restaurant info and location
-  - `DeliverySettings.tsx` - Delivery zones and pricing
+  - `DeliverySettings.tsx` - Configure LKR 180 base + LKR 40/km pricing
   - `PaymentSettings.tsx` - Payment gateway configuration
   - `OperatingHours.tsx` - Set business hours
 
 ### 🎯 Phase 3: Kitchen Dashboard (Week 5)
 
-#### 3.1 Kitchen Interface
+#### 3.1 Kitchen Interface with Delivery Focus
 - **New Pages**:
   - `/kitchen` - Kitchen dashboard route
-  - `KitchenQueue.tsx` - Orders to prepare
-  - `PreparationTimer.tsx` - Cooking timers
+  - `KitchenQueue.tsx` - Orders to prepare (pickup vs delivery priority)
+  - `PreparationTimer.tsx` - Cooking timers with delivery time targets
   - `OrderPreparation.tsx` - Order preparation workflow
+  - `DeliveryReadyQueue.tsx` - Orders ready for pickup/delivery
 
-#### 3.2 Real-time Updates
+#### 3.2 Delivery Time Management
+- **Kitchen Features**:
+  - Update preparation completion times
+  - Mark orders ready for delivery
+  - Communicate with delivery team
+  - Track delivery performance metrics
+
+#### 3.3 Real-time Updates
 - WebSocket integration for live order updates
 - Kitchen notification system
 - Order status synchronization
+- Customer delivery notifications
 
 ## TECHNICAL IMPLEMENTATION DETAILS
 
@@ -161,13 +211,47 @@ interface DeliveryCalculation {
   distanceFee: number;
   totalFee: number;
   estimatedTime: string;
+  isWithinRange: boolean;
 }
 
-// Pricing Structure:
-// Zone 1 (0-2km): LKR 150 base fee
-// Zone 2 (2-5km): LKR 150 + LKR 50/km beyond 2km
-// Zone 3 (5-10km): LKR 200 + LKR 75/km beyond 5km
-// Free delivery for orders above LKR 2000
+// Updated Pricing Structure (Client Requirements):
+// Base Fee: LKR 180 for first 1km
+// Additional: LKR 40 per km for 1-5km range
+// Maximum Delivery Range: 5km (no delivery beyond this)
+// Pickup Orders: Available for all customers (no distance restriction)
+// Example: 3km delivery = 180 + (2 × 40) = LKR 260
+
+function calculateDeliveryFee(distanceKm: number): DeliveryCalculation {
+  const baseFee = 180; // LKR 180 for first 1km
+  const perKmFee = 40; // LKR 40 per additional km
+  const maxDeliveryRange = 5; // 5km maximum
+  
+  if (distanceKm > maxDeliveryRange) {
+    return {
+      zone: null,
+      distance: distanceKm,
+      baseFee: 0,
+      distanceFee: 0,
+      totalFee: 0,
+      estimatedTime: 'N/A',
+      isWithinRange: false
+    };
+  }
+  
+  const additionalKm = Math.max(0, distanceKm - 1);
+  const distanceFee = additionalKm * perKmFee;
+  const totalFee = baseFee + distanceFee;
+  
+  return {
+    zone: { id: '1', name: 'Delivery Zone', maxDistanceKm: 5, baseFee, perKmFee, isActive: true },
+    distance: distanceKm,
+    baseFee,
+    distanceFee,
+    totalFee,
+    estimatedTime: `${Math.ceil(distanceKm * 8 + 15)} minutes`, // Estimated delivery time
+    isWithinRange: true
+  };
+}
 ```
 
 ### 3. Enhanced Admin Dashboard
@@ -237,28 +321,31 @@ interface DeliveryCalculation {
 
 ## 🚀 IMMEDIATE ACTION PLAN (Next 7 Days)
 
-### Day 1-2: Delivery Database Setup
+### Day 1-2: Delivery Database & Pricing Setup
 1. **Create delivery migration file**:
    ```bash
    # Create new migration
-   touch supabase/migrations/$(date +%Y%m%d)_add_delivery_features.sql
+   touch supabase/migrations/$(date +%Y%m%d)_add_delivery_system.sql
    ```
+2. **Implement LKR 180 base + LKR 40/km pricing structure**
+3. **Add GPS location sharing fields**
+4. **Test database changes in development**
+5. **Deploy to production**
 
-2. **Apply delivery schema updates**
-3. **Test database changes in development**
-4. **Deploy to production**
+### Day 3-4: Core Delivery Frontend
+1. **Create `OrderTypeSelector.tsx` - Pickup vs Delivery choice**
+2. **Create `DeliveryAddressForm.tsx` - Address input + GPS sharing**
+3. **Create `DeliveryFeeCalculator.tsx` - Real-time fee calculation**
+4. **Create `DeliveryRangeChecker.tsx` - 5km range validation**
+5. **Update checkout flow for delivery/pickup selection**
 
-### Day 3-4: Delivery Frontend Components
-1. **Create `DeliveryOptionsModal.tsx`**
-2. **Create `DeliveryAddressForm.tsx`**
-3. **Update checkout flow for delivery selection**
-4. **Implement delivery fee calculation**
-
-### Day 5-7: Backend Delivery Logic
-1. **Add delivery endpoints to backend**
-2. **Implement delivery fee calculation API**
-3. **Update order creation to handle delivery**
-4. **Test end-to-end delivery flow**
+### Day 5-7: Backend Delivery Logic & Admin Features
+1. **Implement delivery fee calculation API (LKR 180 + LKR 40/km)**
+2. **Add GPS location sharing endpoints**
+3. **Create delivery time management APIs**
+4. **Build admin delivery dashboard components**
+5. **Test complete pickup/delivery flow**
+6. **Add kitchen delivery time update functionality**
 
 ## 📋 DEVELOPMENT CHECKLIST
 
@@ -272,27 +359,33 @@ interface DeliveryCalculation {
 - [x] Order cancellation
 - [x] Real-time order updates
 
-### 🔄 In Progress (Current Sprint)
-- [ ] Delivery system implementation
-- [ ] Order type selection (pickup vs delivery)
-- [ ] Delivery fee calculation
-- [ ] Delivery address management
+### 🔄 In Progress (Current Sprint - Delivery System)
+- [ ] **Order Type Selection**: Pickup (no restrictions) vs Delivery (5km range)
+- [ ] **Delivery Fee Calculation**: LKR 180 base + LKR 40/km (1-5km range)
+- [ ] **Address Input & GPS Sharing**: Customer location capture
+- [ ] **Range Validation**: 5km maximum delivery distance
+- [ ] **Admin Delivery Management**: Time updates and tracking
+- [ ] **Kitchen Delivery Integration**: Preparation and delivery time tracking
 
 ### 📅 Planned (Next Sprints)
 - [ ] Enhanced admin menu management
 - [ ] Image upload functionality
-- [ ] Kitchen dashboard
-- [ ] Advanced analytics
+- [ ] Advanced delivery analytics
+- [ ] Customer delivery tracking
 - [ ] Staff management system
+- [ ] Delivery performance optimization
 
 ## 🎯 SUCCESS METRICS
 
 ### Phase 1 Success Criteria (Delivery System)
-- [ ] Users can select pickup or delivery
-- [ ] Delivery fees calculated correctly based on distance
-- [ ] Delivery addresses captured and validated
-- [ ] Orders show estimated delivery time
-- [ ] Admin can see delivery vs pickup orders
+- [ ] **Pickup Orders**: Available to all customers (no distance restrictions)
+- [ ] **Delivery Orders**: Only within 5km range from restaurant
+- [ ] **Delivery Fee Calculation**: LKR 180 (first 1km) + LKR 40/km (additional km)
+- [ ] **Address Input**: Required for delivery orders with GPS location sharing
+- [ ] **Range Validation**: Automatic 5km distance checking
+- [ ] **Admin Dashboard**: Delivery time management and order tracking
+- [ ] **Kitchen Integration**: Delivery time updates and status management
+- [ ] **Customer Experience**: Clear pickup vs delivery options with real-time fee calculation
 
 ### Phase 2 Success Criteria (Enhanced Admin)
 - [ ] Admin can add/edit menu items
