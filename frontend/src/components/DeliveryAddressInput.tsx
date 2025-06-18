@@ -104,7 +104,9 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
         }
 
         onCoordinatesChange({ lat: latitude, lng: longitude });
-        onGpsLocationChange(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        const gpsLocationString = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        onGpsLocationChange(gpsLocationString);
+        onCustomerGpsLocationChange(gpsLocationString);
         setIsGettingLocation(false);
       },
       (error) => {
@@ -190,6 +192,11 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
               <strong>GPS Location:</strong> {gpsLocation}
             </span>
           </div>
+          {customerGpsLocation && customerGpsLocation !== gpsLocation && (
+            <div className="mt-2 text-xs text-gray-600">
+              <strong>Customer GPS:</strong> {customerGpsLocation}
+            </div>
+          )}
         </div>
       )}
 
@@ -201,7 +208,7 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
         </div>
       )}
 
-      {deliveryCalculation && (
+      {deliveryCalculation ? (
         <div className={`mb-4 p-3 rounded-lg border ${
           deliveryCalculation.isWithinRange
             ? 'bg-green-50 border-green-200'
@@ -225,6 +232,27 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
             </div>
           )}
         </div>
+      ) : (
+        deliveryFee > 0 && (
+          <div className={`mb-4 p-3 rounded-lg border ${
+            isWithinRange
+              ? 'bg-green-50 border-green-200'
+              : 'bg-red-50 border-red-200'
+          }`}>
+            {isWithinRange ? (
+              <div className="text-green-700">
+                <div className="font-medium mb-2">✓ Delivery Available</div>
+                <div className="text-sm">
+                  <div>Delivery Fee: LKR {deliveryFee.toFixed(2)}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-red-700">
+                <div className="font-medium mb-2">✗ Outside Delivery Range</div>
+              </div>
+            )}
+          </div>
+        )
       )}
 
       {/* Delivery Notes */}

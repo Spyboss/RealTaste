@@ -51,6 +51,7 @@ const CheckoutPage: React.FC = () => {
   const [deliveryFee, setDeliveryFee] = React.useState<number>(0);
   const [isWithinRange, setIsWithinRange] = React.useState<boolean>(true);
   const [customerGpsLocation, setCustomerGpsLocation] = React.useState<string>('');
+  const [gpsLocation, setGpsLocation] = React.useState<string>('');
 
   const {
     register,
@@ -295,19 +296,21 @@ const CheckoutPage: React.FC = () => {
             {/* Delivery Address */}
             {orderType === 'delivery' && (
               <DeliveryAddressInput
-                address={deliveryAddress}
-                notes={deliveryNotes}
-                coordinates={deliveryCoordinates}
-                customerGpsLocation={customerGpsLocation}
-                deliveryFee={deliveryFee}
-                isWithinRange={isWithinRange}
-                onAddressChange={setDeliveryAddress}
-                onNotesChange={setDeliveryNotes}
-                onCoordinatesChange={setDeliveryCoordinates}
-                onCustomerGpsLocationChange={setCustomerGpsLocation}
-                onDeliveryFeeChange={setDeliveryFee}
-                onRangeStatusChange={setIsWithinRange}
-              />
+              address={deliveryAddress}
+              notes={deliveryNotes}
+              coordinates={deliveryCoordinates}
+              gpsLocation={gpsLocation}
+              onGpsLocationChange={setGpsLocation}
+              customerGpsLocation={customerGpsLocation}
+              deliveryFee={deliveryFee}
+              isWithinRange={isWithinRange}
+              onAddressChange={setDeliveryAddress}
+              onNotesChange={setDeliveryNotes}
+              onCoordinatesChange={setDeliveryCoordinates}
+              onCustomerGpsLocationChange={setCustomerGpsLocation}
+              onDeliveryFeeChange={setDeliveryFee}
+              onRangeStatusChange={setIsWithinRange}
+            />
             )}
 
             {/* Payment Method */}
