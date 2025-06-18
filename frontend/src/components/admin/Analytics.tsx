@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { formatPrice } from '@/utils/tempUtils';
 import { AnalyticsData } from '@/types/shared';
 import { Download } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
 interface AnalyticsProps {
@@ -14,34 +14,46 @@ interface AnalyticsProps {
 const Analytics: React.FC<AnalyticsProps> = ({ stats, isLoading }) => {
   const [chartType, setChartType] = useState<'orders' | 'revenue'>('orders');
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!stats || stats.stats.length === 0) return;
 
     // Create a new workbook
-    const workbook = XLSX.utils.book_new();
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Analytics');
 
-    // Prepare data for export
-    const exportData = stats.stats.map(day => ({
-      Date: day.date,
-      Orders: day.total_orders,
-      Revenue: day.total_revenue,
-      AvgOrderValue: day.avg_order_value,
-      PopularItems: day.popular_items.map(item => `${item.menu_item_name} (${item.quantity_sold} sold)`).join(', ')
-    }));
+    // Add headers
+    worksheet.columns = [
+      { header: 'Date', key: 'date', width: 15 },
+      { header: 'Orders', key: 'orders', width: 10 },
+      { header: 'Revenue', key: 'revenue', width: 15 },
+      { header: 'Avg Order Value', key: 'avgOrderValue', width: 18 },
+      { header: 'Popular Items', key: 'popularItems', width: 50 }
+    ];
 
-    // Create a worksheet
-    const worksheet = XLSX.utils.json_to_sheet(exportData, {
-      header: ['Date', 'Orders', 'Revenue', 'Avg Order Value', 'Popular Items'],
+    // Add data rows
+    stats.stats.forEach(day => {
+      worksheet.addRow({
+        date: day.date,
+        orders: day.total_orders,
+        revenue: day.total_revenue,
+        avgOrderValue: day.avg_order_value,
+        popularItems: day.popular_items.map(item => `${item.menu_item_name} (${item.quantity_sold} sold)`).join(', ')
+      });
     });
 
-    // Add the worksheet to the workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Analytics');
+    // Style the header row
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE6E6FA' }
+    };
 
     // Generate the Excel file
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const buffer = await workbook.xlsx.writeBuffer();
 
     // Save the file
-    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     saveAs(blob, `real_taste_analytics_${stats.timeframe}.xlsx`);
   };
 
