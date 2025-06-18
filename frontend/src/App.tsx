@@ -16,6 +16,7 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import OrdersPage from '@/pages/OrdersPage';
 import OrderDetailsPage from '@/pages/OrderDetailsPage';
+import OrderConfirmationPage from '@/pages/OrderConfirmationPage';
 import CheckoutPage from '@/pages/CheckoutPage';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 
@@ -96,6 +97,12 @@ function App() {
             <Route path="/checkout" element={
               <Layout>
                 <CheckoutPage />
+              </Layout>
+            } />
+
+            <Route path="/order-confirmation/:orderId" element={
+              <Layout>
+                <OrderConfirmationPage />
               </Layout>
             } />
 
