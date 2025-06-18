@@ -4,44 +4,7 @@ import { CheckCircle, Clock, Phone } from 'lucide-react';
 import { useQuery } from 'react-query';
 import { api } from '../services/api';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { formatCurrency } from '@/types/shared';
-
-interface OrderItem {
-  id: string;
-  quantity: number;
-  price: number;
-  menu_item: {
-    name: string;
-    image_url?: string;
-  };
-  variant?: {
-    name: string;
-    price: number;
-  };
-  order_item_addons: Array<{
-    addon: {
-      name: string;
-      price: number;
-    };
-  }>;
-}
-
-interface Order {
-  id: string;
-  customer_name: string;
-  customer_phone: string;
-  order_type: 'pickup' | 'delivery';
-  delivery_address?: string;
-  status: string;
-  payment_method: string;
-  payment_status: string;
-  subtotal: number;
-  tax_amount: number;
-  total_amount: number;
-  estimated_pickup_time?: string;
-  created_at: string;
-  order_items: OrderItem[];
-}
+import { formatCurrency, Order } from '@/types/shared';
 
 const OrderConfirmationPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -51,7 +14,7 @@ const OrderConfirmationPage: React.FC = () => {
     ['order', orderId],
     async () => {
       const response = await api.get(`/orders/${orderId}`);
-      return response.data.data;
+      return response.data.data as Order;
     },
     {
       enabled: !!orderId,
