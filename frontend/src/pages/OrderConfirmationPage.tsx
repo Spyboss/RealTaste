@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { CheckCircleIcon, ClockIcon, PhoneIcon } from '@heroicons/react/24/outline';
+import { CheckCircle, Clock, Phone } from 'lucide-react';
 import { useQuery } from 'react-query';
-import { api } from '@/lib/api';
+import { api } from '../services/api';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatCurrency } from '@/types/shared';
 
@@ -123,7 +123,7 @@ const OrderConfirmationPage: React.FC = () => {
     <div className="max-w-3xl mx-auto px-4 py-8">
       {/* Success Header */}
       <div className="text-center mb-8">
-        <CheckCircleIcon className="mx-auto h-16 w-16 text-green-500 mb-4" />
+        <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Order Confirmed!
         </h1>
@@ -152,7 +152,7 @@ const OrderConfirmationPage: React.FC = () => {
               <h3 className="text-sm font-medium text-gray-500 mb-1">Customer</h3>
               <p className="text-gray-900">{order.customer_name}</p>
               <div className="flex items-center mt-1">
-                <PhoneIcon className="h-4 w-4 text-gray-400 mr-1" />
+                <Phone className="h-4 w-4 text-gray-400 mr-1" />
                 <span className="text-gray-600">{order.customer_phone}</span>
               </div>
             </div>
@@ -169,7 +169,7 @@ const OrderConfirmationPage: React.FC = () => {
           {order.estimated_pickup_time && (
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
               <div className="flex items-center">
-                <ClockIcon className="h-5 w-5 text-orange-500 mr-2" />
+                <Clock className="h-5 w-5 text-orange-500 mr-2" />
                 <div>
                   <p className="text-sm font-medium text-orange-800">
                     Estimated {order.order_type === 'delivery' ? 'Delivery' : 'Pickup'} Time
