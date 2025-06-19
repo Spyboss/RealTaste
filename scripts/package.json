@@ -1,0 +1,15 @@
+{
+  "name": "realtaste-scripts",
+  "version": "1.0.0",
+  "description": "Database maintenance scripts for RealTaste",
+  "main": "fix-database.js",
+  "scripts": {
+    "fix-db": "node fix-database.js",
+    "update-images": "node -e \"require('./fix-database').updateImages()\"",
+    "update-pricing": "node -e \"require('./fix-database').updatePricing()\""
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "dotenv": "^16.3.1"
+  }
+}

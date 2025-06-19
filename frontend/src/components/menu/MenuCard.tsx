@@ -15,7 +15,19 @@ const MenuCard: React.FC<MenuCardProps> = ({ item }) => {
   const { addItem } = useCartStore();
 
   const hasVariantsOrAddons = (item.variants && item.variants.length > 0) ||
-                              (item.addons && item.addons.length > 0);
+                              (item.menu_variants && item.menu_variants.length > 0) ||
+                              (item.addons && item.addons.length > 0) ||
+                              (item.menu_addons && item.menu_addons.length > 0);
+
+  // Get the lowest price (base price + smallest variant modifier)
+  const getLowestPrice = () => {
+    const variants = item.variants || item.menu_variants || [];
+    if (variants.length === 0) {
+      return item.base_price;
+    }
+    const lowestModifier = Math.min(...variants.map(v => v.price_modifier || 0));
+    return item.base_price + lowestModifier;
+  };
 
   const handleQuickAdd = () => {
     if (hasVariantsOrAddons) {
@@ -72,7 +84,7 @@ const MenuCard: React.FC<MenuCardProps> = ({ item }) => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <span className="text-xl font-bold text-primary-600">
-                {formatPrice(item.base_price)}
+                {formatPrice(getLowestPrice())}
               </span>
               {hasVariantsOrAddons && (
                 <span className="text-sm text-gray-500 ml-1">starting from</span>

@@ -12,8 +12,12 @@ interface MenuItemModalProps {
 }
 
 const MenuItemModal: React.FC<MenuItemModalProps> = ({ item, isOpen, onClose }) => {
+  // Get variants from either variants or menu_variants
+  const variants = item.variants || item.menu_variants || [];
+  const addons = item.addons || item.menu_addons || [];
+  
   const [selectedVariant, setSelectedVariant] = useState<MenuVariant | undefined>(
-    item.variants?.[0]
+    variants[0]
   );
   const [selectedAddons, setSelectedAddons] = useState<MenuAddon[]>([]);
   const [quantity, setQuantity] = useState(1);
@@ -89,11 +93,11 @@ const MenuItemModal: React.FC<MenuItemModalProps> = ({ item, isOpen, onClose }) 
             )}
 
             {/* Variants */}
-            {item.variants && item.variants.length > 0 && (
+            {variants && variants.length > 0 && (
               <div>
                 <h3 className="font-medium text-gray-900 mb-3">Size</h3>
                 <div className="space-y-2">
-                  {item.variants.map((variant) => (
+                  {variants.map((variant) => (
                     <label
                       key={variant.id}
                       className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
@@ -119,11 +123,11 @@ const MenuItemModal: React.FC<MenuItemModalProps> = ({ item, isOpen, onClose }) 
             )}
 
             {/* Add-ons */}
-            {item.addons && item.addons.length > 0 && (
+            {addons && addons.length > 0 && (
               <div>
                 <h3 className="font-medium text-gray-900 mb-3">Add-ons</h3>
                 <div className="space-y-2">
-                  {item.addons.map((addon) => (
+                  {addons.map((addon) => (
                     <label
                       key={addon.id}
                       className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50"

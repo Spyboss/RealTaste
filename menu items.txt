@@ -89,7 +89,3 @@ Sea Food Koththu - 750, 950.
 Mix Koththu - 800, 1000.
 Vegetable Koththu - 400, 500.
 
-Now i need you to think how to showcase all these to the customers/users beautifully and place orders, calculate totals. Ui should be intuitive, modern and visally appealing right/ UX should be easy and fast too right?
-Design and Implement Everything nicely! As for the pictures, browse the internet and get the links and update/put them in the relavent supabase tables.(example sites to look for pictures - unsplash.com, pixabay.com, pexels.com and many more... )
-Inorder to apply everything safely, first nalyse what code, db tables are already inplace and build based on them and make fixes.
-After everything remember to push changes to github since we are already on production.
