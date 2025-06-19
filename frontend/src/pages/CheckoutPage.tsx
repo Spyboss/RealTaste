@@ -147,7 +147,7 @@ const CheckoutPage: React.FC = () => {
       const orderData: CreateOrderRequest = {
         customer_phone: data.customerPhone,
         customer_name: data.customerName || undefined,
-        payment_method: data.paymentMethod === 'card' ? 'payhere' : 'cash',
+        payment_method: data.paymentMethod,
         order_type: data.orderType,
         delivery_address: data.orderType === 'delivery' ? deliveryAddress : undefined,
         delivery_latitude: data.orderType === 'delivery' ? deliveryCoordinates?.lat : undefined,
@@ -185,8 +185,8 @@ const CheckoutPage: React.FC = () => {
 
           // PayHere payment
           const payment = {
-            sandbox: import.meta.env.VITE_PAYHERE_SANDBOX === 'true',
-            merchant_id: import.meta.env.VITE_PAYHERE_MERCHANT_ID || '1230547',
+            sandbox: true, // Use sandbox for testing
+            merchant_id: '1230547', // Your PayHere merchant ID
             return_url: `${window.location.origin}/payment/success?order_id=${orderId}`,
             cancel_url: `${window.location.origin}/payment/cancelled?order_id=${orderId}`,
             notify_url: `${window.location.origin}/api/payments/payhere/notify`,

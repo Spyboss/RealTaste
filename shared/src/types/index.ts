@@ -105,7 +105,7 @@ export type OrderStatus =
   | 'picked_up'
   | 'cancelled';
 
-export type PaymentMethod = 'card' | 'cash' | 'payhere';
+export type PaymentMethod = 'card' | 'cash';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 
 // API Request/Response Types
