@@ -60,9 +60,11 @@ const Header: React.FC = () => {
           {/* Logo and Restaurant Name */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">R</span>
-              </div>
+              <img 
+                src="/favicon-32x32.png" 
+                alt="RealTaste Logo" 
+                className="w-8 h-8 rounded-lg"
+              />
               <div>
                 <h1 className="text-xl font-bold text-gray-900">{restaurantName}</h1>
                 <div className="flex items-center space-x-2">
