@@ -7,6 +7,14 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Copy shared package first for production dependencies
+COPY ../shared /app/shared
+WORKDIR /app/shared
+RUN npm install --only=production && npm run build
+
+# Go back to backend directory
+WORKDIR /app
+
 # Copy package files (we're building from backend directory)
 COPY package*.json ./
 
@@ -21,7 +29,15 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# Copy source code
+# Copy shared package first
+COPY ../shared /app/shared
+WORKDIR /app/shared
+RUN npm install && npm run build
+
+# Go back to backend directory
+WORKDIR /app
+
+# Copy backend source code
 COPY . .
 
 # Build backend
@@ -34,6 +50,10 @@ WORKDIR /app
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nodejs
+
+# Copy built shared package
+COPY --from=builder --chown=nodejs:nodejs /app/shared/dist ./shared/dist
+COPY --from=builder --chown=nodejs:nodejs /app/shared/package.json ./shared/
 
 # Copy built application (we're building from backend directory)
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
