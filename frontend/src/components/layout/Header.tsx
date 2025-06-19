@@ -18,8 +18,6 @@ import { useCartStore } from '@/stores/cartStore';
 import { useBusinessStore } from '@/stores/businessStore';
 import Button from '@/components/ui/Button';
 import { Dropdown, DropdownItem, DropdownSeparator } from '@/components/ui/Dropdown';
-import { motion, AnimatePresence } from 'framer-motion';
-
 
 const Header: React.FC = () => {
   const location = useLocation();
