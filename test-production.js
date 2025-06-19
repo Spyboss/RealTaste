@@ -40,7 +40,7 @@ async function testProductionAPI() {
 
     // Test order creation
     const orderData = {
-      customer_phone: '+94771234567',
+      customer_phone: '+94 76 195 2541',
       customer_name: 'Test Customer',
       payment_method: 'card', // Test with card payment method
       notes: 'Test order from production test',

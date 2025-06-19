@@ -34,7 +34,7 @@ async function testOrderCreation() {
 
     // Create a test order
     const orderData = {
-      customer_phone: '+94771234567',
+      customer_phone: '+94 76 195 2541',
       customer_name: 'Test Customer',
       payment_method: 'cash',
       notes: 'Test order from script',

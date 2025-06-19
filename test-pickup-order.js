@@ -6,7 +6,7 @@ async function testPickupOrder() {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        customer_phone: '+94771234567',
+        customer_phone: '+94 76 195 2541',
         customer_name: 'Test Customer',
         payment_method: 'cash',
         order_type: 'pickup',

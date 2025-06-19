@@ -34,7 +34,7 @@ async function createTestOrders() {
     // Create 5 test orders with different items and customers
     const testOrders = [
       {
-        customer_phone: '+94771234567',
+        customer_phone: '+94 76 195 2541',
         customer_name: 'John Silva',
         payment_method: 'cash',
         notes: 'Test order 1 - Regular customer',

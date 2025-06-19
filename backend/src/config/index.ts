@@ -49,7 +49,7 @@ export const config = {
   // Business
   business: {
     name: process.env.RESTAURANT_NAME || 'RealTaste',
-    phone: process.env.RESTAURANT_PHONE || '+94771234567',
+    phone: process.env.RESTAURANT_PHONE || '+94 76 195 2541',
     openTime: process.env.BUSINESS_OPEN_TIME || '10:00',
     closeTime: process.env.BUSINESS_CLOSE_TIME || '22:00',
     timezone: 'Asia/Colombo',

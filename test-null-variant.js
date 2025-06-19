@@ -12,7 +12,7 @@ async function testNullVariant() {
     const firstItem = menuResponse.data.data[0].menu_items[0];
 
     const orderData = {
-      customer_phone: '+94771234567',
+      customer_phone: '+94 76 195 2541',
       customer_name: 'Test Customer',
       payment_method: 'cash',
       notes: 'Test order',

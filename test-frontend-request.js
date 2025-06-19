@@ -18,7 +18,7 @@ async function testFrontendRequest() {
       {
         name: 'Basic item (like our test)',
         data: {
-          customer_phone: '+94771234567',
+          customer_phone: '+94 76 195 2541',
           customer_name: 'Test Customer',
           payment_method: 'cash',
           notes: 'Test order',
@@ -34,7 +34,7 @@ async function testFrontendRequest() {
       {
         name: 'Item with empty addon_ids array',
         data: {
-          customer_phone: '+94771234567',
+          customer_phone: '+94 76 195 2541',
           customer_name: 'Test Customer',
           payment_method: 'cash',
           notes: 'Test order',
@@ -51,7 +51,7 @@ async function testFrontendRequest() {
       {
         name: 'Item with null variant_id',
         data: {
-          customer_phone: '+94771234567',
+          customer_phone: '+94 76 195 2541',
           customer_name: 'Test Customer',
           payment_method: 'cash',
           notes: 'Test order',
@@ -69,7 +69,7 @@ async function testFrontendRequest() {
       {
         name: 'Item with undefined variant_id',
         data: {
-          customer_phone: '+94771234567',
+          customer_phone: '+94 76 195 2541',
           customer_name: 'Test Customer',
           payment_method: 'cash',
           notes: 'Test order',
