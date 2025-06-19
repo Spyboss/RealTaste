@@ -1,8 +1,3 @@
-# fly.toml app configuration file generated for realtaste-api on 2025-05-23T21:32:23+05:30
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
-
 app = "realtaste"
 primary_region = "sin"
 kill_signal = "SIGINT"
@@ -12,11 +7,8 @@ kill_timeout = "5s"
   auto_rollback = true
 
 [build]
-  dockerfile = 'backend/Dockerfile'
-  build_context = '..'
-
-# [deploy]
-#   release_command = "echo 'Deployment successful'"
+  dockerfile = "backend/Dockerfile"
+  build_context = ".."
 
 [env]
   NODE_ENV = "production"
