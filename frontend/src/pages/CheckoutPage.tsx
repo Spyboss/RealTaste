@@ -105,6 +105,30 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
+  // PayHere payment callbacks
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && window.payhere) {
+      window.payhere.onCompleted = function(orderId: string) {
+        console.log('Payment completed for order:', orderId);
+        clearCart();
+        toast.success('Payment successful! Order placed.');
+        navigate(`/payment/success?order_id=${orderId}`);
+      };
+
+      window.payhere.onDismissed = function() {
+        console.log('Payment dismissed');
+        toast.error('Payment was cancelled');
+        setIsSubmitting(false);
+      };
+
+      window.payhere.onError = function(error: string) {
+        console.error('Payment error:', error);
+        toast.error('Payment failed. Please try again.');
+        setIsSubmitting(false);
+      };
+    }
+  }, [navigate, clearCart]);
+
   const onSubmit = async (data: CheckoutForm) => {
     // Check if delivery is selected but required data is missing
     if (data.orderType === 'delivery') {
@@ -123,7 +147,7 @@ const CheckoutPage: React.FC = () => {
       const orderData: CreateOrderRequest = {
         customer_phone: data.customerPhone,
         customer_name: data.customerName || undefined,
-        payment_method: data.paymentMethod,
+        payment_method: data.paymentMethod === 'card' ? 'payhere' : 'cash',
         order_type: data.orderType,
         delivery_address: data.orderType === 'delivery' ? deliveryAddress : undefined,
         delivery_latitude: data.orderType === 'delivery' ? deliveryCoordinates?.lat : undefined,
@@ -144,16 +168,31 @@ const CheckoutPage: React.FC = () => {
       
       try {
         if (data.paymentMethod === 'card') {
+          // Check if PayHere is loaded
+          if (!window.payhere || !window.payhere.startPayment) {
+            throw new Error('PayHere payment gateway is not available. Please try again.');
+          }
+
+          // First create the order to get the order ID
+          const result = await api.post('/orders', orderData);
+          console.log('Order creation result:', result.data);
+          const orderId = (result.data as any).data?.id;
+          console.log('Extracted order ID:', orderId);
+          
+          if (!orderId) {
+            throw new Error('Order ID not found in response');
+          }
+
           // PayHere payment
           const payment = {
-            sandbox: true, // Set to false for production
-            merchant_id: '1228716',
-            return_url: `${window.location.origin}/payment/success`,
-            cancel_url: `${window.location.origin}/payment/cancelled`,
+            sandbox: import.meta.env.VITE_PAYHERE_SANDBOX === 'true',
+            merchant_id: import.meta.env.VITE_PAYHERE_MERCHANT_ID || '1230547',
+            return_url: `${window.location.origin}/payment/success?order_id=${orderId}`,
+            cancel_url: `${window.location.origin}/payment/cancelled?order_id=${orderId}`,
             notify_url: `${window.location.origin}/api/payments/payhere/notify`,
-            order_id: `ORDER_${Date.now()}`,
+            order_id: orderId,
             items: 'Food Order',
-            amount: (subtotal + currentDeliveryFee + (data.paymentMethod === 'card' ? onlinePaymentFee : 0)).toFixed(2),
+            amount: (subtotal + currentDeliveryFee + onlinePaymentFee).toFixed(2),
             currency: 'LKR',
             first_name: data.customerName || 'Customer',
             last_name: '',
@@ -184,7 +223,10 @@ const CheckoutPage: React.FC = () => {
         console.error('Order creation failed:', error);
         toast.error('Failed to place order. Please try again.');
       } finally {
-        setIsSubmitting(false);
+        if (data.paymentMethod !== 'card') {
+          setIsSubmitting(false);
+        }
+        // For card payments, setIsSubmitting(false) is handled in PayHere callbacks
       }
     } catch (error) {
       console.error('Form validation error:', error);

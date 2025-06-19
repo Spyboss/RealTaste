@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 const PaymentCancelledPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get('orderId');
+  const orderId = searchParams.get('order_id') || searchParams.get('orderId');
 
   useEffect(() => {
     // Show cancellation message

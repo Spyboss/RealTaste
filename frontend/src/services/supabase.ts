@@ -11,6 +11,8 @@ interface Env {
   VITE_APP_NAME?: string;
   VITE_RESTAURANT_ADDRESS?: string;
   VITE_DELIVERY_RADIUS?: string;
+  VITE_PAYHERE_SANDBOX?: string;
+  VITE_PAYHERE_MERCHANT_ID?: string;
 }
 
 declare global {
