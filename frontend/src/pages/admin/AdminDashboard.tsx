@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAdminStore } from '@/stores/adminStore';
 import { useUpdateOrderPriority } from '@/hooks/useAdmin';
 import DashboardStats from '@/components/admin/DashboardStats';
@@ -18,10 +18,12 @@ const AdminDashboard: React.FC = () => {
     topItems,
     trendsData,
     isLoading: adminStoreLoading,
+    isQueueLoading,
     error: adminStoreError,
     fetchDailySummary: storeFetchDailySummary,
     fetchTopItems: storeFetchTopItems,
     fetchTrendsData: storeFetchTrendsData,
+    fetchOrderQueue: storeFetchOrderQueue,
     subscribeToOrders: storeSubscribeToOrders,
     lastUpdated,
     isRealtimeConnected,
@@ -32,10 +34,12 @@ const AdminDashboard: React.FC = () => {
       topItems: state.topItems,
       trendsData: state.trendsData,
       isLoading: state.isLoading,
+      isQueueLoading: state.isQueueLoading,
       error: state.error,
       fetchDailySummary: state.fetchDailySummary,
       fetchTopItems: state.fetchTopItems,
       fetchTrendsData: state.fetchTrendsData,
+      fetchOrderQueue: state.fetchOrderQueue,
       subscribeToOrders: state.subscribeToOrders,
       lastUpdated: state.lastUpdated,
       isRealtimeConnected: state.isRealtimeConnected,
@@ -43,45 +47,82 @@ const AdminDashboard: React.FC = () => {
   );
 
   const [activeTab, setActiveTab] = useState('dashboard');
-  const isQueueLoading = useAdminStore(state => state.isLoading);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
 
   const { mutate: updatePriority } = useUpdateOrderPriority();
 
   useEffect(() => {
-    if (activeTab === 'dashboard' || activeTab === 'analytics') {
-      storeFetchDailySummary();
-      storeFetchTopItems();
-      storeFetchTrendsData();
-    }
+    const loadInitialData = async () => {
+      try {
+        // Load dashboard and analytics data on first load
+        if (!hasInitiallyLoaded && (activeTab === 'dashboard' || activeTab === 'analytics')) {
+          await storeFetchDailySummary();
+          await storeFetchTopItems();
+          await storeFetchTrendsData();
+          setHasInitiallyLoaded(true);
+        }
+        
+        // Load order queue data when switching to queue tab
+        if (activeTab === 'queue') {
+          await storeFetchOrderQueue();
+        }
+      } catch (error) {
+        console.error('Failed to load admin data:', error);
+      }
+    };
 
-    // Initialize realtime subscription
+    loadInitialData();
+  }, [activeTab, hasInitiallyLoaded, storeFetchDailySummary, storeFetchTopItems, storeFetchTrendsData, storeFetchOrderQueue]);
+
+  // Initialize realtime subscription separately
+  useEffect(() => {
     const unsubscribe = storeSubscribeToOrders();
 
     return () => {
       console.log('AdminDashboard unmounting - cleaning up realtime subscription');
       unsubscribe();
     };
-  }, []);
+  }, [storeSubscribeToOrders]);
 
   const handlePriorityChange = (orderId: string, priority: number) => {
     updatePriority({ orderId, priority: String(priority) });
   };
 
-  const dashboardStatsData: DashboardStatsType | null =
-    dailySummary && topItems && trendsData ? {
+  const dashboardStatsData: DashboardStatsType | null = useMemo(() => {
+    if (!dailySummary || !topItems || !trendsData) return null;
+
+    // Calculate completed orders from queue data
+    const completedOrders = orderQueue.filter(o => o.status === 'completed').length;
+    
+    // Calculate average prep time from completed orders
+    const completedOrdersWithTimes = orderQueue.filter(o => 
+      o.status === 'completed' && 
+      o.created_at && o.updated_at
+    );
+    
+    const avgPrepTime = completedOrdersWithTimes.length > 0 
+      ? completedOrdersWithTimes.reduce((acc, order) => {
+          const createdTime = new Date(order.created_at!).getTime();
+          const updatedTime = new Date(order.updated_at!).getTime();
+          return acc + (updatedTime - createdTime);
+        }, 0) / completedOrdersWithTimes.length / (1000 * 60) // Convert to minutes
+      : 0;
+
+    return {
       timeframe: 'today',
       stats: {
         total_revenue: dailySummary.total_revenue || 0,
         total_orders: dailySummary.total_orders || 0,
         avg_order_value: dailySummary.avg_order_value || 0,
-        completed_orders: 0,
-        avg_prep_time: 0,
+        completed_orders: completedOrders,
+        avg_prep_time: Math.round(avgPrepTime),
         popular_items: topItems.map(item => ({ name: item.name, count: item.quantity, revenue: item.revenue })),
       },
       chart_data: trendsData.map(td => ({ label: td.date, orders: td.orders, revenue: td.revenue })),
       pending_orders: orderQueue.filter(o => o.status === 'received' || o.status === 'preparing'),
       queue_length: orderQueue.filter(o => o.status === 'received' || o.status === 'preparing').length,
-    } : null;
+    };
+  }, [dailySummary, topItems, trendsData, orderQueue]);
 
   const renderStatusIndicator = () => {
     if (isRealtimeConnected) {
@@ -208,7 +249,7 @@ const AdminDashboard: React.FC = () => {
 
       {activeTab === 'orderQueue' ? (
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          {isQueueLoading ? (
+          {(isQueueLoading && !hasInitiallyLoaded) ? (
             <div className="p-8 flex flex-col items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
               <p className="text-gray-600">Loading order queue...</p>
@@ -216,7 +257,7 @@ const AdminDashboard: React.FC = () => {
           ) : (
             <OrderQueue
               orders={orderQueue as Order[]}
-              isLoading={isQueueLoading}
+              isLoading={false}
               onPriorityChange={handlePriorityChange}
             />
           )}

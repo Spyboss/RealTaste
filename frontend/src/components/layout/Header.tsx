@@ -10,13 +10,16 @@ import {
   Bell, 
   CreditCard,
   ChevronDown,
-  X
+  X,
+  Shield
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useCartStore } from '@/stores/cartStore';
 import { useBusinessStore } from '@/stores/businessStore';
 import Button from '@/components/ui/Button';
 import { Dropdown, DropdownItem, DropdownSeparator } from '@/components/ui/Dropdown';
+import { motion, AnimatePresence } from 'framer-motion';
+
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -166,6 +169,18 @@ const Header: React.FC = () => {
                   >
                     Payment Methods
                   </DropdownItem>
+                  {user?.app_metadata?.role === 'admin' && (
+                    <>
+                      <DropdownSeparator />
+                      <DropdownItem 
+                        icon={<Shield className="w-4 h-4" />}
+                        onClick={() => handleNavigation('/admin')}
+                        className="text-blue-600 hover:bg-blue-50"
+                      >
+                        Admin Dashboard
+                      </DropdownItem>
+                    </>
+                  )}
                   <DropdownSeparator />
                   <DropdownItem 
                     icon={<Settings className="w-4 h-4" />}
@@ -294,6 +309,15 @@ const Header: React.FC = () => {
                       <CreditCard className="w-4 h-4" />
                       <span>Payment Methods</span>
                     </button>
+                    {user?.app_metadata?.role === 'admin' && (
+                      <button
+                        onClick={() => handleNavigation('/admin')}
+                        className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+                      >
+                        <Shield className="w-4 h-4" />
+                        <span>Admin Dashboard</span>
+                      </button>
+                    )}
                     <button
                       onClick={() => handleNavigation('/settings')}
                       className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"

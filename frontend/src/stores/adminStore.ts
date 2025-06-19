@@ -18,6 +18,8 @@ interface AdminState {
 
   // Loading states
   isLoading: boolean;
+  isQueueLoading: boolean;
+  isManagementLoading: boolean;
   loadingDaily: boolean;
   loadingItems: boolean;
   loadingTrends: boolean;
@@ -98,16 +100,27 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   dashboardStats: null,
   orderQueue: [],
   selectedOrders: [],
+
+  // Analytics data
   dailySummary: null,
   topItems: [],
   trendsData: [],
+
+  // Loading states
   isLoading: false,
+  isQueueLoading: false,
+  isManagementLoading: false,
   loadingDaily: false,
   loadingItems: false,
   loadingTrends: false,
+
   error: null,
   lastUpdated: null,
+
+  // Sound settings
   soundEnabled: true,
+
+  // Realtime connection state
   isRealtimeConnected: false,
   connectionAttempts: 0,
   isPollingFallback: false,
@@ -116,7 +129,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   queueFilters: {
     status: 'all',
     priority: 'all',
-    timeRange: 'today'
+    timeRange: 'today',
   },
 
   // Notifications
@@ -292,11 +305,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   // New actions for admin order management
   fetchAllAdminOrders: async () => {
-    set({ isLoading: true, error: null });
+    set({ isManagementLoading: true, error: null });
     const token = useAuthStore.getState().session?.access_token;
 
     if (!token) {
-      set({ isLoading: false, error: 'Authentication token not found.' });
+      set({ isManagementLoading: false, error: 'Authentication token not found.' });
       return;
     }
 
@@ -326,13 +339,13 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
       const result = await response.json();
       if (result.success && result.data) {
-        set({ orderQueue: result.data, isLoading: false, lastUpdated: new Date() });
+        set({ orderQueue: result.data, isManagementLoading: false, lastUpdated: new Date() });
       } else {
         throw new Error(result.error || 'Failed to fetch orders: Invalid response structure');
       }
     } catch (error: any) {
       console.error('fetchAllAdminOrders error:', error);
-      set({ isLoading: false, error: error.message || 'Failed to fetch orders' });
+      set({ isManagementLoading: false, error: error.message || 'Failed to fetch orders' });
     }
   },
 
@@ -446,11 +459,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   fetchOrderQueue: async () => {
-    set({ isLoading: true, error: null });
+    set({ isQueueLoading: true, error: null });
     const token = useAuthStore.getState().session?.access_token;
 
     if (!token) {
-      set({ isLoading: false, error: 'Authentication token not found.' });
+      set({ isQueueLoading: false, error: 'Authentication token not found.' });
       return;
     }
 
@@ -480,13 +493,13 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
       const result = await response.json();
       if (result.success && result.data) {
-        set({ orderQueue: result.data, isLoading: false, lastUpdated: new Date() });
+        set({ orderQueue: result.data, isQueueLoading: false, lastUpdated: new Date() });
       } else {
         throw new Error(result.error || 'Failed to fetch order queue: Invalid response structure');
       }
     } catch (error: any) {
       console.error('fetchOrderQueue error:', error);
-      set({ isLoading: false, error: error.message || 'Failed to fetch order queue' });
+      set({ isQueueLoading: false, error: error.message || 'Failed to fetch order queue' });
     }
   },
 

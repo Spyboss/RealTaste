@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAdminStore } from '@/stores/adminStore';
 import OrderList from '@/components/admin/OrderList';
 import LoadingSpinner from '@/components/ui/LoadingSpinner'; // Assuming you have this
@@ -7,21 +7,34 @@ import { Order } from '@/types/shared'; // Import Order type
 const OrderManagementPage: React.FC = () => {
   const {
     orderQueue,
-    isLoading,
+    isManagementLoading,
     error,
     fetchAllAdminOrders,
     updateAdminOrderStatus,
   } = useAdminStore((state) => ({
     orderQueue: state.orderQueue,
-    isLoading: state.isLoading,
+    isManagementLoading: state.isManagementLoading,
     error: state.error,
     fetchAllAdminOrders: state.fetchAllAdminOrders,
     updateAdminOrderStatus: state.updateAdminOrderStatus,
   }));
 
+  const [hasLoaded, setHasLoaded] = useState(false);
+
   useEffect(() => {
-    fetchAllAdminOrders();
-  }, [fetchAllAdminOrders]);
+    const loadOrders = async () => {
+      if (hasLoaded) return;
+      
+      try {
+        await fetchAllAdminOrders();
+        setHasLoaded(true);
+      } catch (error) {
+        console.error('Failed to load orders:', error);
+      }
+    };
+
+    loadOrders();
+  }, [fetchAllAdminOrders, hasLoaded]);
 
   const handleStatusChange = async (orderId: string, newStatus: Order['status']) => {
     // Call the store action to update status
@@ -36,7 +49,7 @@ const OrderManagementPage: React.FC = () => {
     }
   };
 
-  if (isLoading && orderQueue.length === 0) { // Show loading only if no orders yet
+  if (isManagementLoading && orderQueue.length === 0) { // Show loading only if no orders yet
     return (
       <div className="flex justify-center items-center h-64">
         <LoadingSpinner size="lg" />
@@ -63,7 +76,7 @@ const OrderManagementPage: React.FC = () => {
         orders={orderQueue} 
         onStatusChange={handleStatusChange} 
       />
-      {isLoading && orderQueue.length > 0 && (
+      {isManagementLoading && orderQueue.length > 0 && (
         <div className="mt-4 text-center">
             <p>Updating order list...</p>
         </div>
@@ -72,4 +85,4 @@ const OrderManagementPage: React.FC = () => {
   );
 };
 
-export default OrderManagementPage; 
+export default OrderManagementPage;
