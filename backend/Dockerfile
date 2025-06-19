@@ -8,15 +8,15 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy shared package first for production dependencies
-COPY ../shared /app/shared
+COPY shared /app/shared
 WORKDIR /app/shared
 RUN npm install --only=production && npm run build
 
 # Go back to backend directory
 WORKDIR /app
 
-# Copy package files (we're building from backend directory)
-COPY package*.json ./
+# Copy package files (we're building from root directory)
+COPY backend/package*.json ./
 
 # Install production dependencies
 RUN npm install --only=production && npm cache clean --force
@@ -26,11 +26,11 @@ FROM base AS builder
 WORKDIR /app
 
 # Copy package files and install ALL dependencies (including dev dependencies for build)
-COPY package*.json ./
+COPY backend/package*.json ./
 RUN npm install
 
 # Copy shared package first
-COPY ../shared /app/shared
+COPY shared /app/shared
 WORKDIR /app/shared
 RUN npm install && npm run build
 
@@ -38,7 +38,7 @@ RUN npm install && npm run build
 WORKDIR /app
 
 # Copy backend source code
-COPY . .
+COPY backend/ .
 
 # Build backend
 RUN npm run build
@@ -55,7 +55,7 @@ RUN adduser --system --uid 1001 nodejs
 COPY --from=builder --chown=nodejs:nodejs /app/shared/dist ./shared/dist
 COPY --from=builder --chown=nodejs:nodejs /app/shared/package.json ./shared/
 
-# Copy built application (we're building from backend directory)
+# Copy built application (we're building from root directory)
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules

@@ -12,7 +12,8 @@ kill_timeout = "5s"
   auto_rollback = true
 
 [build]
-  dockerfile = 'Dockerfile'
+  dockerfile = 'backend/Dockerfile'
+  build_context = '..'
 
 # [deploy]
 #   release_command = "echo 'Deployment successful'"
