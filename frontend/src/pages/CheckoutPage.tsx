@@ -173,35 +173,32 @@ const CheckoutPage: React.FC = () => {
             throw new Error('PayHere payment gateway is not available. Please try again.');
           }
 
-          // First create the order to get the order ID
+          // First create the order to get the order ID and payment data
           const result = await api.post('/orders', orderData);
           console.log('Order creation result:', result.data);
-          // For card payments, order is nested in data.order, for cash it's directly in data
-          const orderId = (result.data as any).data?.order?.id || (result.data as any).data?.id;
-          console.log('Extracted order ID:', orderId);
+          
+          // For card payments, extract payment data from backend response
+          const responseData = (result.data as any).data;
+          const orderId = responseData?.order?.id;
+          const paymentData = responseData?.payment?.paymentData;
           
           if (!orderId) {
             throw new Error('Order ID not found in response');
           }
+          
+          if (!paymentData) {
+            throw new Error('Payment data not found in response');
+          }
 
-          // PayHere payment
+          console.log('Using payment data from backend:', paymentData);
+
+          // Use payment data from backend (includes correct merchant_id, hash, etc.)
           const payment = {
             sandbox: true, // Use sandbox for testing
-            merchant_id: '1230547', // Your PayHere merchant ID
+            ...paymentData, // Use all payment data from backend
+            // Override URLs to use frontend domain for return/cancel
             return_url: `${window.location.origin}/payment/success?order_id=${orderId}`,
             cancel_url: `${window.location.origin}/payment/cancelled?order_id=${orderId}`,
-            notify_url: `${window.location.origin}/api/payments/payhere/notify`,
-            order_id: orderId,
-            items: 'Food Order',
-            amount: (subtotal + currentDeliveryFee + onlinePaymentFee).toFixed(2),
-            currency: 'LKR',
-            first_name: data.customerName || 'Customer',
-            last_name: '',
-            email: user?.email || 'customer@example.com',
-            phone: data.customerPhone,
-            address: data.orderType === 'delivery' ? deliveryAddress : 'Pickup',
-            city: 'Colombo',
-            country: 'Sri Lanka',
           };
 
           window.payhere.startPayment(payment);
