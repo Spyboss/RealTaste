@@ -7,10 +7,10 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy shared package first for production dependencies
+# Copy shared package first and build it
 COPY shared /app/shared
 WORKDIR /app/shared
-RUN npm install --only=production && npm run build
+RUN npm install && npm run build
 
 # Go back to backend directory
 WORKDIR /app
