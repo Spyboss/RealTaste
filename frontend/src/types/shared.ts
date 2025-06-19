@@ -158,9 +158,13 @@ export interface OrderItemAddon {
 export interface CreateOrderRequest {
   customer_name?: string;
   customer_phone: string;
-  payment_method: 'payhere' | 'cash' | 'card';
+  payment_method: 'card' | 'cash';
   order_type: 'pickup' | 'delivery';
   delivery_address?: string;
+  delivery_latitude?: number;
+  delivery_longitude?: number;
+  delivery_notes?: string;
+  customer_gps_location?: string;
   notes?: string;
   items: {
     menu_item_id: string;
