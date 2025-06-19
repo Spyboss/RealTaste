@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const API_BASE = 'http://localhost:3002/api';
+const API_BASE = 'https://realtaste.fly.dev/api';
 
 async function testPayHereIntegration() {
   console.log('🧪 Testing PayHere Integration...\n');

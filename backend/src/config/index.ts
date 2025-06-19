@@ -89,6 +89,6 @@ for (const envVar of requiredEnvVars) {
 
 // Debug logging for PayHere configuration
 console.log('🔧 Config Debug - PayHere Settings:');
-console.log(`   PAYHERE_SANDBOX env var: "${process.env.PAYHERE_SANDBOX}"`);
+console.log(`   USE_LIVE_PAYHERE env var: "${process.env.USE_LIVE_PAYHERE}"`);
 console.log(`   Parsed sandbox boolean: ${config.payhere.sandbox}`);
 console.log(`   Base URL: ${config.payhere.baseUrl}`);

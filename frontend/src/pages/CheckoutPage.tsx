@@ -176,7 +176,8 @@ const CheckoutPage: React.FC = () => {
           // First create the order to get the order ID
           const result = await api.post('/orders', orderData);
           console.log('Order creation result:', result.data);
-          const orderId = (result.data as any).data?.id;
+          // For card payments, order is nested in data.order, for cash it's directly in data
+          const orderId = (result.data as any).data?.order?.id || (result.data as any).data?.id;
           console.log('Extracted order ID:', orderId);
           
           if (!orderId) {
@@ -208,6 +209,7 @@ const CheckoutPage: React.FC = () => {
           // Cash payment - create order directly
           const result = await api.post('/orders', orderData);
           console.log('Order creation result:', result.data);
+          // For cash payments, order is directly in data
           const orderId = (result.data as any).data?.id;
           console.log('Extracted order ID:', orderId);
           
