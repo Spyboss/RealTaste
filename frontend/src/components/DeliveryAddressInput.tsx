@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Navigation, Loader2, AlertCircle } from 'lucide-react';
 import { deliveryApi } from '../services/api';
+import { ApiResponse } from '../types/shared';
 
 interface DeliveryAddressInputProps {
   address: string;
@@ -37,8 +38,6 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
   onNotesChange,
   customerGpsLocation,
   onCustomerGpsLocationChange,
-  deliveryFee,
-  isWithinRange,
   onDeliveryFeeChange,
   onRangeStatusChange
 }) => {
@@ -62,14 +61,18 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
   const calculateDeliveryFee = async (lat: number, lng: number) => {
     setIsCalculating(true);
     try {
-      const response = await deliveryApi.calculateFee(lat, lng) as any;
-      if (response.success) {
+      const response = await deliveryApi.calculateFee(lat, lng) as ApiResponse<DeliveryCalculation>;
+      if (response.success && response.data) {
         setDeliveryCalculation(response.data);
         onDeliveryFeeChange(response.data.deliveryFee);
         onRangeStatusChange(response.data.isWithinRange);
+      } else {
+        console.error('Failed to calculate delivery fee');
+        setDeliveryCalculation(null);
       }
     } catch (error) {
       console.error('Error calculating delivery fee:', error);
+      setDeliveryCalculation(null);
     } finally {
       setIsCalculating(false);
     }
@@ -78,8 +81,8 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
   const getStandardDeliveryFee = async () => {
     setIsCalculating(true);
     try {
-      const response = await deliveryApi.getStandardFee();
-      if (response.success) {
+      const response = await deliveryApi.getStandardFee() as ApiResponse<{ deliveryFee: number; estimatedTime: number }>;
+      if (response.success && response.data) {
         const standardCalculation = {
           isWithinRange: true,
           distance: 0, // No specific distance for standard fee
