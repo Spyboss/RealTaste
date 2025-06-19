@@ -1,6 +1,6 @@
 # RealTaste Setup Guide
 
-This guide will help you set up RealTaste from scratch for development and production.
+This guide will help you set up the complete RealTaste system with delivery management, payment integration, and admin dashboard from scratch for development and production.
 
 ## 🚀 Development Setup
 
@@ -11,6 +11,8 @@ Make sure you have:
 - **Git** for version control
 - **Supabase account** (free tier is fine)
 - **Code editor** (VS Code recommended)
+- **PayHere Developer Account** (for payment testing)
+- **Modern browser** with geolocation support
 
 ### 2. Project Setup
 
@@ -64,16 +66,23 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 # Required - Generate a secure JWT secret
 JWT_SECRET=your-super-secret-jwt-key-here
 
-# Optional - PayHere configuration
+# PayHere Payment Gateway
 PAYHERE_MERCHANT_ID=your-merchant-id
 PAYHERE_MERCHANT_SECRET=your-merchant-secret
 PAYHERE_SANDBOX=true
 
-# Business configuration
+# Delivery System Configuration
+DELIVERY_BASE_FEE=180
+DELIVERY_PER_KM_FEE=40
+DELIVERY_MAX_RANGE=5
+
+# Business Configuration
 RESTAURANT_NAME=RealTaste
 RESTAURANT_PHONE=+94771234567
 BUSINESS_OPEN_TIME=10:00
 BUSINESS_CLOSE_TIME=22:00
+BUSINESS_LAT=6.9271
+BUSINESS_LNG=79.8612
 ```
 
 #### Frontend Environment
@@ -90,19 +99,35 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 # API URL for development
 VITE_API_URL=http://localhost:3001/api
 
-# Optional - App configuration
+# App configuration
 VITE_APP_NAME=RealTaste
+
+# PayHere Configuration
+VITE_PAYHERE_MERCHANT_ID=your-merchant-id
+VITE_PAYHERE_SANDBOX=true
+
+# Delivery System
+VITE_DELIVERY_BASE_FEE=180
+VITE_DELIVERY_PER_KM_FEE=40
+VITE_DELIVERY_MAX_RANGE=5
+
+# Business Location (Colombo coordinates as example)
+VITE_BUSINESS_LAT=6.9271
+VITE_BUSINESS_LNG=79.8612
 ```
 
 ### 5. Start Development
 
 ```bash
-# Start both frontend and backend
+# Start both frontend and backend (Recommended)
 npm run dev
 
 # Or start individually
 npm run dev:frontend  # http://localhost:5173
 npm run dev:backend   # http://localhost:3001
+
+# Build shared utilities in watch mode
+npm run build:shared --watch
 ```
 
 ### 6. Create Admin User

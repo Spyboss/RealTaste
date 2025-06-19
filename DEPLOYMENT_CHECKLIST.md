@@ -1,16 +1,17 @@
-# ✅ RealTaste Deployment Checklist
+# 🚀 RealTaste Deployment Checklist
 
-Use this checklist to ensure a smooth deployment process.
+Use this checklist to ensure a smooth deployment process for the complete RealTaste system with delivery management, payment integration, and admin dashboard.
 
 ## 🔧 Pre-Deployment Setup
 
 ### Environment Variables
 - [ ] Copy `.env.example` to `.env` in root directory
 - [ ] Copy `frontend/.env.example` to `frontend/.env`
-- [ ] Fill in all Supabase credentials
-- [ ] Set up PayHere merchant credentials
-- [ ] Configure Firebase project (if using push notifications)
-- [ ] Generate strong JWT secret
+- [ ] Fill in all Supabase credentials (URL, anon key, service role key)
+- [ ] Set up PayHere merchant credentials (merchant ID, secret)
+- [ ] Configure delivery system settings (base fee: LKR 180, per km: LKR 40, max range: 5km)
+- [ ] Generate strong JWT secret (minimum 32 characters)
+- [ ] Set production frontend URL for CORS
 
 ### Code Preparation
 - [ ] All code committed to Git
@@ -41,6 +42,10 @@ Use this checklist to ensure a smooth deployment process.
 ### API Testing
 - [ ] Health endpoint responds: `GET /health`
 - [ ] Menu endpoint works: `GET /api/menu`
+- [ ] Orders endpoint functional: `POST /api/orders`
+- [ ] Delivery calculation working: `POST /api/delivery/calculate`
+- [ ] PayHere integration working: `POST /api/payment/payhere`
+- [ ] Admin dashboard API: `GET /api/admin/orders`
 - [ ] CORS headers present in responses
 - [ ] Error handling working properly
 
@@ -80,14 +85,22 @@ Use this checklist to ensure a smooth deployment process.
 
 ### Database Operations
 - [ ] Menu items loading from Supabase
-- [ ] Orders can be created
-- [ ] Real-time updates working (if implemented)
+- [ ] Categories and variants working
+- [ ] Orders can be created with delivery info
+- [ ] Delivery time slots functional
+- [ ] Real-time order updates working
+- [ ] Admin dashboard data loading
+- [ ] Business settings configurable
 - [ ] Data persistence working
+- [ ] Row Level Security (RLS) policies active
 
-### Payment Integration (if implemented)
-- [ ] PayHere sandbox working
-- [ ] Payment flow completing
+### Payment Integration
+- [ ] PayHere production mode configured
+- [ ] Payment flow completing successfully
 - [ ] Order status updating after payment
+- [ ] Payment notifications handling correctly
+- [ ] Refund functionality working (if implemented)
+- [ ] Payment security measures in place
 
 ## 📱 Mobile & PWA Testing
 

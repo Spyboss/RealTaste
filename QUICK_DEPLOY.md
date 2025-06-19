@@ -1,6 +1,6 @@
 # ⚡ Quick Deploy Guide - RealTaste
 
-Get your RealTaste PWA live in production in under 30 minutes!
+Get your complete RealTaste system with delivery management, payment integration, and admin dashboard live in production in under 30 minutes!
 
 ## 🚀 Quick Start (TL;DR)
 
@@ -19,9 +19,9 @@ fly secrets set JWT_SECRET=your-jwt-secret
 fly secrets set FRONTEND_URL=https://realtaste.pages.dev
 fly deploy
 
-# 3. Deploy frontend
+# 3. Deploy frontend to Cloudflare Pages
 # Push to GitHub, then connect to Cloudflare Pages
-git add . && git commit -m "Deploy" && git push
+git add . && git commit -m "Production deployment with delivery system" && git push
 ```
 
 ## 📋 Step-by-Step
@@ -56,11 +56,21 @@ fly launch --no-deploy
 
 # Set environment variables (replace with your values)
 fly secrets set NODE_ENV=production
-fly secrets set SUPABASE_URL=https://vyqcamhvltkwjsnrfkkj.supabase.co
+fly secrets set SUPABASE_URL=https://your-project-id.supabase.co
 fly secrets set SUPABASE_ANON_KEY=your-supabase-anon-key
 fly secrets set SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 fly secrets set JWT_SECRET=your-super-secret-jwt-key-min-32-chars
-fly secrets set FRONTEND_URL=https://realtaste.pages.dev
+fly secrets set FRONTEND_URL=https://your-app-name.pages.dev
+
+# PayHere Payment Gateway (Required for Sri Lankan market)
+fly secrets set PAYHERE_MERCHANT_ID=your-merchant-id
+fly secrets set PAYHERE_MERCHANT_SECRET=your-merchant-secret
+fly secrets set PAYHERE_SANDBOX=false
+
+# Delivery System Configuration
+fly secrets set DELIVERY_BASE_FEE=180
+fly secrets set DELIVERY_PER_KM_FEE=40
+fly secrets set DELIVERY_MAX_RANGE=5
 
 # Deploy
 fly deploy
@@ -92,11 +102,15 @@ git push origin main
 **Environment Variables:**
 Add these in Cloudflare Pages settings:
 ```
-VITE_SUPABASE_URL=https://vyqcamhvltkwjsnrfkkj.supabase.co
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 VITE_API_URL=https://your-app-name.fly.dev/api
 VITE_APP_NAME=RealTaste
+VITE_PAYHERE_MERCHANT_ID=your-merchant-id
 VITE_PAYHERE_SANDBOX=false
+VITE_DELIVERY_BASE_FEE=180
+VITE_DELIVERY_PER_KM_FEE=40
+VITE_DELIVERY_MAX_RANGE=5
 ```
 
 5. Click "Save and Deploy"

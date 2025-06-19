@@ -1,6 +1,6 @@
-# 🚀 RealTaste Deployment Guide
+# RealTaste Deployment Guide 🚀
 
-This guide will help you deploy RealTaste to production using **Cloudflare Pages** (frontend) and **Fly.io** (backend).
+This guide will help you deploy RealTaste to production using **Netlify** (frontend) and **Fly.io** (backend). RealTaste is a comprehensive food ordering system with delivery management, payment integration, and real-time admin dashboard.
 
 ## 📋 Prerequisites
 
@@ -13,10 +13,22 @@ This guide will help you deploy RealTaste to production using **Cloudflare Pages
 ## 🎯 Deployment Strategy
 
 ```
-Frontend (React PWA) → Cloudflare Pages
+Frontend (React PWA) → Netlify
 Backend (Node.js API) → Fly.io
-Database → Supabase (already configured)
+Database → Supabase (PostgreSQL with RLS)
+Payments → PayHere (Sri Lankan gateway)
+Real-time → Supabase Realtime
 ```
+
+## 🌟 Current Features
+
+- ✅ **Complete Delivery System** with GPS integration and fee calculation
+- ✅ **PayHere Payment Integration** for Sri Lankan market
+- ✅ **Advanced Admin Dashboard** with drag-and-drop order management
+- ✅ **Real-time Order Updates** and notifications
+- ✅ **Menu Management System** with categories and variants
+- ✅ **Customer Order Tracking** and cancellation
+- ✅ **Location-based Access Control** for delivery areas
 
 ## 🔧 Phase 1: Backend Deployment (Fly.io)
 
@@ -57,13 +69,17 @@ fly secrets set SUPABASE_URL=your-supabase-url
 fly secrets set SUPABASE_ANON_KEY=your-supabase-anon-key
 fly secrets set SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 fly secrets set JWT_SECRET=your-super-secret-jwt-key
-fly secrets set FRONTEND_URL=https://your-frontend-domain.pages.dev
+fly secrets set FRONTEND_URL=https://your-app-name.netlify.app
 
-# Optional: PayHere and Firebase
+# PayHere Payment Gateway (Required for Sri Lankan market)
 fly secrets set PAYHERE_MERCHANT_ID=your-merchant-id
 fly secrets set PAYHERE_MERCHANT_SECRET=your-merchant-secret
-fly secrets set FIREBASE_PROJECT_ID=your-firebase-project-id
-# ... add other secrets as needed
+fly secrets set PAYHERE_SANDBOX=false
+
+# Delivery System Configuration
+fly secrets set DELIVERY_BASE_FEE=180
+fly secrets set DELIVERY_PER_KM_FEE=40
+fly secrets set DELIVERY_MAX_RANGE=5
 ```
 
 ### Step 5: Deploy Backend

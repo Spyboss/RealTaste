@@ -13,18 +13,22 @@ A modern, mobile-first Progressive Web App (PWA) for restaurant order pickup, sp
 - **📱 Mobile-First Design**: Optimized for Sri Lankan mobile users
 - **🍽️ Browse Menu**: Categorized menu with authentic Sri Lankan dishes
 - **🛒 Smart Cart**: Add, customize, and manage orders easily
+- **🚚 Delivery System**: Location-based ordering with 5km range
+- **💰 Smart Pricing**: LKR 180 base + LKR 40/km delivery fee
 - **💳 Local Payments**: PayHere integration for LKR transactions
-- **📍 Order Tracking**: Real-time status updates in Sinhala/English
+- **📍 Real-time Tracking**: Live order status updates
 - **🔐 Secure Auth**: Email/Google login with Supabase
 - **📲 PWA Install**: Works offline, installs like native app
 - **🌐 Bilingual**: Sinhala and English support
 
 ### 👨‍💼 Admin Features
-- **📊 Order Dashboard**: Real-time order management
-- **🍜 Menu Management**: Easy menu updates with images
-- **⏰ Business Hours**: Configure operating times
-- **📈 Analytics**: Track orders and revenue
-- **🔔 Notifications**: Real-time order alerts
+- **📊 Advanced Dashboard**: Real-time order management with analytics
+- **🍜 Complete Menu Management**: Categories, variants, addons with images
+- **🚚 Delivery Management**: Track orders, manage delivery zones
+- **⏰ Business Configuration**: Hours, location, delivery settings
+- **📈 Revenue Analytics**: Daily/weekly sales tracking
+- **🔔 Real-time Notifications**: Instant order alerts
+- **👥 Customer Management**: Order history and preferences
 
 ## 🛠️ Tech Stack
 
@@ -254,10 +258,12 @@ git push origin main
 - **📖 Full Guide**: [DEPLOYMENT.md](DEPLOYMENT.md) - Complete instructions
 - **✅ Checklist**: [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) - Step-by-step verification
 
-### 🌐 Production Stack
-- **Frontend**: Cloudflare Pages (Free tier, global CDN)
-- **Backend**: Fly.io (Free tier, Singapore region)
-- **Database**: Supabase (Already configured)
+### 🌐 Production Stack (Currently Live)
+- **Frontend**: Cloudflare Pages (Global CDN, PWA enabled)
+- **Backend**: Fly.io (Singapore region, auto-scaling)
+- **Database**: Supabase (PostgreSQL with RLS, real-time)
+- **Payments**: PayHere (Sri Lankan payment gateway)
+- **Status**: ✅ Production Ready with Delivery System
 
 ### 🔧 Deployment Commands
 ```bash
