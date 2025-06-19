@@ -7,8 +7,8 @@ kill_timeout = "5s"
   auto_rollback = true
 
 [build]
-  dockerfile = "Dockerfile"
-  build_context = ".."
+  dockerfile = "backend/Dockerfile"
+  build_context = "."
 
 [env]
   NODE_ENV = "production"
