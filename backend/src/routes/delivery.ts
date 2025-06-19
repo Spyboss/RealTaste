@@ -95,8 +95,8 @@ router.post('/calculate-fee', async (req, res) => {
       });
     }
     
-    const restaurantLat = parseFloat(process.env.RESTAURANT_LAT || '6.7964');
-    const restaurantLng = parseFloat(process.env.RESTAURANT_LNG || '79.9003');
+    const restaurantLat = parseFloat(process.env.VITE_RESTAURANT_LAT || '6.7964');
+    const restaurantLng = parseFloat(process.env.VITE_RESTAURANT_LNG || '79.9003');
     
     const calculation = await deliveryService.calculateDeliveryFee(
       restaurantLat,
