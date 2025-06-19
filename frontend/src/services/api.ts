@@ -111,11 +111,17 @@ export const handleApiError = (error: any): string => {
 // Delivery API functions
 export const deliveryApi = {
   // Calculate delivery fee based on coordinates
-  calculateFee: async (latitude: number, longitude: number) => {
+  calculateFee: async (lat: number, lng: number) => {
     const response = await api.post('/delivery/calculate-fee', {
-      latitude,
-      longitude
+      delivery_latitude: lat,
+      delivery_longitude: lng
     });
+    return response.data;
+  },
+
+  // Get standard delivery fee when coordinates not available
+  getStandardFee: async () => {
+    const response = await api.get('/delivery/standard-fee');
     return response.data;
   },
 

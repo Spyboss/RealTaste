@@ -120,6 +120,26 @@ router.post('/calculate-fee', async (req, res) => {
   }
 });
 
+// GET /api/delivery/standard-fee - Get standard delivery fee when coordinates not available
+router.get('/standard-fee', async (req, res) => {
+  try {
+    const standardFee = await deliveryService.getStandardDeliveryFee();
+    
+    const response: ApiResponse<{ deliveryFee: number; estimatedTime: number }> = {
+      success: true,
+      data: standardFee
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Error getting standard delivery fee:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get standard delivery fee'
+    });
+  }
+});
+
 // GET /api/delivery/active - Get active deliveries (admin only)
 router.get('/active',
   authenticateToken,

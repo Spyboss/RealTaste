@@ -112,11 +112,8 @@ const CheckoutPage: React.FC = () => {
         toast.error('Please enter a delivery address');
         return;
       }
-      if (!deliveryCoordinates) {
-        toast.error('Please share your GPS location for delivery');
-        return;
-      }
-      if (!isWithinRange) {
+      // GPS coordinates are optional, but if provided, check if within range
+      if (deliveryCoordinates && !isWithinRange) {
         toast.error('Sorry, delivery is not available to your location (outside 5km range)');
         return;
       }

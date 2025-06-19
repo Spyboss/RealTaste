@@ -47,14 +47,17 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
   const [deliveryCalculation, setDeliveryCalculation] = useState<DeliveryCalculation | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
-  // Calculate delivery fee when coordinates change
+  // Calculate delivery fee when coordinates change or address is entered
   useEffect(() => {
-    if (coordinates) {
+    if (coordinates && coordinates.lat && coordinates.lng) {
       calculateDeliveryFee(coordinates.lat, coordinates.lng);
+    } else if (address.trim()) {
+      // If address is entered but no GPS coordinates, get standard fee
+      getStandardDeliveryFee();
     } else {
       setDeliveryCalculation(null);
     }
-  }, [coordinates]);
+  }, [coordinates, address]);
 
   const calculateDeliveryFee = async (lat: number, lng: number) => {
     setIsCalculating(true);
@@ -67,6 +70,28 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
       }
     } catch (error) {
       console.error('Error calculating delivery fee:', error);
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
+  const getStandardDeliveryFee = async () => {
+    setIsCalculating(true);
+    try {
+      const response = await deliveryApi.getStandardFee();
+      if (response.success) {
+        const standardCalculation = {
+          isWithinRange: true,
+          distance: 0, // No specific distance for standard fee
+          deliveryFee: response.data.deliveryFee,
+          estimatedTime: response.data.estimatedTime
+        };
+        setDeliveryCalculation(standardCalculation);
+        onDeliveryFeeChange(standardCalculation.deliveryFee);
+        onRangeStatusChange(standardCalculation.isWithinRange);
+      }
+    } catch (error) {
+      console.error('Error getting standard delivery fee:', error);
     } finally {
       setIsCalculating(false);
     }
@@ -128,8 +153,8 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000 // 5 minutes
+        timeout: 15000, // Increased to 15 seconds
+        maximumAge: 600000 // 10 minutes cache
       }
     );
   };
@@ -159,26 +184,42 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
 
       {/* GPS Location Button */}
       <div className="mb-4">
-        <button
-          type="button"
-          onClick={getCurrentLocation}
-          disabled={isGettingLocation}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isGettingLocation ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Navigation className="w-4 h-4" />
-          )}
-          <span>
-            {isGettingLocation ? 'Getting Location...' : 'Use Current Location'}
-          </span>
-        </button>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+          <div className="flex items-center space-x-2 mb-2">
+            <Navigation className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-800">Share Location for Accurate Delivery Fee</span>
+          </div>
+          <p className="text-xs text-blue-700 mb-3">
+            Optional: Share your GPS location to get precise delivery fees based on distance. 
+            You can still place an order without sharing location.
+          </p>
+          <button
+            type="button"
+            onClick={getCurrentLocation}
+            disabled={isGettingLocation}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isGettingLocation ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Navigation className="w-4 h-4" />
+            )}
+            <span>
+              {isGettingLocation ? 'Getting Location...' : 'Share Current Location'}
+            </span>
+          </button>
+        </div>
         
         {locationError && (
-          <div className="mt-2 flex items-center space-x-2 text-red-600">
-            <AlertCircle className="w-4 h-4" />
-            <span className="text-sm">{locationError}</span>
+          <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center space-x-2 text-yellow-800">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-sm font-medium">Location sharing failed</span>
+            </div>
+            <p className="text-xs text-yellow-700 mt-1">
+              {locationError} Don't worry - you can still place your order! 
+              Standard delivery fees will apply.
+            </p>
           </div>
         )}
       </div>
@@ -218,9 +259,21 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
             <div className="text-green-700">
               <div className="font-medium mb-2">✓ Delivery Available</div>
               <div className="text-sm space-y-1">
-                <div>Distance: {deliveryCalculation.distance.toFixed(2)} km</div>
-                <div>Delivery Fee: LKR {deliveryCalculation.deliveryFee.toFixed(2)}</div>
-                <div>Estimated Time: {deliveryCalculation.estimatedTime} minutes</div>
+                {deliveryCalculation.distance > 0 ? (
+                  <>
+                    <div>Distance: {deliveryCalculation.distance.toFixed(2)} km</div>
+                    <div>Delivery Fee: LKR {deliveryCalculation.deliveryFee.toFixed(2)}</div>
+                    <div>Estimated Time: {deliveryCalculation.estimatedTime} minutes</div>
+                  </>
+                ) : (
+                  <>
+                    <div>Standard Delivery Fee: LKR {deliveryCalculation.deliveryFee.toFixed(2)}</div>
+                    <div>Estimated Time: {deliveryCalculation.estimatedTime} minutes</div>
+                    <div className="text-blue-600 text-xs mt-2">
+                      💡 Share your location for precise distance-based pricing
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           ) : (
@@ -233,24 +286,17 @@ const DeliveryAddressInput: React.FC<DeliveryAddressInputProps> = ({
           )}
         </div>
       ) : (
-        deliveryFee > 0 && (
-          <div className={`mb-4 p-3 rounded-lg border ${
-            isWithinRange
-              ? 'bg-green-50 border-green-200'
-              : 'bg-red-50 border-red-200'
-          }`}>
-            {isWithinRange ? (
-              <div className="text-green-700">
-                <div className="font-medium mb-2">✓ Delivery Available</div>
-                <div className="text-sm">
-                  <div>Delivery Fee: LKR {deliveryFee.toFixed(2)}</div>
+        !coordinates && address.trim() && (
+          <div className="mb-4 p-3 rounded-lg border bg-blue-50 border-blue-200">
+            <div className="text-blue-700">
+              <div className="font-medium mb-2">📍 Delivery Available</div>
+              <div className="text-sm space-y-1">
+                <div>Standard delivery fee will apply</div>
+                <div className="text-xs text-blue-600 mt-1">
+                  Share your location above for precise distance-based pricing
                 </div>
               </div>
-            ) : (
-              <div className="text-red-700">
-                <div className="font-medium mb-2">✗ Outside Delivery Range</div>
-              </div>
-            )}
+            </div>
           </div>
         )
       )}

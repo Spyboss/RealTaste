@@ -134,6 +134,34 @@ class DeliveryService {
     };
   }
 
+  async getStandardDeliveryFee(): Promise<{ deliveryFee: number; estimatedTime: number }> {
+    const settings = await this.getDeliverySettings();
+    
+    if (!settings.is_delivery_enabled) {
+      return {
+        deliveryFee: 0,
+        estimatedTime: 0
+      };
+    }
+
+    // Standard fee for medium distance (3km) when GPS not available
+    const standardDistance = 3; // 3km average
+    let deliveryFee = settings.base_fee; // Base fee for first 1km
+    
+    if (standardDistance > 1) {
+      const additionalKm = Math.ceil(standardDistance - 1);
+      deliveryFee += additionalKm * settings.per_km_fee;
+    }
+
+    // Standard estimated time for 3km
+    const estimatedTime = Math.ceil(standardDistance * 5) + 10;
+
+    return {
+      deliveryFee: Math.round(deliveryFee * 100) / 100,
+      estimatedTime
+    };
+  }
+
   async createDeliveryTimeSlot(
     orderId: string,
     estimatedPrepTime: number = 30,
