@@ -1,0 +1,95 @@
+Menu Items/home page look update/upgrate:
+I just received the actual menu from the client so why not implement actual menu from the actual restaurant real taste chinese food eh?
+there are few catogories(eg: starters, soups, Koththu...) mainly menu and set menu items. Potions are mostly only two, small and large. ill type the prices of small first then large followed by a comma got it?
+MENU:-
+Straters:
+ French Fries - 700; 900.
+
+Soups: 
+Creame of Chicken Soup - 380, 450.
+Chicken and Egg Soup - 360,430.
+Mix Hot and Sour Soup - 450, 500.
+Vegetable Hot and Sour Soup - 370, 420.
+Creame of Vegetable Soup - 350, 400.
+Rice Basmathi:
+Real Taste Special Rice - 800, 1450.
+Chicken Fried Rice - 600, 1050.
+Sea Food Fried Rice - 700, 1300.
+Mix fried Rice - 750, 1350.
+Nasi Georeng - 800,1450.
+Vegetable and Egg Fried Rice - 550, 1000.
+Vegetable Fried Rice - 500, 950.
+Gralic Fried Rice - 900, 1450.
+Steam Rice - 470, 880.
+Mix Chopsuey Rice - 950, 1550.
+Sea Food Choupsuey rice - 920, 1500.
+Vgetable Choupsuey Rice - 750, 1100.
+
+Noodles:
+Real Taste Special Noodles - 750, 1400.
+Chicken Fried Noodles - 580, 1030.
+Sea Food Fried Noodles - 680, 1250.
+Mix Fried Noodles - 730, 1300.
+Vegetable and Egg Fried Noodles - 550, 1000.
+Vegetablle Fried Noodles - 500, 900.
+
+Fish:
+Fried Fish - 900, 1300.
+Develled Fish - 900, 1300.
+Crispy Fish - 900, 1300.
+Sweet and Sour Fish - 950, 1400.
+Fish with Hot Garlic Sause - 900, 1300.
+Fish Hot Curry - 930, 1350.
+
+Cuttle FishL:
+Cuttle Fish with Hot Butter Sause - 900,1300
+Develled Cuttle Fish - 900, 1300.
+Cuttle Fish curry - 930, 1350.
+
+Prawns:
+Batter Fried Prawns - 930, 1350.
+Develled Prawns - 900, 1300.
+Sweet & Sour Prawns - 1050, 1400.
+Prawns with Hot Garlic Sauce - 900, 1300.
+Prawns Curry - 930, 1350.
+
+Chicken:
+Fried Chicken - 800, 1200.
+Develled Chicken - 800, 1200.
+Crispy Chicken - 900, 1300.
+Sweet & Sour Chicken - 930, 1350.
+Chilli Chicken with Cashew nut -950, 1480.
+Chicken Curry - 830, 1250.
+
+Pork:
+Fried Pork - 900, 120.
+Develled Pork - 900, 1250.
+Sweet & Sour Pork - 980, 1350.
+Pork Curry - 930, 1280
+
+Omelette:
+Vegetable Omelette - 400.
+Chicken Omellette - 500.
+Prawns Omelette - 550.
+Mix Omelette - 600.
+
+Vegetable:
+Boiled Vegetable - 600, 1000.
+Mix Vegetable Choupsuey - 600, 1000.
+Develled Mushroom - 650, 750.
+Onion Salad - 350.
+Mix Salad - 400.
+
+Koththu:
+Egg Koththu - 500, 600.
+Chicken Koththu - 700, 900.
+Fish Koththu - 600, 750.
+Pork Koththu - 750, 950.
+Sea Food Koththu - 750, 950.
+Mix Koththu - 800, 1000.
+Vegetable Koththu - 400, 500.
+
+Now i need you to think how to showcase all these to the customers/users beautifully and place orders, calculate totals. Ui should be intuitive, modern and visally appealing right/ UX should be easy and fast too right?
+Design and Implement Everything nicely! As for the pictures, browse the internet and get the links and update/put them in the relavent supabase tables.(example sites to look for pictures - unsplash.com, pixabay.com, pexels.com and many more... )
+Inorder to apply everything safely, first nalyse what code, db tables are already inplace and build based on them and make fixes.
+After everything remember to push changes to github since we are already on production.
