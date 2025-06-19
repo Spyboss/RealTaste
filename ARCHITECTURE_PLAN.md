@@ -534,10 +534,10 @@ function calculateDeliveryFee(distanceKm: number): DeliveryCalculation {
 - **Validation**: Input validation and sanitization
 
 #### Infrastructure
-- **Frontend Hosting**: Netlify with automatic deployments
+- **Frontend Hosting**: Cloudflare Pages with automatic deployments
 - **Backend Hosting**: Fly.io with containerized deployment
 - **Database**: Supabase Cloud with automatic backups
-- **CDN**: Netlify Edge for global content delivery
+- **CDN**: Cloudflare Edge for global content delivery
 - **SSL**: Automatic HTTPS with certificate management
 - **Location Services**: Browser Geolocation API + OpenCage reverse geocoding
 
@@ -604,7 +604,7 @@ CREATE TABLE restaurant_settings (
 ## 🚀 DEPLOYMENT STATUS
 
 ### Production Environment
-- **Frontend**: Deployed on Netlify (Auto-deploy from main branch)
+- **Frontend**: Deployed on Cloudflare Pages (Auto-deploy from main branch)
 - **Backend**: Deployed on Fly.io (`https://realtaste.fly.dev`)
 - **Database**: Supabase (Production instance)
 - **Domain**: Custom domain configured
