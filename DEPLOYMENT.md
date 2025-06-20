@@ -25,10 +25,12 @@ Real-time → Supabase Realtime
 - ✅ **Complete Delivery System** with GPS integration and fee calculation
 - ✅ **PayHere Payment Integration** for Sri Lankan market
 - ✅ **Advanced Admin Dashboard** with drag-and-drop order management
+- ✅ **Enhanced Order Status Workflow** with pickup/delivery differentiation (received → confirmed → preparing → ready → delivered/picked up → completed)
 - ✅ **Real-time Order Updates** and notifications
 - ✅ **Menu Management System** with categories and variants
 - ✅ **Customer Order Tracking** and cancellation
 - ✅ **Location-based Access Control** for delivery areas
+- ✅ **Color-coded Status Display** with dynamic filtering and bulk actions
 
 ## 🔧 Phase 1: Backend Deployment (Fly.io)
 

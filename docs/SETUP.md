@@ -37,6 +37,10 @@ npm install
 1. Go to SQL Editor in Supabase dashboard
 2. Copy and paste the contents of `supabase/schema.sql`
 3. Run the query to create tables and policies
+4. Apply the latest migration for enhanced order status workflow:
+   - Run `supabase/migrations/20250119_enhanced_order_status_workflow.sql`
+   - This adds new order statuses: `confirmed`, `ready_for_delivery`, `picked_up`, `delivered`, `completed`
+   - Includes delivery-related fields and database indexes
 
 #### Add Sample Data
 1. In SQL Editor, copy and paste `supabase/seed.sql`
@@ -48,6 +52,32 @@ npm install
 3. Optionally enable Google OAuth:
    - Add Google provider
    - Configure OAuth credentials
+
+### 4. Testing Order Status Workflow
+
+After setup, test the enhanced order status workflow:
+
+#### Create Test Orders
+1. Place a pickup order and verify status progression:
+   - received → confirmed → preparing → ready_for_pickup → picked_up → completed
+2. Place a delivery order and verify status progression:
+   - received → confirmed → preparing → ready_for_delivery → delivered → completed
+
+#### Admin Dashboard Testing
+1. Access admin dashboard at `/admin`
+2. Test status updates using the OrderStatusWidget
+3. Verify color-coded status display
+4. Test bulk status updates
+5. Test order filtering by status and type
+
+#### Database Verification
+```sql
+-- Check order statuses
+SELECT id, status, order_type, created_at FROM orders ORDER BY created_at DESC;
+
+-- Verify enum values
+SELECT unnest(enum_range(NULL::order_status));
+```
 
 ### 4. Environment Configuration
 

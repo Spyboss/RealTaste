@@ -16,7 +16,7 @@ A modern, mobile-first Progressive Web App (PWA) for restaurant order pickup, sp
 - **🚚 Delivery System**: Location-based ordering with 5km range
 - **💰 Smart Pricing**: LKR 180 base + LKR 40/km delivery fee
 - **💳 Local Payments**: PayHere integration for LKR transactions
-- **📍 Real-time Tracking**: Live order status updates
+- **📍 Real-time Tracking**: Complete order status workflow (received → confirmed → preparing → ready → delivered/picked up → completed)
 - **🔐 Secure Auth**: Email/Google login with Supabase
 - **📲 PWA Install**: Works offline, installs like native app
 - **🌐 Bilingual**: Sinhala and English support
@@ -24,11 +24,46 @@ A modern, mobile-first Progressive Web App (PWA) for restaurant order pickup, sp
 ### 👨‍💼 Admin Features
 - **📊 Advanced Dashboard**: Real-time order management with analytics
 - **🍜 Complete Menu Management**: Categories, variants, addons with images
-- **🚚 Delivery Management**: Track orders, manage delivery zones
+- **🚚 Delivery Management**: Track orders, manage delivery zones with enhanced status workflow
 - **⏰ Business Configuration**: Hours, location, delivery settings
 - **📈 Revenue Analytics**: Daily/weekly sales tracking
 - **🔔 Real-time Notifications**: Instant order alerts
 - **👥 Customer Management**: Order history and preferences
+- **🎯 Order Status Management**: Complete workflow from received to completed with pickup/delivery differentiation
+
+## 📋 Order Status Workflow
+
+RealTaste features a comprehensive order management system with different workflows for pickup and delivery orders:
+
+### Order Statuses
+- **received** - Initial order placement
+- **confirmed** - Order confirmed by restaurant
+- **preparing** - Kitchen is preparing the order
+- **ready_for_pickup** - Order ready for customer pickup
+- **ready_for_delivery** - Order ready for delivery
+- **picked_up** - Customer has collected the order
+- **delivered** - Order has been delivered to customer
+- **completed** - Order fully completed
+- **cancelled** - Order cancelled
+
+### Workflow Paths
+
+**Pickup Orders:**
+```
+received → confirmed → preparing → ready_for_pickup → picked_up → completed
+```
+
+**Delivery Orders:**
+```
+received → confirmed → preparing → ready_for_delivery → delivered → completed
+```
+
+### Admin Features
+- Color-coded status display for easy identification
+- Bulk status updates for multiple orders
+- Dynamic filtering by order status and type
+- Real-time status updates with notifications
+- Estimated delivery time tracking
 
 ## 🛠️ Tech Stack
 

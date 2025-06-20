@@ -21,7 +21,7 @@ fly deploy
 
 # 3. Deploy frontend to Cloudflare Pages
 # Push to GitHub, then connect to Cloudflare Pages
-git add . && git commit -m "Production deployment with delivery system" && git push
+git add . && git commit -m "Production deployment with enhanced order status workflow" && git push
 ```
 
 ## 📋 Step-by-Step

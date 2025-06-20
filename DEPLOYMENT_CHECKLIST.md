@@ -46,6 +46,9 @@ Use this checklist to ensure a smooth deployment process for the complete RealTa
 - [ ] Delivery calculation working: `POST /api/delivery/calculate`
 - [ ] PayHere integration working: `POST /api/payment/payhere`
 - [ ] Admin dashboard API: `GET /api/admin/orders`
+- [ ] Order status updates working: `PUT /api/admin/orders/:id/status`
+- [ ] Enhanced order status workflow functional (received → confirmed → preparing → ready → delivered/picked up → completed)
+- [ ] Order type differentiation working (pickup vs delivery)
 - [ ] CORS headers present in responses
 - [ ] Error handling working properly
 
