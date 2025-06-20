@@ -27,7 +27,15 @@ export const useBusinessStore = create<BusinessState>((set) => ({
     try {
       set({ loading: true, error: null });
 
-      const data = await businessService.getBusinessHours();
+      // Add a timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Business info request timed out')), 15000);
+      });
+
+      const data = await Promise.race([
+        businessService.getBusinessHours(),
+        timeoutPromise
+      ]) as any;
 
       set({
         businessHours: data.business_hours,
@@ -41,6 +49,11 @@ export const useBusinessStore = create<BusinessState>((set) => ({
       set({
         error: 'Failed to load business information',
         loading: false,
+        // Set default values so app can still function
+        businessHours: null,
+        isOpen: false,
+        restaurantName: 'RealTaste',
+        restaurantPhone: '',
       });
     }
   },

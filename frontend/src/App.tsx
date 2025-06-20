@@ -42,16 +42,20 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const { initialize, loading, setupAuthResetListener } = useAuthStore();
-  const { fetchBusinessInfo } = useBusinessStore();
+  const { initialize, loading: authLoading, setupAuthResetListener } = useAuthStore();
+  const { fetchBusinessInfo, loading: businessLoading } = useBusinessStore();
 
   useEffect(() => {
     // Initialize auth and business info
     const initializeApp = async () => {
-      await Promise.all([
-        initialize(),
-        fetchBusinessInfo(),
-      ]);
+      try {
+        await Promise.all([
+          initialize(),
+          fetchBusinessInfo(),
+        ]);
+      } catch (error) {
+        console.error('Failed to initialize app:', error);
+      }
     };
 
     initializeApp();
@@ -63,7 +67,7 @@ function App() {
     return cleanup;
   }, [initialize, fetchBusinessInfo, setupAuthResetListener]);
 
-  if (loading) {
+  if (authLoading || businessLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
