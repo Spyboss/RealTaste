@@ -164,115 +164,88 @@ export interface BusinessSettings {
   minimum_order_amount: number;
 }
 
-export interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category_id: string;
-  image_url?: string;
-  is_available: boolean;
-  prep_time: number;
-  is_vegetarian: boolean;
-  is_spicy: boolean;
-  allergens: string[];
-  created_at: string;
-  updated_at: string;
+export interface DeliveryCalculation {
+  fee: number;
+  estimated_time: number;
+  distance?: number;
 }
 
-export interface MenuCategory {
-  id: string;
-  name: string;
-  description?: string;
-  display_order: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-// Alias for compatibility
-export interface Category extends MenuCategory {}
-
-export interface Order {
-  id: string;
-  customer_name: string;
-  customer_phone: string;
-  customer_email?: string;
-  status: 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled';
-  payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
-  payment_method: 'payhere' | 'cash';
-  total_amount: number;
-  special_instructions?: string;
-  estimated_ready_time?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface OrderItem {
-  id: string;
+export interface PaymentRequest {
   order_id: string;
-  menu_item_id: string;
-  variant_id?: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
-  special_instructions?: string;
-  created_at: string;
+  amount: number;
+  currency: string;
+  return_url: string;
+  cancel_url: string;
+  notify_url: string;
 }
 
-export interface MenuVariant {
-  id: string;
-  menu_item_id: string;
-  name: string;
-  price_modifier: number;
-  is_available: boolean;
-  created_at: string;
-  updated_at: string;
+export interface PaymentResponse {
+  payment_id: string;
+  status: 'pending' | 'completed' | 'failed';
+  gateway_response?: any;
 }
 
-export interface MenuAddon {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  is_available: boolean;
-  created_at: string;
-  updated_at: string;
-}
+// Price Utilities
+export const formatPrice = (amount: number): string => {
+  return `Rs. ${amount.toFixed(2)}`;
+};
 
-export interface OrderItemAddon {
-  id: string;
-  order_item_id: string;
-  addon_id: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
-  created_at: string;
-}
+export const calculateItemTotal = (
+  basePrice: number,
+  variantModifier: number = 0,
+  addonPrices: number[] = [],
+  quantity: number = 1
+): number => {
+  const itemPrice = basePrice + variantModifier;
+  const addonsTotal = addonPrices.reduce((sum, price) => sum + price, 0);
+  return (itemPrice + addonsTotal) * quantity;
+};
 
-export interface CreateOrderRequest {
-  customer_name?: string;
-  customer_phone: string;
-  payment_method: 'card' | 'cash';
-  notes?: string;
-  order_type?: 'pickup' | 'delivery';
-  delivery_address?: string;
-  delivery_latitude?: number;
-  delivery_longitude?: number;
-  delivery_notes?: string;
-  customer_gps_location?: string;
-  items: {
-    menu_item_id: string;
-    variant_id?: string;
-    quantity: number;
-    addon_ids?: string[];
-    notes?: string;
-  }[];
-}
+// Phone Number Utilities
+export const formatPhoneNumber = (phone: string): string => {
+  const cleaned = phone.replace(/\D/g, '');
+  
+  if (cleaned.length === 10 && cleaned.startsWith('0')) {
+    return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`;
+  }
+  
+  if (cleaned.length === 9) {
+    return `0${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(5)}`;
+  }
+  
+  return phone;
+};
 
-// Utility function to generate order ID
-export function generateOrderId(): string {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substr(2, 5);
-  return `RT-${timestamp}-${random}`.toUpperCase();
-}
+export const validatePhoneNumber = (phone: string): boolean => {
+  const cleaned = phone.replace(/\D/g, '');
+  return /^0[0-9]{9}$/.test(cleaned) || /^[0-9]{9}$/.test(cleaned);
+};
+
+// Validation Utilities
+export const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+export const validateRequired = (value: any): boolean => {
+  if (typeof value === 'string') {
+    return value.trim().length > 0;
+  }
+  return value !== null && value !== undefined;
+};
+
+// Date Utilities
+export const formatDate = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+export const addMinutes = (date: Date, minutes: number): Date => {
+  return new Date(date.getTime() + minutes * 60000);
+};
