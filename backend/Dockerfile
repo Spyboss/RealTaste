@@ -7,8 +7,8 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files (we're building from root directory)
-COPY backend/package*.json ./
+# Copy package files (we're building from backend directory)
+COPY package*.json ./
 
 # Remove shared dependency temporarily for deployment
 RUN sed -i '/@realtaste\/shared/d' package.json
@@ -21,7 +21,7 @@ FROM base AS builder
 WORKDIR /app
 
 # Copy package files and install ALL dependencies (including dev dependencies for build)
-COPY backend/package*.json ./
+COPY package*.json ./
 
 # Remove shared dependency temporarily for deployment
 RUN sed -i '/@realtaste\/shared/d' package.json
@@ -29,7 +29,7 @@ RUN sed -i '/@realtaste\/shared/d' package.json
 RUN npm install
 
 # Copy backend source code
-COPY backend/ .
+COPY . .
 
 # Build backend
 RUN npm run build
@@ -44,7 +44,7 @@ RUN adduser --system --uid 1001 nodejs
 
 # Shared package is now included locally in types/shared.ts
 
-# Copy built application (we're building from root directory)
+# Copy built application (we're building from backend directory)
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
