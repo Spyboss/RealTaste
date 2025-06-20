@@ -100,9 +100,11 @@ const HomePage: React.FC = () => {
             </div>
           </div>
         </div>
-      )}</div>
+      )}
 
-      {/* Supabase Connection Test */}
+      {/* Test Components */}
+      <div className="space-y-4">
+        {/* Supabase Connection Test */}
         <SupabaseTest />
         
         {/* Authentication Test */}
@@ -110,6 +112,7 @@ const HomePage: React.FC = () => {
         
         {/* Signup Test */}
         <SignupTest />
+      </div>
 
       {/* Search and Filters */
       <div className="space-y-4">
