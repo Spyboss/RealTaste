@@ -201,7 +201,7 @@ const Header: React.FC = () => {
                       Login
                     </Button>
                   </Link>
-                  <Link to="/signup">
+                  <Link to="/register">
                     <Button size="sm">
                       Sign Up
                     </Button>
@@ -344,7 +344,7 @@ const Header: React.FC = () => {
                     </Button>
                   </Link>
                   <Link 
-                    to="/signup" 
+                    to="/register" 
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="block w-full"
                   >
