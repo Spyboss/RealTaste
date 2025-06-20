@@ -125,11 +125,35 @@ export const fetchUserRole = async (userId: string): Promise<string> => {
       .from('users')
       .select('role')
       .eq('id', userId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() instead of single() to handle missing records
 
     if (error) {
       console.warn('Failed to fetch user role from database:', error.message);
       // Return default role if database query fails
+      return 'customer';
+    }
+
+    // If no user record found, create one
+    if (!data) {
+      console.log('User record not found, creating default user record');
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser) {
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert({
+              id: userId,
+              email: authUser.email,
+              role: 'customer'
+            });
+          
+          if (insertError) {
+            console.warn('Failed to create user record:', insertError.message);
+          }
+        }
+      } catch (insertError) {
+        console.warn('Error creating user record:', insertError);
+      }
       return 'customer';
     }
 
