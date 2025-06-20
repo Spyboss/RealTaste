@@ -11,12 +11,14 @@ const OrderManagementPage: React.FC = () => {
     error,
     fetchAllAdminOrders,
     updateAdminOrderStatus,
+    deleteOrder,
   } = useAdminStore((state) => ({
     orderQueue: state.orderQueue,
     isManagementLoading: state.isManagementLoading,
     error: state.error,
     fetchAllAdminOrders: state.fetchAllAdminOrders,
     updateAdminOrderStatus: state.updateAdminOrderStatus,
+    deleteOrder: state.deleteOrder,
   }));
 
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -72,10 +74,11 @@ const OrderManagementPage: React.FC = () => {
     <div>
       <h1 className="text-xl font-semibold mb-4">Full Order Management</h1>
       {/* We'll pass orders and the status change handler to OrderList */}
-      <OrderList 
-        orders={orderQueue} 
-        onStatusChange={handleStatusChange} 
-      />
+      <OrderList
+          orders={orderQueue}
+          onStatusChange={handleStatusChange}
+          onDeleteOrder={deleteOrder}
+        />
       {isManagementLoading && orderQueue.length > 0 && (
         <div className="mt-4 text-center">
             <p>Updating order list...</p>

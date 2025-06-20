@@ -71,11 +71,44 @@ router.get('/dashboard', authenticateToken, requireAdmin, async (req, res) => {
 
     if (pendingError) throw pendingError;
 
-    // Calculate stats for the timeframe
+    // Get ALL completed orders from database (not just timeframe)
+    const { data: allCompletedOrders, error: allCompletedError } = await supabaseAdmin
+      .from(tables.orders)
+      .select('*')
+      .in('status', ['completed', 'picked_up', 'delivered']);
+
+    if (allCompletedError) throw allCompletedError;
+
+    // Calculate stats for the timeframe (daily/weekly/monthly)
     const totalOrders = orders?.length || 0;
-    const completedOrders = orders?.filter(order => order.status === 'picked_up') || [];
-    const totalRevenue = completedOrders.reduce((sum, order) => sum + Number(order.total_amount), 0);
+    const completedOrdersInTimeframe = orders?.filter(order => ['completed', 'picked_up', 'delivered'].includes(order.status)) || [];
+    const totalRevenue = completedOrdersInTimeframe.reduce((sum, order) => sum + Number(order.total_amount), 0);
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    // Calculate total completed orders stats
+    const totalCompletedOrders = allCompletedOrders?.length || 0;
+    const totalCompletedRevenue = allCompletedOrders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
+
+    // Calculate daily completed orders for the last 7 days
+    const dailyCompletedStats = [];
+    for (let i = 6; i >= 0; i--) {
+      const dayStart = new Date();
+      dayStart.setDate(dayStart.getDate() - i);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const dayCompletedOrders = allCompletedOrders?.filter(order => {
+        const orderTime = new Date(order.created_at);
+        return orderTime >= dayStart && orderTime <= dayEnd && ['completed', 'picked_up', 'delivered'].includes(order.status);
+      }) || [];
+
+      dailyCompletedStats.push({
+        date: dayStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        completed_orders: dayCompletedOrders.length,
+        revenue: dayCompletedOrders.reduce((sum, order) => sum + Number(order.total_amount), 0)
+      });
+    }
 
     // Calculate hourly data for charts (last 24 hours for today, daily for week/month)
     const chartData = [];
@@ -140,12 +173,12 @@ router.get('/dashboard', authenticateToken, requireAdmin, async (req, res) => {
       .slice(0, 5);
 
     // Calculate average preparation time
-    const completedOrdersWithTimes = completedOrders.filter(order =>
+    const completedOrdersWithTimes = allCompletedOrders.filter((order: any) =>
       order.estimated_pickup_time && order.created_at
     );
 
     const avgPrepTime = completedOrdersWithTimes.length > 0
-      ? completedOrdersWithTimes.reduce((sum, order) => {
+      ? completedOrdersWithTimes.reduce((sum: number, order: any) => {
           const created = new Date(order.created_at).getTime();
           const pickup = new Date(order.estimated_pickup_time).getTime();
           return sum + (pickup - created);
@@ -156,15 +189,20 @@ router.get('/dashboard', authenticateToken, requireAdmin, async (req, res) => {
       timeframe,
       stats: {
         total_orders: totalOrders,
-        completed_orders: completedOrders.length,
+        completed_orders: completedOrdersInTimeframe.length,
         total_revenue: totalRevenue,
         avg_order_value: avgOrderValue,
         avg_prep_time: Math.round(avgPrepTime),
-        popular_items: popularItems
+        popular_items: popularItems,
+        // Add total completed orders from all time
+        total_completed_orders: totalCompletedOrders,
+        total_completed_revenue: totalCompletedRevenue
       },
       chart_data: chartData,
       pending_orders: pendingOrders || [],
-      queue_length: pendingOrders?.length || 0
+      queue_length: pendingOrders?.length || 0,
+      // Add daily completed orders stats for the last 7 days
+      daily_completed_stats: dailyCompletedStats
     };
 
     const response: ApiResponse<typeof dashboardData> = {

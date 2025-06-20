@@ -73,6 +73,7 @@ interface AdminState {
   // New actions for admin order management
   fetchAllAdminOrders: () => Promise<void>;
   updateAdminOrderStatus: (orderId: string, status: Order['status']) => Promise<boolean>;
+  deleteOrder: (orderId: string) => Promise<boolean>;
 
   // Real-time updates
   addNewOrder: (order: Order) => void;
@@ -396,6 +397,56 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     } catch (error: any) {
       console.error('updateAdminOrderStatus error:', error);
       set({ isLoading: false, error: error.message || 'Failed to update order status' });
+      return false;
+    }
+  },
+
+  deleteOrder: async (orderId: string) => {
+    set({ isLoading: true, error: null });
+    const token = useAuthStore.getState().session?.access_token;
+
+    if (!token) {
+      set({ isLoading: false, error: 'Authentication token not found.' });
+      return false;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('deleteOrder API !response.ok. Status:', response.status, 'Response text:', errorText.substring(0, 500));
+
+        // Check if response is HTML
+        if (errorText.includes('<!doctype html>')) {
+          throw new Error('Server returned an unexpected HTML response. Please try again later.');
+        }
+
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`HTTP error! status: ${response.status}. Response: ${errorText.substring(0, 200)}...`);
+        }
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        // Remove the order from local state
+        get().removeOrder(orderId);
+        set({ isLoading: false, lastUpdated: new Date() });
+        return true;
+      } else {
+        throw new Error(result.error || 'Failed to delete order: Invalid response structure');
+      }
+    } catch (error: any) {
+      console.error('deleteOrder error:', error);
+      set({ isLoading: false, error: error.message || 'Failed to delete order' });
       return false;
     }
   },

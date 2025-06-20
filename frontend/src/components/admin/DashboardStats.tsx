@@ -71,11 +71,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats, isLoading }) => 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Orders"
-          value={data.total_orders}
+          title="Total Orders (All Time)"
+          value={data.total_completed_orders}
           icon={<Package className="w-6 h-6" />}
           color="text-blue-600"
-          subtitle={`${data.completed_orders} completed`}
+          subtitle={`${data.total_orders} ${stats.timeframe}`}
         />
         
         <StatCard
@@ -101,6 +101,22 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats, isLoading }) => 
           subtitle="minutes"
         />
       </div>
+
+      {/* Daily Completed Orders Stats */}
+      {stats.daily_completed_stats && stats.daily_completed_stats.length > 0 && (
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Completed Orders (Last 7 Days)</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            {stats.daily_completed_stats.map((day, index) => (
+              <div key={index} className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-xs text-gray-500 mb-1">{day.date}</div>
+                <div className="text-lg font-semibold text-gray-900">{day.completed_orders}</div>
+                <div className="text-xs text-gray-600">{formatPrice(day.revenue)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Queue Status */}
       <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">

@@ -253,6 +253,9 @@ export interface DashboardStats {
       count: number;
       revenue: number;
     }[];
+    // Add total completed orders from all time
+    total_completed_orders: number;
+    total_completed_revenue: number;
   };
   chart_data: {
     label: string;
@@ -261,6 +264,12 @@ export interface DashboardStats {
   }[];
   pending_orders: Order[];
   queue_length: number;
+  // Add daily completed orders stats for the last 7 days
+  daily_completed_stats: {
+    date: string;
+    completed_orders: number;
+    revenue: number;
+  }[];
 }
 
 export interface AnalyticsData {

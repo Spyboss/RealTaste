@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Order } from '@/types/shared';
 import { useAdminStore } from '@/stores/adminStore';
 import { useBulkUpdateOrders } from '@/hooks/useAdmin';
@@ -28,6 +28,7 @@ interface OrderCardProps {
   onToggleSelect: (orderId: string) => void;
   onStatusUpdate: (orderId: string, newStatus: Order['status']) => void;
   onPriorityChange: (orderId: string, newPriority: number) => void;
+  onDeleteOrder?: (orderId: string) => Promise<boolean>;
 }
 
 const OrderCard: React.FC<OrderCardProps> = ({
@@ -36,6 +37,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   onToggleSelect,
   onStatusUpdate,
   onPriorityChange,
+  onDeleteOrder,
 }) => {
   const {
     attributes,
@@ -49,6 +51,25 @@ const OrderCard: React.FC<OrderCardProps> = ({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: attributes['aria-pressed'] ? 0.6 : 1,
+  };
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteOrder = async () => {
+    if (!onDeleteOrder) return;
+    
+    setIsDeleting(true);
+    try {
+      const success = await onDeleteOrder(order.id);
+      if (success) {
+        setShowDeleteConfirm(false);
+      }
+    } catch (error) {
+      console.error('Failed to delete order:', error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handlePriorityChangeClick = (currentPriority: string | number | undefined, change: number) => {
@@ -102,6 +123,41 @@ const OrderCard: React.FC<OrderCardProps> = ({
       <div className="mt-2 flex items-center space-x-1">
         <Button size="sm" variant="ghost" onClick={() => handlePriorityChangeClick(order.priority, 1)} title="Increase Priority">↑ Prio</Button>
         <Button size="sm" variant="ghost" onClick={() => handlePriorityChangeClick(order.priority, -1)} title="Decrease Priority">↓ Prio</Button>
+        {onDeleteOrder && (
+          <div className="flex gap-1">
+            {showDeleteConfirm ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleDeleteOrder}
+                  disabled={isDeleting}
+                  className="bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isDeleting ? 'Deleting...' : 'Confirm'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                  className="bg-gray-500 text-white hover:bg-gray-600"
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="bg-red-500 text-white hover:bg-red-600"
+              >
+                Delete
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -141,10 +197,12 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
     selectedOrders,
     toggleOrderSelection,
     updateAdminOrderStatus,
+    deleteOrder,
   } = useAdminStore((state) => ({
     selectedOrders: state.selectedOrders,
     toggleOrderSelection: state.toggleOrderSelection,
     updateAdminOrderStatus: state.updateAdminOrderStatus,
+    deleteOrder: state.deleteOrder,
   }));
 
   const [statusFilter, setStatusFilter] = React.useState<Order['status'] | 'all'>('all');
@@ -402,6 +460,7 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
                         onToggleSelect={toggleOrderSelection}
                         onStatusUpdate={handleIndividualOrderStatusUpdate}
                         onPriorityChange={handlePriorityChangeLocal}
+                        onDeleteOrder={deleteOrder}
                       />
                     ))}
                     {ordersInColumn.length === 0 && <p className="text-sm text-gray-500 italic">No orders in this stage.</p>}

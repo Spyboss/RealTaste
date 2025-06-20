@@ -1,13 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Order } from '@/types/shared'; // Import the shared Order type
 import OrderStatusWidget from './OrderStatusWidget'; // Import the widget
 
 interface OrderListProps {
   orders: Order[];
   onStatusChange: (orderId: string, newStatus: Order['status']) => void;
+  onDeleteOrder?: (orderId: string) => Promise<boolean>;
 }
 
-const OrderList: React.FC<OrderListProps> = ({ orders, onStatusChange }) => {
+const OrderList: React.FC<OrderListProps> = ({ orders, onStatusChange, onDeleteOrder }) => {
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!onDeleteOrder) return;
+    
+    setDeletingOrderId(orderId);
+    try {
+      const success = await onDeleteOrder(orderId);
+      if (success) {
+        setShowDeleteConfirm(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete order:', error);
+    } finally {
+      setDeletingOrderId(null);
+    }
+  };
+
   if (!orders || orders.length === 0) {
     return <p className="text-gray-600">No orders to display at the moment.</p>;
   }
@@ -39,7 +59,7 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onStatusChange }) => {
           {order.estimated_pickup_time && 
             <p className="text-sm text-gray-500">Est. Pickup: {new Date(order.estimated_pickup_time).toLocaleString()}</p>
           }
-          <div className="mt-3">
+          <div className="mt-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <OrderStatusWidget 
               orderId={order.id} 
               currentStatus={order.status} 
@@ -47,6 +67,35 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onStatusChange }) => {
               // Pass down a specific handler for this order's status change
               onStatusChange={(newStatus) => onStatusChange(order.id, newStatus as Order['status'])} 
             />
+            {onDeleteOrder && (
+              <div className="flex gap-2">
+                {showDeleteConfirm === order.id ? (
+                  <>
+                    <button
+                      onClick={() => handleDeleteOrder(order.id)}
+                      disabled={deletingOrderId === order.id}
+                      className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {deletingOrderId === order.id ? 'Deleting...' : 'Confirm Delete'}
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteConfirm(null)}
+                      disabled={deletingOrderId === order.id}
+                      className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setShowDeleteConfirm(order.id)}
+                    className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                  >
+                    Delete Order
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           {/* Consider adding a button to view full order details later */}
         </div>
