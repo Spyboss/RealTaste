@@ -28,6 +28,20 @@ const SupabaseTest: React.FC = () => {
           console.log('Supabase connection successful:', data);
           setConnectionStatus('Connection successful!');
         }
+        
+        // Test a simple sign-in attempt with dummy credentials to see the actual error
+        console.log('Testing sign-in with dummy credentials...');
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: 'test@example.com',
+          password: 'testpassword'
+        });
+        
+        if (signInError) {
+          console.log('Sign-in test error (expected):', signInError);
+        } else {
+          console.log('Sign-in test unexpected success:', signInData);
+        }
+        
       } catch (err: any) {
         console.error('Test failed:', err);
         setConnectionStatus(`Test failed: ${err.message}`);

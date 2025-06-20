@@ -33,17 +33,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
 console.log('Supabase URL:', supabaseUrl);
 console.log('Supabase Key present:', !!supabaseAnonKey);
 
-// Clear any corrupted session data
-if (typeof window !== 'undefined') {
-  // Clear localStorage items that might be corrupted
-  const storageKeys = Object.keys(localStorage);
-  storageKeys.forEach(key => {
-    if (key.includes('supabase') && key.includes('auth-token')) {
-      console.log('Clearing potentially corrupted auth token:', key);
-      localStorage.removeItem(key);
-    }
-  });
-}
+// Only clear corrupted session data if there's an actual error
+// Commented out aggressive clearing that might interfere with normal operation
+// if (typeof window !== 'undefined') {
+//   const storageKeys = Object.keys(localStorage);
+//   storageKeys.forEach(key => {
+//     if (key.includes('supabase') && key.includes('auth-token')) {
+//       console.log('Clearing potentially corrupted auth token:', key);
+//       localStorage.removeItem(key);
+//     }
+//   });
+// }
 
 export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
