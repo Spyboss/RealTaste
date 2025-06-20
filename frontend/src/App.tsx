@@ -19,6 +19,7 @@ import OrderDetailsPage from '@/pages/OrderDetailsPage';
 import OrderConfirmationPage from '@/pages/OrderConfirmationPage';
 import CheckoutPage from '@/pages/CheckoutPage';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
+import AuthCallback from '@/components/auth/AuthCallback';
 
 // Payment Pages
 import PaymentSuccessPage from '@/pages/PaymentSuccessPage';
@@ -93,6 +94,8 @@ function App() {
                 <RegisterPage />
               </Layout>
             } />
+
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
             <Route path="/checkout" element={
               <Layout>

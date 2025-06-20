@@ -121,9 +121,51 @@ export const useAuthStore = create<AuthState>()(
         
         window.addEventListener('auth-reset', handleAuthReset);
         
+        // Setup Supabase auth state listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            console.log('Auth state changed:', event, session?.user?.email);
+            
+            if (event === 'SIGNED_IN' && session?.user) {
+              try {
+                const role = await fetchUserRole(session.user.id);
+                let { data: { user: refreshedUser }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+
+                if (refreshedUser) {
+                  if (!refreshedUser.app_metadata) {
+                    refreshedUser.app_metadata = {};
+                  }
+                  refreshedUser.app_metadata.role = role;
+                }
+
+                set({
+                  user: refreshedUser,
+                  session,
+                  isAuthenticated: true,
+                  error: null,
+                  loading: false
+                });
+              } catch (error: any) {
+                console.error('Error handling auth state change:', error);
+                set({ error: error.message, loading: false });
+              }
+            } else if (event === 'SIGNED_OUT') {
+              set({
+                user: null,
+                session: null,
+                isAuthenticated: false,
+                error: null,
+                loading: false
+              });
+            }
+          }
+        );
+        
         // Return cleanup function
         return () => {
           window.removeEventListener('auth-reset', handleAuthReset);
+          subscription.unsubscribe();
         };
       },
 
