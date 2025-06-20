@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Input from '@/components/ui/Input';
 import SupabaseTest from '@/components/SupabaseTest';
 import AuthTest from '@/components/AuthTest';
+import SignupTest from '@/components/SignupTest';
 import { MenuItem, MenuCategory } from '@/types/shared';
 
 const HomePage: React.FC = () => {
@@ -106,6 +107,9 @@ const HomePage: React.FC = () => {
         
         {/* Authentication Test */}
         <AuthTest />
+        
+        {/* Signup Test */}
+        <SignupTest />
 
       {/* Search and Filters */
       <div className="space-y-4">
