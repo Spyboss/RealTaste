@@ -5,6 +5,14 @@
 
 ### 🎉 MAJOR MILESTONE: DELIVERY SYSTEM COMPLETED (January 2025)
 
+### 🔧 RECENT FIXES: OAuth Authentication Issues Resolved (January 2025)
+
+**Issue Resolved**: Google OAuth redirect `ERR_CONNECTION_REFUSED` error
+- **Root Cause**: Configuration mismatch between Google Cloud Console and Supabase dashboard
+- **Solution**: Updated Google Cloud Console Authorized redirect URIs to match production URLs
+- **Status**: ✅ VERIFIED - OAuth authentication now working correctly
+- **Impact**: Users can now successfully sign in with Google without connection errors
+
 RealTaste has successfully implemented a **complete delivery system** with the following key achievements:
 
 #### ✅ Core Delivery Features Implemented
@@ -460,7 +468,13 @@ function calculateDeliveryFee(distanceKm: number): DeliveryCalculation {
 11. ✅ **Admin delivery dashboard components built**
 12. ✅ **Complete pickup/delivery flow tested**
 
-### 🎯 NEW PRIORITY: Admin Menu Management Interface (Next 7 Days)
+### ✅ RECENT COMPLETION: OAuth Authentication Fixed (January 2025)
+1. ✅ **Google OAuth Configuration**: Updated Google Cloud Console redirect URIs
+2. ✅ **Supabase Integration**: Verified OAuth provider settings
+3. ✅ **Production Testing**: Confirmed authentication flow working
+4. ✅ **Error Resolution**: Fixed `ERR_CONNECTION_REFUSED` issue
+
+### 🎯 CURRENT PRIORITY: Admin Menu Management Interface (Next 7 Days)
 
 ### Day 1-2: Admin Menu Management Pages
 1. **Create `/admin/menu` route and main menu management page**
@@ -484,6 +498,7 @@ function calculateDeliveryFee(distanceKm: number): DeliveryCalculation {
 
 ### ✅ Completed (Ready for Production)
 - [x] User authentication and signup
+- [x] **Google OAuth Authentication** (Fixed January 2025)
 - [x] Food images and menu display
 - [x] Location-based access control (10km radius)
 - [x] Order creation and management
