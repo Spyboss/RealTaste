@@ -7,6 +7,7 @@ import MenuCard from '@/components/menu/MenuCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Input from '@/components/ui/Input';
 import SupabaseTest from '@/components/SupabaseTest';
+import AuthTest from '@/components/AuthTest';
 import { MenuItem, MenuCategory } from '@/types/shared';
 
 const HomePage: React.FC = () => {
@@ -101,7 +102,10 @@ const HomePage: React.FC = () => {
       )}</div>
 
       {/* Supabase Connection Test */}
-      <SupabaseTest />
+        <SupabaseTest />
+        
+        {/* Authentication Test */}
+        <AuthTest />
 
       {/* Search and Filters */
       <div className="space-y-4">
