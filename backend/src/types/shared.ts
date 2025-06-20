@@ -142,10 +142,16 @@ export interface CreateOrderRequest {
     notes?: string;
   }[];
   order_type: 'pickup' | 'delivery';
+  customer_phone: string;
+  customer_name?: string;
   delivery_address?: string;
   delivery_phone?: string;
   delivery_notes?: string;
-  payment_method: 'cash' | 'card' | 'payhere';
+  delivery_latitude?: number;
+  delivery_longitude?: number;
+  customer_gps_location?: string;
+  notes?: string;
+  payment_method: 'cash' | 'card';
 }
 
 export function generateOrderId(): string {
