@@ -73,10 +73,13 @@ export const isAdmin = async () => {
 
 // Auth helpers
 export const signInWithGoogle = async () => {
+  // Use environment variable for redirect URL in production, fallback to current origin for development
+  const redirectUrl = import.meta.env.VITE_REDIRECT_URL || `${window.location.origin}/auth/callback`;
+  
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`
+      redirectTo: redirectUrl
     }
   });
   return { data, error };
