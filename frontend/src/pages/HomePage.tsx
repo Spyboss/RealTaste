@@ -6,6 +6,7 @@ import { formatTime } from '@/utils/tempUtils';
 import MenuCard from '@/components/menu/MenuCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Input from '@/components/ui/Input';
+import SupabaseTest from '@/components/SupabaseTest';
 import { MenuItem, MenuCategory } from '@/types/shared';
 
 const HomePage: React.FC = () => {
@@ -97,9 +98,12 @@ const HomePage: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
+      )}</div>
 
-      {/* Search and Filters */}
+      {/* Supabase Connection Test */}
+      <SupabaseTest />
+
+      {/* Search and Filters */
       <div className="space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
