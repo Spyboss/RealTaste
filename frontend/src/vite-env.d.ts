@@ -16,4 +16,9 @@ interface ImportMetaEnv {
   readonly VITE_PAYHERE_SANDBOX: string
   readonly VITE_APP_NAME: string
   readonly VITE_APP_VERSION: string
+  readonly VITE_RESTAURANT_LAT: string
+  readonly VITE_RESTAURANT_LNG: string
+  readonly VITE_RESTAURANT_NAME: string
+  readonly VITE_RESTAURANT_ADDRESS: string
+  readonly VITE_DELIVERY_RADIUS: string
 }

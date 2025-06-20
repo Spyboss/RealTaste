@@ -1,22 +1,6 @@
 import { createClient, RealtimeChannel, Session, User, SupabaseClient } from '@supabase/supabase-js';
 
-interface Env {
-  readonly VITE_SUPABASE_URL: string;
-  readonly VITE_SUPABASE_ANON_KEY: string;
-  readonly VITE_API_URL: string;
-  readonly VITE_APP_NAME: string;
-  readonly VITE_RESTAURANT_LAT: string;
-  readonly VITE_RESTAURANT_LNG: string;
-  readonly VITE_RESTAURANT_NAME: string;
-  readonly VITE_RESTAURANT_ADDRESS: string;
-  readonly VITE_DELIVERY_RADIUS: string;
-}
-
-declare global {
-  interface ImportMeta {
-    env: Env;
-  }
-}
+/// <reference types="vite/client" />
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
