@@ -119,10 +119,13 @@ const AdminDashboard: React.FC = () => {
         completed_orders: dailySummary.completed_orders || 0, // Use from dailySummary instead of queue
         avg_prep_time: Math.round(avgPrepTime),
         popular_items: topItems.map(item => ({ name: item.name, count: item.quantity, revenue: item.revenue })),
+        total_completed_orders: 0, // Placeholder - will be updated when backend integration is complete
+        total_completed_revenue: 0, // Placeholder - will be updated when backend integration is complete
       },
       chart_data: trendsData.map(td => ({ label: td.date, orders: td.orders, revenue: td.revenue })),
       pending_orders: pendingOrders,
       queue_length: pendingOrders.length,
+      daily_completed_stats: [], // Placeholder - will be updated when backend integration is complete
     };
   }, [dailySummary, topItems, trendsData, orderQueue]);
 
