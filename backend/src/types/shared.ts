@@ -44,6 +44,116 @@ export function isRestaurantOpen(hours: BusinessHours): boolean {
   return currentTime >= openTime && currentTime <= closeTime;
 }
 
+export interface User {
+  id: string;
+  email?: string;
+  phone?: string;
+  first_name?: string;
+  role: 'customer' | 'admin';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  menu_items?: MenuItem[];
+}
+
+export interface MenuItem {
+  id: string;
+  category_id: string;
+  name: string;
+  description?: string;
+  base_price: number;
+  image_url?: string;
+  is_available: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  category?: Category;
+  variants?: MenuVariant[];
+  addons?: MenuAddon[];
+}
+
+export interface MenuVariant {
+  id: string;
+  menu_item_id: string;
+  name: string;
+  price_modifier: number;
+  is_available: boolean;
+  sort_order: number;
+}
+
+export interface MenuAddon {
+  id: string;
+  menu_item_id: string;
+  name: string;
+  price: number;
+  is_available: boolean;
+  sort_order: number;
+}
+
+export interface Order {
+  id: string;
+  user_id: string;
+  status: 'received' | 'confirmed' | 'preparing' | 'ready_for_pickup' | 'out_for_delivery' | 'completed' | 'cancelled';
+  order_type: 'pickup' | 'delivery';
+  total_amount: number;
+  delivery_fee?: number;
+  delivery_address?: string;
+  delivery_phone?: string;
+  delivery_notes?: string;
+  estimated_delivery_time?: string;
+  payment_method: 'cash' | 'card' | 'payhere';
+  payment_status: 'pending' | 'completed' | 'failed';
+  created_at: string;
+  updated_at: string;
+  items?: OrderItem[];
+  user?: User;
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  menu_item_id: string;
+  variant_id?: string;
+  addon_ids: string[];
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  notes?: string;
+  menu_item?: MenuItem;
+  variant?: MenuVariant;
+  addons?: MenuAddon[];
+}
+
+export interface CreateOrderRequest {
+  items: {
+    menu_item_id: string;
+    variant_id?: string;
+    addon_ids: string[];
+    quantity: number;
+    notes?: string;
+  }[];
+  order_type: 'pickup' | 'delivery';
+  delivery_address?: string;
+  delivery_phone?: string;
+  delivery_notes?: string;
+  payment_method: 'cash' | 'card' | 'payhere';
+}
+
+export function generateOrderId(): string {
+  const timestamp = Date.now().toString(36);
+  const randomStr = Math.random().toString(36).substring(2, 8);
+  return `ORD-${timestamp}-${randomStr}`.toUpperCase();
+}
+
 export interface BusinessSettings {
   restaurant_name: string;
   phone: string;
