@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create custom types
-CREATE TYPE order_status AS ENUM ('received', 'confirmed', 'preparing', 'ready_for_pickup', 'completed', 'picked_up', 'cancelled');
+CREATE TYPE order_status AS ENUM ('received', 'confirmed', 'preparing', 'ready_for_pickup', 'ready_for_delivery', 'picked_up', 'delivered', 'completed', 'cancelled');
 CREATE TYPE payment_method AS ENUM ('card', 'cash');
 CREATE TYPE payment_status AS ENUM ('pending', 'completed', 'failed', 'refunded');
 CREATE TYPE user_role AS ENUM ('customer', 'admin');
@@ -73,12 +73,22 @@ CREATE TABLE orders (
   customer_id UUID REFERENCES users(id) ON DELETE SET NULL, -- NULL for guest orders
   customer_phone TEXT NOT NULL,
   customer_name TEXT,
+  order_type TEXT DEFAULT 'pickup' CHECK (order_type IN ('pickup', 'delivery')),
   status order_status DEFAULT 'received',
   payment_method payment_method NOT NULL,
   payment_status payment_status DEFAULT 'pending',
   subtotal DECIMAL(10,2) NOT NULL CHECK (subtotal >= 0),
   tax_amount DECIMAL(10,2) DEFAULT 0 CHECK (tax_amount >= 0),
   total_amount DECIMAL(10,2) NOT NULL CHECK (total_amount >= 0),
+  delivery_fee DECIMAL(10,2) DEFAULT 0,
+  delivery_address TEXT,
+  delivery_latitude DECIMAL(10, 8),
+  delivery_longitude DECIMAL(11, 8),
+  delivery_distance_km DECIMAL(5, 2),
+  estimated_delivery_time TIMESTAMP WITH TIME ZONE,
+  actual_delivery_time TIMESTAMP WITH TIME ZONE,
+  delivery_notes TEXT,
+  customer_gps_location TEXT,
   notes TEXT,
   estimated_pickup_time TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

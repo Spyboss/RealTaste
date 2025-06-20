@@ -23,7 +23,10 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onStatusChange }) => {
               order.status === 'confirmed' ? 'bg-indigo-100 text-indigo-700' :
               order.status === 'preparing' ? 'bg-yellow-100 text-yellow-700' :
               order.status === 'ready_for_pickup' ? 'bg-green-100 text-green-700' :
-              order.status === 'completed' ? 'bg-purple-100 text-purple-700' :
+              order.status === 'ready_for_delivery' ? 'bg-emerald-100 text-emerald-700' :
+              order.status === 'picked_up' ? 'bg-purple-100 text-purple-700' :
+              order.status === 'delivered' ? 'bg-teal-100 text-teal-700' :
+              order.status === 'completed' ? 'bg-gray-100 text-gray-700' :
               order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
               'bg-gray-100 text-gray-700'
             }`}>
@@ -40,6 +43,7 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onStatusChange }) => {
             <OrderStatusWidget 
               orderId={order.id} 
               currentStatus={order.status} 
+              orderType={order.order_type || 'pickup'}
               // Pass down a specific handler for this order's status change
               onStatusChange={(newStatus) => onStatusChange(order.id, newStatus as Order['status'])} 
             />
@@ -51,4 +55,4 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onStatusChange }) => {
   );
 };
 
-export default OrderList; 
+export default OrderList;

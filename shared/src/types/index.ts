@@ -59,12 +59,22 @@ export interface Order {
   customer_id?: string; // null for guest orders
   customer_phone: string;
   customer_name?: string;
+  order_type: 'pickup' | 'delivery';
   status: OrderStatus;
   payment_method: PaymentMethod;
   payment_status: PaymentStatus;
   subtotal: number;
   tax_amount: number;
   total_amount: number;
+  delivery_fee?: number;
+  delivery_address?: string;
+  delivery_latitude?: number;
+  delivery_longitude?: number;
+  delivery_distance_km?: number;
+  estimated_delivery_time?: string;
+  actual_delivery_time?: string;
+  delivery_notes?: string;
+  customer_gps_location?: string;
   notes?: string;
   estimated_pickup_time?: string;
   created_at: string;
@@ -100,9 +110,13 @@ export interface OrderItemAddon {
 // Enums
 export type OrderStatus =
   | 'received'
+  | 'confirmed'
   | 'preparing'
   | 'ready_for_pickup'
+  | 'ready_for_delivery'
   | 'picked_up'
+  | 'delivered'
+  | 'completed'
   | 'cancelled';
 
 export type PaymentMethod = 'card' | 'cash';

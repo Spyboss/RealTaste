@@ -73,7 +73,7 @@ const OrdersPage: React.FC = () => {
         >
           All Orders
         </button>
-        {['received', 'preparing', 'ready_for_pickup', 'picked_up'].map((status) => (
+        {['received', 'confirmed', 'preparing', 'ready_for_pickup', 'ready_for_delivery', 'picked_up', 'delivered', 'completed'].map((status) => (
           <button
             key={status}
             onClick={() => setStatusFilter(status)}

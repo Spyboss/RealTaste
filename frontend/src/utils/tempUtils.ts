@@ -38,9 +38,13 @@ export const formatDateTime = (dateStr: string): string => {
 export const getOrderStatusDisplay = (status: string): string => {
   const statusMap: Record<string, string> = {
     received: 'Order Received',
+    confirmed: 'Confirmed',
     preparing: 'Preparing',
     ready_for_pickup: 'Ready for Pickup',
+    ready_for_delivery: 'Ready for Delivery',
     picked_up: 'Picked Up',
+    delivered: 'Delivered',
+    completed: 'Completed',
     cancelled: 'Cancelled',
   };
   return statusMap[status] || status;
@@ -49,9 +53,13 @@ export const getOrderStatusDisplay = (status: string): string => {
 export const getOrderStatusColor = (status: string): string => {
   const colorMap: Record<string, string> = {
     received: 'bg-blue-100 text-blue-800',
+    confirmed: 'bg-indigo-100 text-indigo-800',
     preparing: 'bg-yellow-100 text-yellow-800',
     ready_for_pickup: 'bg-green-100 text-green-800',
-    picked_up: 'bg-gray-100 text-gray-800',
+    ready_for_delivery: 'bg-emerald-100 text-emerald-800',
+    picked_up: 'bg-purple-100 text-purple-800',
+    delivered: 'bg-teal-100 text-teal-800',
+    completed: 'bg-gray-100 text-gray-800',
     cancelled: 'bg-red-100 text-red-800',
   };
   return colorMap[status] || 'bg-gray-100 text-gray-800';

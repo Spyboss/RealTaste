@@ -87,6 +87,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
         <OrderStatusWidget
             orderId={order.id}
             currentStatus={order.status}
+            orderType={order.order_type || 'pickup'}
             onStatusChange={(newStatus) => onStatusUpdate(order.id, newStatus)}
         />
         <Button
@@ -112,12 +113,28 @@ interface OrderQueueProps {
   onPriorityChange: (orderId: string, priority: number) => void;
 }
 
-const statusColumns = [
-  { id: 'received', title: 'New Orders' },
-  { id: 'confirmed', title: 'Confirmed' },
-  { id: 'preparing', title: 'Preparing' },
-  { id: 'ready_for_pickup', title: 'Ready For Pickup' }
-];
+const getStatusColumns = (orders: Order[]) => {
+  const hasDeliveryOrders = orders.some(order => order.order_type === 'delivery');
+  
+  const baseColumns = [
+    { id: 'received', title: 'New Orders' },
+    { id: 'confirmed', title: 'Confirmed' },
+    { id: 'preparing', title: 'Preparing' },
+  ];
+  
+  if (hasDeliveryOrders) {
+    return [
+      ...baseColumns,
+      { id: 'ready_for_pickup', title: 'Ready (Pickup)' },
+      { id: 'ready_for_delivery', title: 'Ready (Delivery)' },
+    ];
+  } else {
+    return [
+      ...baseColumns,
+      { id: 'ready_for_pickup', title: 'Ready For Pickup' },
+    ];
+  }
+}
 
 const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityChange }) => {
   const {
@@ -133,6 +150,7 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
   const [statusFilter, setStatusFilter] = React.useState<Order['status'] | 'all'>('all');
   const [sortOrder, setSortOrder] = React.useState<'newest' | 'oldest' | 'priority_high' | 'priority_low'>('newest');
 
+  const statusColumns = React.useMemo(() => getStatusColumns(orders), [orders]);
   const bulkUpdateMutation = useBulkUpdateOrders();
 
   const sensors = useSensors(
@@ -303,6 +321,7 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
                 <option value="confirmed">Confirmed</option>
                 <option value="preparing">Preparing</option>
                 <option value="ready_for_pickup">Ready for Pickup</option>
+                <option value="ready_for_delivery">Ready for Delivery</option>
               </select>
             </div>
 
@@ -351,7 +370,16 @@ const OrderQueue: React.FC<OrderQueueProps> = ({ orders, isLoading, onPriorityCh
               size="sm"
             >
               <CheckCircle className="w-4 h-4 mr-1" />
-              Mark Ready
+              Ready (Pickup)
+            </Button>
+            <Button
+              onClick={() => handleBulkStatusUpdate('ready_for_delivery')}
+              disabled={selectedOrders.length === 0 || bulkUpdateMutation.isLoading}
+              variant="outline"
+              size="sm"
+            >
+              <CheckCircle className="w-4 h-4 mr-1" />
+              Ready (Delivery)
             </Button>
           </div>
         </div>

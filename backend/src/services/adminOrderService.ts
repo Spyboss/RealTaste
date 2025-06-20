@@ -8,12 +8,22 @@ export interface Order {
   customer_id?: string | null; // UUID, can be null for guest orders
   customer_phone: string;
   customer_name?: string | null;
-  status: 'received' | 'confirmed' | 'preparing' | 'ready_for_pickup' | 'completed' | 'cancelled';
+  order_type: 'pickup' | 'delivery';
+  status: 'received' | 'confirmed' | 'preparing' | 'ready_for_pickup' | 'ready_for_delivery' | 'picked_up' | 'delivered' | 'completed' | 'cancelled';
   payment_method: 'card' | 'cash';
   payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
   subtotal: number; // DECIMAL(10,2)
   tax_amount?: number; // DECIMAL(10,2)
   total_amount: number; // DECIMAL(10,2)
+  delivery_fee?: number;
+  delivery_address?: string | null;
+  delivery_latitude?: number | null;
+  delivery_longitude?: number | null;
+  delivery_distance_km?: number | null;
+  estimated_delivery_time?: string | null;
+  actual_delivery_time?: string | null;
+  delivery_notes?: string | null;
+  customer_gps_location?: string | null;
   notes?: string | null;
   estimated_pickup_time?: string | null; // TIMESTAMP WITH TIME ZONE
   created_at: string; // TIMESTAMP WITH TIME ZONE
@@ -54,7 +64,7 @@ export const updateOrderStatusHandler = async (req: Request, res: Response): Pro
     return;
   }
 
-  const validStatuses: Order['status'][] = ['received', 'confirmed', 'preparing', 'ready_for_pickup', 'completed', 'cancelled'];
+  const validStatuses: Order['status'][] = ['received', 'confirmed', 'preparing', 'ready_for_pickup', 'ready_for_delivery', 'picked_up', 'delivered', 'completed', 'cancelled'];
   if (!validStatuses.includes(status)) {
     res.status(400).json({ success: false, error: `Invalid status value. Must be one of: ${validStatuses.join(', ')}` });
     return;
@@ -98,4 +108,4 @@ export const updateOrderStatusHandler = async (req: Request, res: Response): Pro
 // For now, I'm assuming the *Handler versions are the primary ones for routes.
 
 // export const getAllOrders = async (): Promise<Order[]> => { ... };
-// export const updateOrderStatus = async (orderId: string, newStatus: string): Promise<Order | null> => { ... }; 
+// export const updateOrderStatus = async (orderId: string, newStatus: string): Promise<Order | null> => { ... };

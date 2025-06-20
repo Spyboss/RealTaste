@@ -89,7 +89,7 @@ export interface Order {
   customer_phone: string;
   customer_email?: string;
   customer_id?: string;
-  status: 'received' | 'confirmed' | 'preparing' | 'ready_for_pickup' | 'completed' | 'cancelled';
+  status: 'received' | 'confirmed' | 'preparing' | 'ready_for_pickup' | 'ready_for_delivery' | 'picked_up' | 'delivered' | 'completed' | 'cancelled';
   priority?: 'urgent' | 'normal' | 'low';
   payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
   payment_method: 'payhere' | 'cash';
@@ -100,6 +100,12 @@ export interface Order {
   notes?: string;
   estimated_ready_time?: string;
   estimated_pickup_time?: string;
+  order_type: 'pickup' | 'delivery';
+  delivery_address?: string;
+  delivery_phone?: string;
+  delivery_notes?: string;
+  delivery_fee?: number;
+  estimated_delivery_time?: string;
   created_at: string;
   updated_at: string;
   order_items?: OrderItem[];
@@ -176,7 +182,7 @@ export interface CreateOrderRequest {
 }
 
 export interface UpdateOrderStatusRequest {
-  status: 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+  status: 'received' | 'confirmed' | 'preparing' | 'ready_for_pickup' | 'ready_for_delivery' | 'picked_up' | 'delivered' | 'completed' | 'cancelled';
   estimated_pickup_time?: string;
 }
 

@@ -62,8 +62,8 @@ const AdminDashboard: React.FC = () => {
           setHasInitiallyLoaded(true);
         }
         
-        // Load order queue data when switching to queue tab
-        if (activeTab === 'queue') {
+        // Load order queue data when switching to queue tab or order management
+        if (activeTab === 'orderQueue' || activeTab === 'orderManagement') {
           await storeFetchOrderQueue();
         }
       } catch (error) {
@@ -91,12 +91,14 @@ const AdminDashboard: React.FC = () => {
   const dashboardStatsData: DashboardStatsType | null = useMemo(() => {
     if (!dailySummary || !topItems || !trendsData) return null;
 
-    // Calculate completed orders from queue data
-    const completedOrders = orderQueue.filter(o => o.status === 'completed').length;
+    // Calculate pending orders from queue data (received, confirmed, preparing)
+    const pendingOrders = orderQueue.filter(o => 
+      ['received', 'confirmed', 'preparing'].includes(o.status)
+    );
     
-    // Calculate average prep time from completed orders
+    // Calculate average prep time from completed orders in queue
     const completedOrdersWithTimes = orderQueue.filter(o => 
-      o.status === 'completed' && 
+      ['completed', 'picked_up', 'delivered'].includes(o.status) && 
       o.created_at && o.updated_at
     );
     
@@ -114,13 +116,13 @@ const AdminDashboard: React.FC = () => {
         total_revenue: dailySummary.total_revenue || 0,
         total_orders: dailySummary.total_orders || 0,
         avg_order_value: dailySummary.avg_order_value || 0,
-        completed_orders: completedOrders,
+        completed_orders: dailySummary.completed_orders || 0, // Use from dailySummary instead of queue
         avg_prep_time: Math.round(avgPrepTime),
         popular_items: topItems.map(item => ({ name: item.name, count: item.quantity, revenue: item.revenue })),
       },
       chart_data: trendsData.map(td => ({ label: td.date, orders: td.orders, revenue: td.revenue })),
-      pending_orders: orderQueue.filter(o => o.status === 'received' || o.status === 'preparing'),
-      queue_length: orderQueue.filter(o => o.status === 'received' || o.status === 'preparing').length,
+      pending_orders: pendingOrders,
+      queue_length: pendingOrders.length,
     };
   }, [dailySummary, topItems, trendsData, orderQueue]);
 

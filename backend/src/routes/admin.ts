@@ -66,7 +66,7 @@ router.get('/dashboard', authenticateToken, requireAdmin, async (req, res) => {
           )
         )
       `)
-      .in('status', ['received', 'preparing'])
+      .in('status', ['received', 'confirmed', 'preparing'])
       .order('created_at', { ascending: true });
 
     if (pendingError) throw pendingError;
@@ -1364,7 +1364,7 @@ router.put('/orders/bulk-update', authenticateToken, requireAdmin, async (req, r
     }
 
     // Validate status
-    const validStatuses = ['received', 'confirmed', 'preparing', 'ready_for_pickup', 'completed', 'cancelled'];
+    const validStatuses = ['received', 'confirmed', 'preparing', 'ready_for_pickup', 'ready_for_delivery', 'picked_up', 'delivered', 'completed', 'cancelled'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
