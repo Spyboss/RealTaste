@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, signIn as supabaseSignIn, signUp as supabaseSignUp, signOut, resetPassword, updatePassword, fetchUserRole } from '@/services/supabase';
+import { authRateLimiter, signupRateLimiter, getRateLimitKey, formatRemainingTime } from '@/utils/rateLimiter';
 
 interface AuthState {
   user: User | null;
@@ -129,8 +130,29 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         try {
           set({ loading: true, error: null });
+          
+          // Check rate limit
+          const rateLimitKey = getRateLimitKey('login', email);
+          if (!authRateLimiter.isAllowed(rateLimitKey)) {
+            const remainingTime = authRateLimiter.getRemainingTime(rateLimitKey);
+            throw new Error(`Too many login attempts. Please wait ${formatRemainingTime(remainingTime)} before trying again.`);
+          }
+          
           const { data, error } = await supabaseSignIn(email, password);
-          if (error) throw error;
+          
+          if (error) {
+            // Handle specific error types
+            if (error.message.includes('rate_limit') || error.status === 429) {
+              throw new Error('Too many login attempts. Please wait a few minutes before trying again.');
+            }
+            if (error.message.includes('Invalid login credentials') || error.status === 400) {
+              throw new Error('Invalid email or password. Please check your credentials and try again.');
+            }
+            if (error.message.includes('Email not confirmed')) {
+              throw new Error('Please check your email and confirm your account before logging in.');
+            }
+            throw error;
+          }
           
           if (data.user && data.session) {
             const role = await fetchUserRole(data.user.id);
@@ -164,8 +186,32 @@ export const useAuthStore = create<AuthState>()(
       register: async (email: string, password: string) => {
         try {
           set({ loading: true, error: null });
+          
+          // Check rate limit for signup
+          const rateLimitKey = getRateLimitKey('signup', email);
+          if (!signupRateLimiter.isAllowed(rateLimitKey)) {
+            const remainingTime = signupRateLimiter.getRemainingTime(rateLimitKey);
+            throw new Error(`Too many signup attempts. Please wait ${formatRemainingTime(remainingTime)} before trying again.`);
+          }
+          
           const { data, error } = await supabaseSignUp(email, password);
-          if (error) throw error;
+          
+          if (error) {
+            // Handle specific error types
+            if (error.message.includes('rate_limit') || error.status === 429) {
+              throw new Error('Too many signup attempts. Please wait a few minutes before trying again.');
+            }
+            if (error.message.includes('User already registered')) {
+              throw new Error('An account with this email already exists. Please try logging in instead.');
+            }
+            if (error.message.includes('Invalid email')) {
+              throw new Error('Please enter a valid email address.');
+            }
+            if (error.message.includes('Password')) {
+              throw new Error('Password must be at least 6 characters long.');
+            }
+            throw error;
+          }
           
           if (data.user && data.session) {
             const role = await fetchUserRole(data.user.id);

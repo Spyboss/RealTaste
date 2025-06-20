@@ -1,5 +1,4 @@
-import { createClient, RealtimeChannel, Session, User } from '@supabase/supabase-js';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { createClient, RealtimeChannel, Session, User, SupabaseClient } from '@supabase/supabase-js';
 
 interface Env {
   readonly VITE_SUPABASE_URL: string;
@@ -97,35 +96,47 @@ export const updatePassword = async (newPassword: string) => {
   return { data, error };
 };
 
-// Fetch user role from the users table
-export const fetchUserRole = async (userId: string): Promise<string | undefined> => {
-  // First try to get role from app_metadata
-  const { data: { user } } = await supabase.auth.getUser();
-  const roleFromMeta = user?.app_metadata?.role;
+// Fetch user role from the users table with better error handling
+export const fetchUserRole = async (userId: string): Promise<string> => {
+  try {
+    // First try to get role from app_metadata
+    const { data: { user } } = await supabase.auth.getUser();
+    const roleFromMeta = user?.app_metadata?.role;
 
-  if (roleFromMeta) {
-    return roleFromMeta;
+    if (roleFromMeta) {
+      return roleFromMeta;
+    }
+
+    // If not in app_metadata, get from users table
+    const { data, error } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.warn('Failed to fetch user role from database:', error.message);
+      // Return default role if database query fails
+      return 'customer';
+    }
+
+    const role = data?.role || 'customer';
+
+    // Try to update app_metadata with the role (non-blocking)
+    try {
+      await supabase.auth.updateUser({
+        data: { role }
+      });
+    } catch (updateError) {
+      console.warn('Failed to update user metadata:', updateError);
+      // Don't throw here, just log the warning
+    }
+
+    return role;
+  } catch (error) {
+    console.error('Error in fetchUserRole:', error);
+    return 'customer'; // Default fallback
   }
-
-  // If not in app_metadata, get from users table and update app_metadata
-  const { data, error } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .single();
-
-  if (error) throw error;
-
-  if (data?.role) {
-    // Update app_metadata with the role
-    const { error: updateError } = await supabase.auth.updateUser({
-      data: { role: data.role }
-    });
-
-    if (updateError) throw updateError;
-  }
-
-  return data?.role;
 };
 
 export const getCurrentUser = async (): Promise<User | null> => {
