@@ -100,7 +100,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </span>
         </div>
         <p className="text-sm text-gray-700">{order.customer_name || 'Guest'} - {order.customer_phone}</p>
-        <p className="text-sm text-gray-500">Total: Rs. {order.total_amount.toFixed(2)}</p>
+        <p className="text-sm text-gray-500">Total: Rs. {(order.total_amount || 0).toFixed(2)}</p>
         <p className="text-xs text-gray-500">Rec: {new Date(order.created_at).toLocaleTimeString()}</p>
       </div>
 

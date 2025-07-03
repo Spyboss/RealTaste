@@ -205,7 +205,10 @@ export function generateOrderId(): string {
   return `RT-${timestamp}-${random}`.toUpperCase();
 }
 
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined || isNaN(amount)) {
+    return 'Rs. 0.00';
+  }
   return `Rs. ${amount.toFixed(2)}`;
 }
 

@@ -192,7 +192,10 @@ export interface PaymentResponse {
 }
 
 // Price Utilities
-export const formatPrice = (amount: number): string => {
+export const formatPrice = (amount: number | null | undefined): string => {
+  if (amount === null || amount === undefined || isNaN(amount)) {
+    return 'Rs. 0.00';
+  }
   return `Rs. ${amount.toFixed(2)}`;
 };
 
