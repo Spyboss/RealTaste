@@ -34,7 +34,7 @@ export const useAuthStore = create<AuthState>()(
     (set: (state: Partial<AuthState>) => void) => ({
       user: null,
       session: null,
-      loading: true,
+      loading: false,
       isAuthenticated: false,
       error: null,
 
@@ -222,6 +222,8 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error: any) {
           set({ error: error.message, user: null, session: null, isAuthenticated: false, loading: false });
+        } finally {
+          set({ loading: false });
         }
       },
 
@@ -295,6 +297,8 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error: any) {
           set({ error: error.message, user: null, session: null, isAuthenticated: false, loading: false });
+        } finally {
+          set({ loading: false });
         }
       },
 
@@ -449,7 +453,7 @@ export const useAuthStore = create<AuthState>()(
           // Optionally handle success (e.g., set a success message)
           console.log('Password reset email sent:', data);
         } catch (error: any) {
-          set({ error: error.message, loading: false });
+          set({ error: error.message });
         } finally {
           set({ loading: false });
         }
@@ -463,15 +467,20 @@ export const useAuthStore = create<AuthState>()(
           // Optionally handle success (e.g., update user state, set a success message)
           console.log('Password updated successfully:', data);
         } catch (error: any) {
-          set({ error: error.message, loading: false });
+          set({ error: error.message });
         } finally {
           set({ loading: false });
         }
       },
     }),
     {
-      name: 'auth-storage', // name of the item in the storage (must be unique)
-      // getStorage: () => localStorage, // (optional) by default, 'localStorage' is used - Using default
+      name: 'auth-storage',
+      partialize: (state) => ({
+        user: state.user,
+        session: state.session,
+        isAuthenticated: state.isAuthenticated,
+        // Exclude loading and error from persistence
+      }),
     }
   )
 );
