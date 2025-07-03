@@ -19,14 +19,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }));
   const location = useLocation();
 
-  if (authLoading) {
-    console.log('ProtectedRoute: Auth store is loading...');
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
+  // Temporarily disable loading check to fix persistent spinner issue
+  // if (authLoading) {
+  //   console.log('ProtectedRoute: Auth store is loading...');
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <LoadingSpinner size="lg" />
+  //     </div>
+  //   );
+  // }
 
   if (!isAuthenticated) {
     console.log('ProtectedRoute: Not authenticated, redirecting to login.');
