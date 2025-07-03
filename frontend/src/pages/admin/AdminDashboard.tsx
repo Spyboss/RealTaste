@@ -139,13 +139,14 @@ const AdminDashboard: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (adminStoreLoading && activeTab !== 'orderQueue') {
-      return (
-        <div className="flex justify-center items-center h-64">
-          <LoadingSpinner size="lg" />
-        </div>
-      );
-    }
+    // Temporarily disable loading check to fix persistent spinner issue
+    // if (adminStoreLoading && activeTab !== 'orderQueue') {
+    //   return (
+    //     <div className="flex justify-center items-center h-64">
+    //       <LoadingSpinner size="lg" />
+    //     </div>
+    //   );
+    // }
 
     if (adminStoreError) {
       console.error('AdminDashboard API error:', adminStoreError);
