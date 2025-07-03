@@ -58,6 +58,7 @@ const RegisterPage: React.FC = () => {
               <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Email</label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
@@ -69,6 +70,7 @@ const RegisterPage: React.FC = () => {
               <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Password</label>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
@@ -80,6 +82,7 @@ const RegisterPage: React.FC = () => {
               <label htmlFor="confirm-password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Confirm Password</label>
               <Input
                 id="confirm-password"
+                name="confirmPassword"
                 type="password"
                 placeholder="••••••••"
                 value={confirmPassword}

@@ -128,6 +128,7 @@ export const useAuthStore = create<AuthState>()(
             
             if (event === 'SIGNED_IN' && session?.user) {
               try {
+                set({ loading: true });
                 const role = await fetchUserRole(session.user.id);
                 let { data: { user: refreshedUser }, error: userError } = await supabase.auth.getUser();
                 if (userError) throw userError;
@@ -151,12 +152,20 @@ export const useAuthStore = create<AuthState>()(
                 set({ error: error.message, loading: false });
               }
             } else if (event === 'SIGNED_OUT') {
+              console.log('Auth state listener: User signed out, clearing state');
               set({
                 user: null,
                 session: null,
                 isAuthenticated: false,
                 error: null,
                 loading: false
+              });
+            } else if (event === 'TOKEN_REFRESHED' && session) {
+              console.log('Auth state listener: Token refreshed');
+              // Don't change loading state for token refresh
+              set({
+                session,
+                error: null
               });
             }
           }
@@ -304,19 +313,38 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         try {
+          console.log('Logout initiated');
           set({ loading: true, error: null });
+          
+          // Clear local storage first to prevent race conditions
+          localStorage.removeItem('auth-storage');
+          
           const { error } = await signOut();
-          if (error) throw error;
+          if (error) {
+            console.error('Supabase signOut error:', error);
+            throw error;
+          }
+          
+          console.log('Logout successful, clearing auth state');
+          // The auth state listener will handle clearing the state,
+          // but we'll also clear it here to ensure immediate update
           set({
             user: null,
             session: null,
             isAuthenticated: false,
-            error: null
+            error: null,
+            loading: false
           });
         } catch (error: any) {
-          set({ error: error.message });
-        } finally {
-          set({ loading: false });
+          console.error('Logout error:', error);
+          // Even if logout fails, clear the local state
+          set({ 
+            user: null,
+            session: null,
+            isAuthenticated: false,
+            error: error.message,
+            loading: false
+          });
         }
       },
 
@@ -429,19 +457,38 @@ export const useAuthStore = create<AuthState>()(
 
       signOutAction: async () => {
         try {
+          console.log('SignOut action initiated');
           set({ loading: true, error: null });
+          
+          // Clear local storage first to prevent race conditions
+          localStorage.removeItem('auth-storage');
+          
           const { error } = await signOut();
-          if (error) throw error;
+          if (error) {
+            console.error('Supabase signOut error:', error);
+            throw error;
+          }
+          
+          console.log('SignOut action successful, clearing auth state');
+          // The auth state listener will handle clearing the state,
+          // but we'll also clear it here to ensure immediate update
           set({
             user: null,
             session: null,
             isAuthenticated: false,
-            error: null
+            error: null,
+            loading: false
           });
         } catch (error: any) {
-          set({ error: error.message });
-        } finally {
-          set({ loading: false });
+          console.error('SignOut action error:', error);
+          // Even if logout fails, clear the local state
+          set({ 
+            user: null,
+            session: null,
+            isAuthenticated: false,
+            error: error.message,
+            loading: false
+          });
         }
       },
 
