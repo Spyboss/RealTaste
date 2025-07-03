@@ -39,10 +39,15 @@ const Header: React.FC = () => {
     return email.split('@')[0].charAt(0).toUpperCase() + '.';
   };
 
-  const handleLogout = () => {
-    logout();
-    setIsMobileMenuOpen(false);
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setIsMobileMenuOpen(false);
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      setIsMobileMenuOpen(false);
+    }
   };
 
   const handleNavigation = (path: string) => {

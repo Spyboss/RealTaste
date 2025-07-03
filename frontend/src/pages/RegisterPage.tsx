@@ -31,6 +31,7 @@ const RegisterPage: React.FC = () => {
       navigate('/');
     } catch (err) {
       // Error is handled by the authStore
+      console.error('Registration failed:', err);
     }
   };
 
