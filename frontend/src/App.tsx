@@ -67,13 +67,14 @@ function App() {
     return cleanup;
   }, [initialize, fetchBusinessInfo, setupAuthResetListener]);
 
-  if (authLoading || businessLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
+  // Temporarily disable loading check to debug the issue
+  // if (authLoading) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <LoadingSpinner size="lg" />
+  //     </div>
+  //   );
+  // }
 
   return (
     <QueryClientProvider client={queryClient}>

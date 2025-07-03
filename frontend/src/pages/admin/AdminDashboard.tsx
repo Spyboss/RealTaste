@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAdminStore } from '@/stores/adminStore';
 import { useUpdateOrderPriority } from '@/hooks/useAdmin';
 import DashboardStats from '@/components/admin/DashboardStats';
@@ -80,9 +80,11 @@ const AdminDashboard: React.FC = () => {
 
     return () => {
       console.log('AdminDashboard unmounting - cleaning up realtime subscription');
-      unsubscribe();
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
-  }, [storeSubscribeToOrders]);
+  }, []); // Empty dependency array - only run once on mount
 
   const handlePriorityChange = (orderId: string, priority: number) => {
     updatePriority({ orderId, priority: String(priority) });

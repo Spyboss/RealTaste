@@ -31,7 +31,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set: (state: Partial<AuthState>) => void) => ({
+    (set: (state: Partial<AuthState>) => void, get: () => AuthState) => ({
       user: null,
       session: null,
       loading: false,
@@ -128,7 +128,12 @@ export const useAuthStore = create<AuthState>()(
             
             if (event === 'SIGNED_IN' && session?.user) {
               try {
-                set({ loading: true });
+                // Only set loading if we don't already have a user to avoid unnecessary loading states
+                const currentState = get();
+                if (!currentState.user || !currentState.isAuthenticated) {
+                  set({ loading: true });
+                }
+                
                 const role = await fetchUserRole(session.user.id);
                 let { data: { user: refreshedUser }, error: userError } = await supabase.auth.getUser();
                 if (userError) throw userError;
@@ -530,6 +535,15 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         // Exclude loading and error from persistence
       }),
+      onRehydrateStorage: () => (state) => {
+        // Ensure loading is always false on rehydration
+        console.log('onRehydrateStorage called, state:', state);
+        if (state) {
+          state.loading = false;
+          state.error = null;
+          console.log('Set loading to false in onRehydrateStorage');
+        }
+      },
     }
   )
 );
