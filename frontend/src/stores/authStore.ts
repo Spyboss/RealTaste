@@ -399,7 +399,8 @@ export const useAuthStore = create<AuthState>()(
               user: refreshedUser,
               session: data.session,
               isAuthenticated: true,
-              error: null
+              error: null,
+              loading: false
             });
           } else {
             throw new Error("Login did not return a user and session.");
@@ -433,7 +434,8 @@ export const useAuthStore = create<AuthState>()(
               user: refreshedUser,
               session: data.session,
               isAuthenticated: true,
-              error: null
+              error: null,
+              loading: false
             });
           } else {
              if (data.user) {
@@ -443,7 +445,7 @@ export const useAuthStore = create<AuthState>()(
               if (!userToSet.app_metadata) userToSet.app_metadata = {};
               (userToSet.app_metadata as any).role = role;
               console.log('[AuthStore:SignUp] User role set in store (no session):', role, 'User object:', userToSet);
-              set({ user: userToSet, session: null, isAuthenticated: false });
+              set({ user: userToSet, session: null, isAuthenticated: false, loading: false });
             } else {
               throw new Error("Registration did not return a user.");
             }
