@@ -44,6 +44,15 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Compression middleware
 app.use(compression());
 
+// API routes
+app.use('/api/menu', menuRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/admin/orders', adminOrderRoutes);
+app.use('/api/business', businessRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/delivery', deliveryRoutes);
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({
@@ -53,15 +62,6 @@ app.get('/health', (req, res) => {
     environment: config.nodeEnv
   });
 });
-
-// API routes
-app.use('/api/menu', menuRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/admin/orders', adminOrderRoutes);
-app.use('/api/business', businessRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/delivery', deliveryRoutes);
 
 // Serve static files from frontend build
 const frontendPath = path.join(__dirname, '../frontend-dist');
