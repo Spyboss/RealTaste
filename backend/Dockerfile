@@ -18,10 +18,10 @@ RUN npm install --only=production && npm cache clean --force
 
 # Build frontend
 FROM base AS frontend-builder
-WORKDIR /app
+WORKDIR /app/frontend
 
-# Copy shared package first
-COPY shared/ ./shared/
+# Copy shared package to the correct relative location
+COPY shared/ ../shared/
 
 # Copy frontend package files
 COPY frontend/package*.json ./
@@ -72,7 +72,7 @@ COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 # Copy built frontend
-COPY --from=frontend-builder --chown=nodejs:nodejs /app/dist ./frontend-dist
+COPY --from=frontend-builder --chown=nodejs:nodejs /app/frontend/dist ./frontend-dist
 
 USER nodejs
 
