@@ -20,6 +20,9 @@ RUN npm install --only=production && npm cache clean --force
 FROM base AS frontend-builder
 WORKDIR /app
 
+# Copy shared package first
+COPY shared/ ./shared/
+
 # Copy frontend package files
 COPY frontend/package*.json ./
 
@@ -35,6 +38,9 @@ RUN npm run build
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+
+# Copy shared package first
+COPY shared/ ./shared/
 
 # Copy backend package files and install ALL dependencies (including dev dependencies for build)
 COPY backend/package*.json ./
