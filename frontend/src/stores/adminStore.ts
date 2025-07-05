@@ -361,7 +361,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
     try {
       const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/status`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -565,7 +565,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
     try {
       const response = await fetch(`${API_BASE_URL}/admin/orders/bulk-update`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,

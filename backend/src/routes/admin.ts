@@ -348,7 +348,7 @@ router.get('/orders/queue', authenticateToken, requireAdmin, async (req, res) =>
           )
         )
       `)
-      .in('status', ['received', 'preparing'])
+      .not('status', 'eq', 'cancelled')
       .order('created_at', { ascending: true });
 
     if (error) throw error;

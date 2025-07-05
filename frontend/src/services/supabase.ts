@@ -236,8 +236,7 @@ export const subscribeToOrderQueue = (onChange: (payload: any) => void, onStatus
       {
         event: '*',
         schema: 'public',
-        table: 'orders',
-        filter: 'status=in.(received,preparing)'
+        table: 'orders'
       },
       onChange
     )
