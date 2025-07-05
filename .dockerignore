@@ -38,8 +38,3 @@ docs/
 
 # Ignore IDE files
 .trae/
-
-# Keep the essential directories
-!backend/
-!frontend/
-!shared/
