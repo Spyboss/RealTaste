@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import path from 'path';
 import { config } from './config';
 import { apiLimiter } from './middleware/rateLimiter';
 
@@ -62,13 +63,23 @@ app.use('/api/business', businessRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/delivery', deliveryRoutes);
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'Endpoint not found',
-    path: req.originalUrl
-  });
+// Serve static files from frontend build
+const frontendPath = path.join(__dirname, '../frontend-dist');
+app.use(express.static(frontendPath));
+
+// Handle client-side routing - serve index.html for non-API routes
+app.get('*', (req, res) => {
+  // If it's an API route that doesn't exist, return 404 JSON
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({
+      success: false,
+      error: 'Endpoint not found',
+      path: req.originalUrl
+    });
+  }
+  
+  // For all other routes, serve the frontend index.html
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // Global error handler

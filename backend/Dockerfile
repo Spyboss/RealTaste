@@ -7,8 +7,8 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files (we're building from backend directory)
-COPY package*.json ./
+# Copy backend package files
+COPY backend/package*.json ./
 
 # Remove shared dependency temporarily for deployment
 RUN sed -i '/@realtaste\/shared/d' package.json
@@ -16,12 +16,28 @@ RUN sed -i '/@realtaste\/shared/d' package.json
 # Install production dependencies
 RUN npm install --only=production && npm cache clean --force
 
+# Build frontend
+FROM base AS frontend-builder
+WORKDIR /app
+
+# Copy frontend package files
+COPY frontend/package*.json ./
+
+# Install frontend dependencies
+RUN npm install
+
+# Copy frontend source
+COPY frontend/ ./
+
+# Build frontend
+RUN npm run build
+
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 
-# Copy package files and install ALL dependencies (including dev dependencies for build)
-COPY package*.json ./
+# Copy backend package files and install ALL dependencies (including dev dependencies for build)
+COPY backend/package*.json ./
 
 # Remove shared dependency temporarily for deployment
 RUN sed -i '/@realtaste\/shared/d' package.json
@@ -29,7 +45,7 @@ RUN sed -i '/@realtaste\/shared/d' package.json
 RUN npm install
 
 # Copy backend source code
-COPY . .
+COPY backend/ .
 
 # Build backend
 RUN npm run build
@@ -48,6 +64,9 @@ RUN adduser --system --uid 1001 nodejs
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+
+# Copy built frontend
+COPY --from=frontend-builder --chown=nodejs:nodejs /app/dist ./frontend-dist
 
 USER nodejs
 
