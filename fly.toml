@@ -1,14 +1,13 @@
+# fly.toml app configuration file generated for realtaste on 2025-01-17T10:30:00Z
+
 app = "realtaste"
 primary_region = "sin"
-kill_signal = "SIGINT"
-kill_timeout = "5s"
-
-[experimental]
-  auto_rollback = true
 
 [build]
   dockerfile = "backend/Dockerfile"
-  build_context = "."
+
+[experimental]
+  auto_rollback = true
 
 [env]
   NODE_ENV = "production"
@@ -17,20 +16,19 @@ kill_timeout = "5s"
 [http_service]
   internal_port = 3001
   force_https = true
-  auto_stop_machines = false
+  auto_stop_machines = "stop"
   auto_start_machines = true
-  min_machines_running = 1
+  min_machines_running = 0
   processes = ["app"]
 
   [[http_service.checks]]
-    interval = "15s"
-    grace_period = "5s"
+    grace_period = "10s"
+    interval = "30s"
     method = "GET"
+    timeout = "5s"
     path = "/health"
-    protocol = "http"
-    timeout = "10s"
 
 [[vm]]
+  memory = "1gb"
   cpu_kind = "shared"
   cpus = 1
-  memory_mb = 256
