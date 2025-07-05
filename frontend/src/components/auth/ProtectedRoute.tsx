@@ -1,7 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,10 +11,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireAdmin = false
 }) => {
-  const { user, isAuthenticated, loading: authLoading } = useAuthStore(state => ({
+  const { user, isAuthenticated } = useAuthStore(state => ({
     user: state.user,
     isAuthenticated: state.isAuthenticated,
-    loading: state.loading,
   }));
   const location = useLocation();
 

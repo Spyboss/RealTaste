@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAdminStore } from '@/stores/adminStore';
 import { useUpdateOrderPriority } from '@/hooks/useAdmin';
 import DashboardStats from '@/components/admin/DashboardStats';
@@ -8,7 +8,7 @@ import PerformanceMonitor from '@/components/admin/PerformanceMonitor';
 import { LayoutGrid, BarChart2, Clock, ListOrdered, Activity } from 'lucide-react';
 import { Order, DashboardStats as DashboardStatsType } from '@/types/shared';
 import AnalyticsSummary from '@/components/admin/AnalyticsSummary';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+
 import OrderManagementPage from '@/pages/admin/OrderManagementPage';
 
 const AdminDashboard: React.FC = () => {

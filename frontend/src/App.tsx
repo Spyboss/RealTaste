@@ -28,7 +28,6 @@ import PaymentPendingPage from '@/pages/PaymentPendingPage';
 import PaymentCancelledPage from '@/pages/PaymentCancelledPage';
 
 // Components
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 // Create a client
@@ -42,8 +41,8 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const { initialize, loading: authLoading, setupAuthResetListener } = useAuthStore();
-  const { fetchBusinessInfo, loading: businessLoading } = useBusinessStore();
+  const { initialize, setupAuthResetListener } = useAuthStore();
+  const { fetchBusinessInfo } = useBusinessStore();
 
   useEffect(() => {
     // Initialize auth and business info
