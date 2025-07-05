@@ -1,0 +1,45 @@
+# Ignore node_modules in subdirectories during build
+**/node_modules
+**/dist
+**/build
+
+# Ignore git and other version control
+.git
+.gitignore
+
+# Ignore documentation and non-essential files
+*.md
+DEPLOYMENT*.md
+ARCHITECTURE*.md
+*.txt
+
+# Ignore test files
+test-*.js
+check-*.js
+clear-*.js
+create-*.js
+reduce-*.js
+purge-*.js
+
+# Ignore scripts and deployment files
+scripts/
+*.ps1
+*.sh
+
+# Ignore environment files
+.env*
+!.env.example
+
+# Ignore Supabase local files
+supabase/
+
+# Ignore docs
+docs/
+
+# Ignore IDE files
+.trae/
+
+# Keep the essential directories
+!backend/
+!frontend/
+!shared/
