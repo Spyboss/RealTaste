@@ -38,3 +38,10 @@ docs/
 
 # Ignore IDE files
 .trae/
+
+# Explicitly include required directories
+!backend/
+!frontend/
+!shared/
+!package.json
+!fly.toml
