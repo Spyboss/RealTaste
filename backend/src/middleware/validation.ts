@@ -38,16 +38,8 @@ export const schemas = {
       then: Joi.required(),
       otherwise: Joi.optional()
     }),
-    delivery_latitude: Joi.number().when('order_type', {
-      is: 'delivery',
-      then: Joi.required(),
-      otherwise: Joi.optional()
-    }),
-    delivery_longitude: Joi.number().when('order_type', {
-      is: 'delivery',
-      then: Joi.required(),
-      otherwise: Joi.optional()
-    }),
+    delivery_latitude: Joi.number().optional(),
+    delivery_longitude: Joi.number().optional(),
     delivery_notes: Joi.string().max(500).optional(),
     customer_gps_location: Joi.string().max(200).optional(),
     notes: Joi.string().max(500).optional(),

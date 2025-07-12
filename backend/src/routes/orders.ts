@@ -28,18 +28,14 @@ router.post('/',
           });
         }
 
-        if (!orderData.delivery_latitude || !orderData.delivery_longitude) {
-          return res.status(400).json({
-            success: false,
-            error: 'Delivery coordinates are required for delivery orders'
-          });
-        }
-
-        if (!validateCoordinates(orderData.delivery_latitude, orderData.delivery_longitude)) {
-          return res.status(400).json({
-            success: false,
-            error: 'Invalid delivery coordinates'
-          });
+        // Validate coordinates only if provided
+        if (orderData.delivery_latitude && orderData.delivery_longitude) {
+          if (!validateCoordinates(orderData.delivery_latitude, orderData.delivery_longitude)) {
+            return res.status(400).json({
+              success: false,
+              error: 'Invalid delivery coordinates'
+            });
+          }
         }
       }
 
@@ -121,24 +117,31 @@ router.post('/',
 
       // Calculate delivery fee if order type is delivery
       if (orderData.order_type === 'delivery') {
-        const restaurantLat = parseFloat(process.env.VITE_RESTAURANT_LAT || '6.261449');
-    const restaurantLng = parseFloat(process.env.VITE_RESTAURANT_LNG || '80.906462');
-        
-        const deliveryCalculation = await deliveryService.calculateDeliveryFee(
-          restaurantLat,
-          restaurantLng,
-          orderData.delivery_latitude as number,
-          orderData.delivery_longitude as number
-        );
+        if (orderData.delivery_latitude && orderData.delivery_longitude) {
+          // Calculate delivery fee based on coordinates
+          const restaurantLat = parseFloat(process.env.VITE_RESTAURANT_LAT || '6.261449');
+          const restaurantLng = parseFloat(process.env.VITE_RESTAURANT_LNG || '80.906462');
+          
+          const deliveryCalculation = await deliveryService.calculateDeliveryFee(
+            restaurantLat,
+            restaurantLng,
+            orderData.delivery_latitude as number,
+            orderData.delivery_longitude as number
+          );
 
-        if (!deliveryCalculation.isWithinRange) {
-          return res.status(400).json({
-            success: false,
-            error: `Delivery location is outside our ${await deliveryService.getDeliverySettings().then(s => s.max_delivery_distance_km)}km delivery range`
-          });
+          if (!deliveryCalculation.isWithinRange) {
+            return res.status(400).json({
+              success: false,
+              error: `Delivery location is outside our ${await deliveryService.getDeliverySettings().then(s => s.max_delivery_distance_km)}km delivery range`
+            });
+          }
+
+          deliveryFee = deliveryCalculation.deliveryFee;
+        } else {
+          // Use base delivery fee when coordinates are not provided
+          const settings = await deliveryService.getDeliverySettings();
+          deliveryFee = settings.base_fee;
         }
-
-        deliveryFee = deliveryCalculation.deliveryFee;
       }
 
       // Calculate tax (assuming 0% for now, can be configured)
@@ -197,21 +200,31 @@ router.post('/',
         orderInsertData.delivery_notes = orderData.delivery_notes || null;
         orderInsertData.customer_gps_location = orderData.customer_gps_location || null;
         
-        // Calculate delivery distance
-        const restaurantLat = parseFloat(process.env.VITE_RESTAURANT_LAT || '6.261449');
-    const restaurantLng = parseFloat(process.env.VITE_RESTAURANT_LNG || '80.906462');
-        const deliveryCalculation = await deliveryService.calculateDeliveryFee(
-          restaurantLat,
-          restaurantLng,
-          orderData.delivery_latitude as number,
-          orderData.delivery_longitude as number
-        );
-        orderInsertData.delivery_distance_km = deliveryCalculation.distance;
-        
-        // Set estimated delivery time
-        const estimatedDeliveryTime = new Date();
-        estimatedDeliveryTime.setMinutes(estimatedDeliveryTime.getMinutes() + deliveryCalculation.estimatedTime + 30); // 30 min prep time
-        orderInsertData.estimated_delivery_time = estimatedDeliveryTime.toISOString();
+        // Calculate delivery distance and estimated time if coordinates are provided
+        if (orderData.delivery_latitude && orderData.delivery_longitude) {
+          const restaurantLat = parseFloat(process.env.VITE_RESTAURANT_LAT || '6.261449');
+          const restaurantLng = parseFloat(process.env.VITE_RESTAURANT_LNG || '80.906462');
+          const deliveryCalculation = await deliveryService.calculateDeliveryFee(
+            restaurantLat,
+            restaurantLng,
+            orderData.delivery_latitude as number,
+            orderData.delivery_longitude as number
+          );
+          orderInsertData.delivery_distance_km = deliveryCalculation.distance;
+          
+          // Set estimated delivery time
+          const estimatedDeliveryTime = new Date();
+          estimatedDeliveryTime.setMinutes(estimatedDeliveryTime.getMinutes() + deliveryCalculation.estimatedTime + 30); // 30 min prep time
+          orderInsertData.estimated_delivery_time = estimatedDeliveryTime.toISOString();
+        } else {
+          // Use default values when coordinates are not provided
+          orderInsertData.delivery_distance_km = null;
+          
+          // Set default estimated delivery time (60 minutes: 30 min prep + 30 min delivery)
+          const estimatedDeliveryTime = new Date();
+          estimatedDeliveryTime.setMinutes(estimatedDeliveryTime.getMinutes() + 60);
+          orderInsertData.estimated_delivery_time = estimatedDeliveryTime.toISOString();
+        }
       }
 
       const { data: order, error: orderError } = await supabaseAdmin
