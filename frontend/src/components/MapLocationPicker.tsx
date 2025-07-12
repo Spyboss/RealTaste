@@ -416,7 +416,7 @@ const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
           ref={mapRef}
           {...viewState}
           onMove={evt => setViewState(evt.viewState)}
-          onLoad={() => setIsMapLoaded(true)}
+
           onClick={handleMapClick}
           mapboxAccessToken={MAPBOX_TOKEN}
           style={{ width: '100%', height: '100%' }}
