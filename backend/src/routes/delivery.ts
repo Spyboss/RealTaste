@@ -34,7 +34,7 @@ router.put('/settings',
   adminLimiter,
   async (req, res) => {
     try {
-      const { base_fee, per_km_fee, max_delivery_range_km, min_order_for_delivery, is_delivery_enabled } = req.body;
+      const { base_fee, per_km_rate, max_delivery_distance_km, min_order_for_delivery, is_delivery_enabled } = req.body;
       
       // Validate input
       if (base_fee !== undefined && (typeof base_fee !== 'number' || base_fee < 0)) {
@@ -44,24 +44,24 @@ router.put('/settings',
         });
       }
       
-      if (per_km_fee !== undefined && (typeof per_km_fee !== 'number' || per_km_fee < 0)) {
+      if (per_km_rate !== undefined && (typeof per_km_rate !== 'number' || per_km_rate < 0)) {
         return res.status(400).json({
           success: false,
-          error: 'Per km fee must be a non-negative number'
+          error: 'Per km rate must be a non-negative number'
         });
       }
       
-      if (max_delivery_range_km !== undefined && (typeof max_delivery_range_km !== 'number' || max_delivery_range_km <= 0)) {
+      if (max_delivery_distance_km !== undefined && (typeof max_delivery_distance_km !== 'number' || max_delivery_distance_km <= 0)) {
         return res.status(400).json({
           success: false,
-          error: 'Maximum delivery range must be a positive number'
+          error: 'Maximum delivery distance must be a positive number'
         });
       }
       
       const updatedSettings = await deliveryService.updateDeliverySettings({
         base_fee,
-        per_km_fee,
-        max_delivery_range_km,
+        per_km_rate,
+        max_delivery_distance_km,
         min_order_for_delivery,
         is_delivery_enabled
       });

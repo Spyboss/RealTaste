@@ -134,7 +134,7 @@ router.post('/',
         if (!deliveryCalculation.isWithinRange) {
           return res.status(400).json({
             success: false,
-            error: `Delivery location is outside our ${await deliveryService.getDeliverySettings().then(s => s.max_delivery_range_km)}km delivery range`
+            error: `Delivery location is outside our ${await deliveryService.getDeliverySettings().then(s => s.max_delivery_distance_km)}km delivery range`
           });
         }
 
