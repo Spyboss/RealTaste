@@ -116,13 +116,13 @@ export const deliveryApi = {
       delivery_latitude: lat,
       delivery_longitude: lng
     });
-    return response.data;
+    return handleApiResponse(response);
   },
 
   // Get standard delivery fee when coordinates not available
   getStandardFee: async () => {
     const response = await api.get('/delivery/standard-fee');
-    return response.data;
+    return handleApiResponse(response);
   },
 
   // Get delivery settings (admin only)

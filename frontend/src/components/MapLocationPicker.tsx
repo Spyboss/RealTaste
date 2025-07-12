@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Map, { Marker, NavigationControl, GeolocateControl } from 'react-map-gl';
 import { MapPin, Navigation, Loader2, AlertCircle, Search, X } from 'lucide-react';
 import { deliveryApi } from '../services/api';
-import { ApiResponse } from '../types/shared';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MapLocationPickerProps {
@@ -95,18 +94,15 @@ const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
   const calculateDeliveryFee = async (lat: number, lng: number) => {
     setIsCalculating(true);
     try {
-      const response = await deliveryApi.calculateFee(lat, lng) as ApiResponse<DeliveryCalculation>;
-      if (response.success && response.data) {
-        setDeliveryCalculation(response.data);
-        onDeliveryFeeChange(response.data.deliveryFee);
-        onRangeStatusChange(response.data.isWithinRange);
-      } else {
-        console.error('Failed to calculate delivery fee');
-        setDeliveryCalculation(null);
-      }
+      const data = await deliveryApi.calculateFee(lat, lng) as DeliveryCalculation;
+      setDeliveryCalculation(data);
+      onDeliveryFeeChange(data.deliveryFee);
+      onRangeStatusChange(data.isWithinRange);
     } catch (error) {
       console.error('Error calculating delivery fee:', error);
       setDeliveryCalculation(null);
+      onDeliveryFeeChange(0);
+      onRangeStatusChange(false);
     } finally {
       setIsCalculating(false);
     }

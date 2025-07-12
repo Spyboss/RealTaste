@@ -186,6 +186,17 @@ export interface UpdateOrderStatusRequest {
   estimated_pickup_time?: string;
 }
 
+// Card payment response type
+export interface CardPaymentOrderResponse {
+  order: Order;
+  payment: {
+    paymentData: any;
+  };
+}
+
+// Union type for order creation responses
+export type CreateOrderResponse = Order | CardPaymentOrderResponse;
+
 export interface CartItem {
   id: string;
   menu_item_id: string;

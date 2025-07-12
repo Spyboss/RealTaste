@@ -5,13 +5,14 @@ import { CreditCard, Banknote, ShoppingBag, Truck } from 'lucide-react';
 import { useCartStore } from '../stores/cartStore';
 import { useAuthStore } from '../stores/authStore';
 import { CreateOrderRequest } from '../../../shared/src/types';
+import { CardPaymentOrderResponse, Order } from '../types/shared';
 import { formatPrice, validatePhoneNumber } from '../utils/tempUtils';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import OrderTypeSelector from '../components/OrderTypeSelector';
 import MapLocationPicker from '../components/MapLocationPicker';
 import { toast } from 'react-hot-toast';
-import { api } from '../services/api';
+import { orderService } from '../services/orderService';
 
 // PayHere JavaScript SDK types
 declare global {
@@ -172,13 +173,22 @@ const CheckoutPage: React.FC = () => {
           }
 
           // First create the order to get the order ID and payment data
-          const result = await api.post('/orders', orderData);
-          console.log('Order creation result:', result.data);
+          const result = await orderService.createOrder(orderData);
+          console.log('Order creation result:', result);
           
-          // For card payments, extract payment data from backend response
-          const responseData = (result.data as any).data;
-          const orderId = responseData?.order?.id;
-          const paymentData = responseData?.payment?.paymentData;
+          // Type guard to check if this is a card payment response
+          const isCardPaymentResponse = (response: any): response is CardPaymentOrderResponse => {
+            return response && typeof response === 'object' && 'order' in response && 'payment' in response;
+          };
+          
+          if (!isCardPaymentResponse(result)) {
+            throw new Error('Invalid response format for card payment');
+          }
+          
+          // For card payments, the result contains both order and payment data
+          const cardPaymentResult = result as CardPaymentOrderResponse;
+          const orderId = cardPaymentResult.order.id;
+          const paymentData = cardPaymentResult.payment.paymentData;
           
           if (!orderId) {
             throw new Error('Order ID not found in response');
@@ -202,10 +212,19 @@ const CheckoutPage: React.FC = () => {
           window.payhere.startPayment(payment);
         } else {
           // Cash payment - create order directly
-          const result = await api.post('/orders', orderData);
-          console.log('Order creation result:', result.data);
-          // For cash payments, order is directly in data
-          const orderId = (result.data as any).data?.id;
+          const result = await orderService.createOrder(orderData);
+          console.log('Order creation result:', result);
+          
+          // Type guard to check if this is a simple order response (cash payment)
+          const isOrderResponse = (response: any): response is Order => {
+            return response && typeof response === 'object' && 'id' in response && !('order' in response);
+          };
+          
+          if (!isOrderResponse(result)) {
+            throw new Error('Invalid response format for cash payment');
+          }
+          
+          const orderId = result.id;
           console.log('Extracted order ID:', orderId);
           
           if (!orderId) {

@@ -1,9 +1,9 @@
 import { api, handleApiResponse } from './api';
-import { Order, CreateOrderRequest, UpdateOrderStatusRequest } from '../types/shared';
+import { Order, CreateOrderRequest, UpdateOrderStatusRequest, CreateOrderResponse } from '../types/shared';
 
 export const orderService = {
   // Create new order
-  createOrder: async (orderData: CreateOrderRequest): Promise<Order> => {
+  createOrder: async (orderData: CreateOrderRequest): Promise<CreateOrderResponse> => {
     const response = await api.post('/orders', orderData);
     return handleApiResponse(response);
   },
