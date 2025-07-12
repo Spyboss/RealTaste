@@ -88,8 +88,8 @@ You need to configure environment variables on their respective dashboards:
 2. Select your RealTaste project
 3. Navigate to Settings → Environment Variables
 4. Add the following variables:
-   - `VITE_MAPBOX_ACCESS_TOKEN`: pk.eyJ1IjoidWhhZGV2IiwiYSI6ImNtZDBnYjcwNzE0ODEya3F0OWFoeXRzc3EifQ.8PQccQVoe1Ej-jeTeXJiWw
-   - `VITE_OPENCAGE_API_KEY`: 013cf08072d34de09a78ca371aff736d
+   - `VITE_MAPBOX_ACCESS_TOKEN`: your_mapbox_access_token_here
+- `VITE_OPENCAGE_API_KEY`: your_opencage_api_key_here
 
 #### Fly.io Dashboard (Backend)
 If any backend environment variables are needed for map integration, configure them in your Fly.io app settings.
