@@ -34,8 +34,8 @@ interface GeocodingResult {
 
 // Restaurant location (Colombo, Sri Lanka - default coordinates)
 const RESTAURANT_LOCATION = {
-  lat: parseFloat(import.meta.env.VITE_RESTAURANT_LAT || '6.7964'),
-  lng: parseFloat(import.meta.env.VITE_RESTAURANT_LNG || '79.9003')
+  lat: parseFloat(import.meta.env.VITE_RESTAURANT_LAT || '6.261449'),
+  lng: parseFloat(import.meta.env.VITE_RESTAURANT_LNG || '80.906462')
 };
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;

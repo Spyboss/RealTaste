@@ -78,6 +78,10 @@ fly secrets set PAYHERE_MERCHANT_ID=your-merchant-id
 fly secrets set PAYHERE_MERCHANT_SECRET=your-merchant-secret
 fly secrets set PAYHERE_SANDBOX=false
 
+# Restaurant Location (for delivery calculations)
+fly secrets set VITE_RESTAURANT_LAT=6.261449
+fly secrets set VITE_RESTAURANT_LNG=80.906462
+
 # Delivery System Configuration
 fly secrets set DELIVERY_BASE_FEE=180
 fly secrets set DELIVERY_PER_KM_FEE=40
@@ -141,6 +145,8 @@ VITE_FIREBASE_PROJECT_ID=your-firebase-project-id
 VITE_PAYHERE_MERCHANT_ID=your-merchant-id
 VITE_PAYHERE_SANDBOX=false
 VITE_APP_NAME=RealTaste
+VITE_RESTAURANT_LAT=6.261449
+VITE_RESTAURANT_LNG=80.906462
 ```
 
 ### Step 4: Deploy Frontend

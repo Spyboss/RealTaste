@@ -51,21 +51,35 @@ class DeliveryService {
       .select('*')
       .single();
 
+    // Default settings to use as fallback
+    const defaultSettings = {
+      id: 'default',
+      base_fee: 180.00, // LKR 180 for first 1km
+      per_km_fee: 40.00, // LKR 40 per additional km
+      max_delivery_range_km: 5.0, // 5km maximum
+      min_order_for_delivery: 0,
+      is_delivery_enabled: true
+    };
+
     if (error) {
       console.error('Error fetching delivery settings:', error);
       // Return default settings if none found
-      return {
-        id: 'default',
-        base_fee: 180.00, // LKR 180 for first 1km
-        per_km_fee: 40.00, // LKR 40 per additional km
-        max_delivery_range_km: 5.0, // 5km maximum
-        min_order_for_delivery: 0,
-        is_delivery_enabled: true
-      };
+      return defaultSettings;
     }
 
-    this.settings = data;
-    return data;
+    // Validate and sanitize the data - use defaults for any undefined/null values
+    const validatedSettings: DeliverySettings = {
+      id: data.id || defaultSettings.id,
+      base_fee: (data.base_fee !== null && data.base_fee !== undefined) ? data.base_fee : defaultSettings.base_fee,
+      per_km_fee: (data.per_km_fee !== null && data.per_km_fee !== undefined) ? data.per_km_fee : defaultSettings.per_km_fee,
+      max_delivery_range_km: (data.max_delivery_range_km !== null && data.max_delivery_range_km !== undefined) ? data.max_delivery_range_km : defaultSettings.max_delivery_range_km,
+      min_order_for_delivery: (data.min_order_for_delivery !== null && data.min_order_for_delivery !== undefined) ? data.min_order_for_delivery : defaultSettings.min_order_for_delivery,
+      is_delivery_enabled: (data.is_delivery_enabled !== null && data.is_delivery_enabled !== undefined) ? data.is_delivery_enabled : defaultSettings.is_delivery_enabled
+    };
+
+    console.log('Delivery settings loaded:', validatedSettings);
+    this.settings = validatedSettings;
+    return validatedSettings;
   }
 
   async updateDeliverySettings(settings: Partial<DeliverySettings>): Promise<DeliverySettings> {

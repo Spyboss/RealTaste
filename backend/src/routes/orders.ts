@@ -121,8 +121,8 @@ router.post('/',
 
       // Calculate delivery fee if order type is delivery
       if (orderData.order_type === 'delivery') {
-        const restaurantLat = parseFloat(process.env.RESTAURANT_LAT || '6.7964');
-        const restaurantLng = parseFloat(process.env.RESTAURANT_LNG || '79.9003');
+        const restaurantLat = parseFloat(process.env.VITE_RESTAURANT_LAT || '6.261449');
+    const restaurantLng = parseFloat(process.env.VITE_RESTAURANT_LNG || '80.906462');
         
         const deliveryCalculation = await deliveryService.calculateDeliveryFee(
           restaurantLat,
@@ -198,8 +198,8 @@ router.post('/',
         orderInsertData.customer_gps_location = orderData.customer_gps_location || null;
         
         // Calculate delivery distance
-        const restaurantLat = parseFloat(process.env.RESTAURANT_LAT || '6.7964');
-        const restaurantLng = parseFloat(process.env.RESTAURANT_LNG || '79.9003');
+        const restaurantLat = parseFloat(process.env.VITE_RESTAURANT_LAT || '6.261449');
+    const restaurantLng = parseFloat(process.env.VITE_RESTAURANT_LNG || '80.906462');
         const deliveryCalculation = await deliveryService.calculateDeliveryFee(
           restaurantLat,
           restaurantLng,
