@@ -515,6 +515,23 @@ const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
         </div>
       )}
 
+      {/* Delivery Information */}
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start space-x-2">
+          <div className="flex-shrink-0">
+            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2" />
+          </div>
+          <div className="text-sm text-blue-700">
+            <p className="font-medium mb-1">Delivery Information:</p>
+            <ul className="space-y-1 text-blue-600">
+              <li>• Base fee: LKR 180 for first 1km</li>
+              <li>• Additional: LKR 40 per km up to 5km range</li>
+              <li>• Estimated delivery time will be calculated based on distance</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       {deliveryCalculation && (
         <div className={`mb-4 p-3 rounded-lg border ${
           deliveryCalculation.isWithinRange
