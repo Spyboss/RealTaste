@@ -9,7 +9,7 @@ import { formatPrice, validatePhoneNumber } from '../utils/tempUtils';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import OrderTypeSelector from '../components/OrderTypeSelector';
-import DeliveryAddressInput from '../components/DeliveryAddressInput';
+import MapLocationPicker from '../components/MapLocationPicker';
 import { toast } from 'react-hot-toast';
 import { api } from '../services/api';
 
@@ -50,8 +50,7 @@ const CheckoutPage: React.FC = () => {
   const [deliveryNotes, setDeliveryNotes] = React.useState<string>('');
   const [deliveryFee, setDeliveryFee] = React.useState<number>(0);
   const [isWithinRange, setIsWithinRange] = React.useState<boolean>(true);
-  const [customerGpsLocation, setCustomerGpsLocation] = React.useState<string>('');
-  const [gpsLocation, setGpsLocation] = React.useState<string>('');
+
 
   const {
     register,
@@ -87,8 +86,7 @@ const CheckoutPage: React.FC = () => {
     setValue('deliveryLatitude', deliveryCoordinates?.lat);
     setValue('deliveryLongitude', deliveryCoordinates?.lng);
     setValue('deliveryNotes', deliveryNotes);
-    setValue('customerGpsLocation', customerGpsLocation);
-  }, [deliveryAddress, deliveryCoordinates, deliveryNotes, customerGpsLocation, setValue]);
+  }, [deliveryAddress, deliveryCoordinates, deliveryNotes, setValue]);
 
 
 
@@ -153,7 +151,7 @@ const CheckoutPage: React.FC = () => {
         delivery_latitude: data.orderType === 'delivery' ? deliveryCoordinates?.lat : undefined,
         delivery_longitude: data.orderType === 'delivery' ? deliveryCoordinates?.lng : undefined,
         delivery_notes: data.orderType === 'delivery' ? deliveryNotes : undefined,
-        customer_gps_location: data.orderType === 'delivery' ? customerGpsLocation : undefined,
+        customer_gps_location: undefined,
         notes: data.notes || undefined,
         items: items.map(item => ({
           menu_item_id: item.menu_item?.id || item.menu_item_id,
@@ -339,24 +337,38 @@ const CheckoutPage: React.FC = () => {
               deliveryEnabled={true}
             />
 
-            {/* Delivery Address */}
+            {/* Delivery Location */}
             {orderType === 'delivery' && (
-              <DeliveryAddressInput
-              address={deliveryAddress}
-              notes={deliveryNotes}
-              coordinates={deliveryCoordinates}
-              gpsLocation={gpsLocation}
-              onGpsLocationChange={setGpsLocation}
-              customerGpsLocation={customerGpsLocation}
-              deliveryFee={deliveryFee}
-              isWithinRange={isWithinRange}
-              onAddressChange={setDeliveryAddress}
-              onNotesChange={setDeliveryNotes}
-              onCoordinatesChange={setDeliveryCoordinates}
-              onCustomerGpsLocationChange={setCustomerGpsLocation}
-              onDeliveryFeeChange={setDeliveryFee}
-              onRangeStatusChange={setIsWithinRange}
-            />
+              <>
+                <MapLocationPicker
+                  address={deliveryAddress}
+                  onAddressChange={setDeliveryAddress}
+                  coordinates={deliveryCoordinates}
+                  onCoordinatesChange={setDeliveryCoordinates}
+                  deliveryFee={deliveryFee}
+                  isWithinRange={isWithinRange}
+                  onDeliveryFeeChange={setDeliveryFee}
+                  onRangeStatusChange={setIsWithinRange}
+                />
+                
+                {/* Delivery Notes */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Delivery Notes (Optional)
+                  </label>
+                  <textarea
+                    value={deliveryNotes}
+                    onChange={(e) => setDeliveryNotes(e.target.value)}
+                    placeholder="Any special delivery instructions (e.g., apartment number, gate code, landmarks)..."
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    rows={3}
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Help our delivery team find you easily
+                  </p>
+                </div>
+              </>
             )}
 
             {/* Payment Method */}
