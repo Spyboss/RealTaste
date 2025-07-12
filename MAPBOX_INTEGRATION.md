@@ -129,7 +129,7 @@ npm install mapbox-gl react-map-gl @types/mapbox-gl
    cp .env.example .env.local
    
    # Edit .env.local and add your Mapbox token
-   VITE_MAPBOX_ACCESS_TOKEN=pk.eyJ1IjoieW91ci11c2VybmFtZSIsImEiOiJjbGV4YW1wbGUifQ.example
+   VITE_MAPBOX_ACCESS_TOKEN=your_mapbox_access_token_here
    ```
 
 ### 3. OpenCage API Key (Optional)
