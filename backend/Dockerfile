@@ -17,13 +17,13 @@ FROM base AS deps
 WORKDIR /app
 
 # Copy package files
-COPY backend/package*.json backend/package-lock.json ./
+COPY backend/package*.json ./
 
 # Remove shared dependency for production build (types are inlined)
 RUN sed -i '/@realtaste\/shared/d' package.json
 
 # Install production dependencies only
-RUN npm ci --only=production --no-audit --no-fund && \
+RUN npm install --only=production --no-audit --no-fund && \
     npm cache clean --force
 
 # =============================================================================
@@ -33,13 +33,13 @@ FROM base AS builder
 WORKDIR /app
 
 # Copy package files
-COPY backend/package*.json backend/package-lock.json ./
+COPY backend/package*.json ./
 
 # Remove shared dependency for build
 RUN sed -i '/@realtaste\/shared/d' package.json
 
 # Install all dependencies (including dev dependencies for TypeScript compilation)
-RUN npm ci --no-audit --no-fund
+RUN npm install --no-audit --no-fund
 
 # Copy source code
 COPY backend/src/ ./src/
