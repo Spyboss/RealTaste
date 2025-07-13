@@ -11,9 +11,9 @@ primary_region = 'sin'  # Singapore region for optimal performance
 
 [build]
   # Use the optimized backend-only Dockerfile
-  dockerfile = 'Dockerfile'
-  # Build context is the backend directory
-  build_context = 'backend'
+  dockerfile = 'backend/Dockerfile'
+  # Build context is the root directory
+  build_context = '.'
 
 [env]
   # Production environment variables

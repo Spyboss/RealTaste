@@ -17,7 +17,7 @@ FROM base AS deps
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY backend/package*.json ./
 
 # Remove shared dependency for production build (types are inlined)
 RUN sed -i '/@realtaste\/shared/d' package.json
@@ -33,7 +33,7 @@ FROM base AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY backend/package*.json ./
 
 # Remove shared dependency for build
 RUN sed -i '/@realtaste\/shared/d' package.json
@@ -42,8 +42,8 @@ RUN sed -i '/@realtaste\/shared/d' package.json
 RUN npm ci --no-audit --no-fund
 
 # Copy source code
-COPY src/ ./src/
-COPY tsconfig.json ./
+COPY backend/src/ ./src/
+COPY backend/tsconfig.json ./
 
 # Build the application
 RUN npm run build
