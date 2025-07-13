@@ -46,7 +46,7 @@ export const schemas = {
       .messages({
         'string.pattern.base': 'Please provide a valid Sri Lankan phone number (format: +94xxxxxxxxx or 0xxxxxxxxx)'
       }),
-    customer_name: Joi.string().min(1).max(100).optional(),
+    customer_name: Joi.string().max(100).allow('').optional(),
     payment_method: Joi.string().valid('card', 'cash').required(),
     order_type: Joi.string().valid('pickup', 'delivery').default('pickup'),
     delivery_address: Joi.string().max(500).when('order_type', {
@@ -56,15 +56,15 @@ export const schemas = {
     }),
     delivery_latitude: Joi.number().optional(),
     delivery_longitude: Joi.number().optional(),
-    delivery_notes: Joi.string().max(500).optional(),
-    customer_gps_location: Joi.string().max(200).optional(),
-    notes: Joi.string().max(500).optional(),
+    delivery_notes: Joi.string().max(500).allow('').optional(),
+    customer_gps_location: Joi.string().max(200).allow('').optional(),
+    notes: Joi.string().max(500).allow('').optional(),
     items: Joi.array().items(
       Joi.object({
         menu_item_id: Joi.string().uuid().required(),
         variant_id: Joi.string().uuid().allow(null).optional(),
         quantity: Joi.number().integer().min(1).max(10).required(),
-        notes: Joi.string().max(200).optional(),
+        notes: Joi.string().max(200).allow('').optional(),
         addon_ids: Joi.array().items(Joi.string().uuid()).optional()
       })
     ).min(1).required()
