@@ -31,7 +31,7 @@ const PaymentErrorPage: React.FC = () => {
 
   const handleContactSupport = () => {
     // You can implement contact support logic here
-    toast.success('Please call +94 77 123 4567 for assistance');
+    toast.success('Please call +94 76 195 2541 for assistance');
   };
 
   return (
@@ -106,7 +106,7 @@ const PaymentErrorPage: React.FC = () => {
         {/* Help Text */}
         <div className="text-xs text-gray-500 space-y-1">
           <p>If you continue to experience issues, please contact our support team.</p>
-          <p>We're here to help: +94 77 123 4567</p>
+          <p>We're here to help: +94 76 195 2541</p>
         </div>
       </div>
     </div>

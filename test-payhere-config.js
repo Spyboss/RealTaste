@@ -6,7 +6,7 @@ async function testPayHereConfig() {
   try {
     // Test the payment initiation to see what URL is being generated
     const orderData = {
-      customer_phone: '0771234567',
+      customer_phone: '0761952541',
       customer_name: 'Test Customer',
       payment_method: 'card',
       notes: 'Test order for PayHere config check',

@@ -436,7 +436,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **📧 Email**: support@realtaste.lk
 - **🐛 Issues**: [GitHub Issues](https://github.com/Spyboss/RealTaste/issues)
 - **💬 Discussions**: [GitHub Discussions](https://github.com/Spyboss/RealTaste/discussions)
-- **📱 WhatsApp**: +94 77 123 4567
+- **📱 WhatsApp**: +94 76 195 2541
 
 ---
 

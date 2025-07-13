@@ -10,7 +10,7 @@ async function testPayHereIntegration() {
     console.log('1️⃣ Creating order with card payment...');
 
     const orderData = {
-      customer_phone: '0771234567',
+      customer_phone: '0761952541',
       customer_name: 'Test Customer',
       payment_method: 'card',
       notes: 'Test order for PayHere integration',
