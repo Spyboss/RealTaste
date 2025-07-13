@@ -144,7 +144,7 @@ const CheckoutPage: React.FC = () => {
 
     try {
       const orderData: CreateOrderRequest = {
-        customer_phone: data.customerPhone,
+        customer_phone: data.customerPhone.replace(/\D/g, ''), // Clean phone number by removing non-digits
         customer_name: data.customerName || undefined,
         payment_method: data.paymentMethod,
         order_type: data.orderType,
