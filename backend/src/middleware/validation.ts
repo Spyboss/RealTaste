@@ -4,7 +4,7 @@ import Joi from 'joi';
 // Generic validation middleware
 export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const { error } = schema.validate(req.body);
+    const { error, value } = schema.validate(req.body);
 
     if (error) {
       return res.status(400).json({
@@ -17,6 +17,8 @@ export const validate = (schema: Joi.ObjectSchema) => {
       });
     }
 
+    // Update request body with validated and cleaned data
+    req.body = value;
     next();
   };
 };
