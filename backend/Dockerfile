@@ -17,7 +17,7 @@ FROM base AS deps
 WORKDIR /app
 
 # Copy package files
-COPY backend/package*.json ./
+COPY backend/package*.json backend/package-lock.json ./
 
 # Remove shared dependency for production build (types are inlined)
 RUN sed -i '/@realtaste\/shared/d' package.json
@@ -33,7 +33,7 @@ FROM base AS builder
 WORKDIR /app
 
 # Copy package files
-COPY backend/package*.json ./
+COPY backend/package*.json backend/package-lock.json ./
 
 # Remove shared dependency for build
 RUN sed -i '/@realtaste\/shared/d' package.json
