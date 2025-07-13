@@ -156,10 +156,10 @@ const CheckoutPage: React.FC = () => {
         customer_name: data.customerName || undefined,
         payment_method: data.paymentMethod,
         order_type: data.orderType,
-        delivery_address: data.orderType === 'delivery' ? deliveryAddress : undefined,
-        delivery_latitude: data.orderType === 'delivery' ? deliveryCoordinates?.lat : undefined,
-        delivery_longitude: data.orderType === 'delivery' ? deliveryCoordinates?.lng : undefined,
-        delivery_notes: data.orderType === 'delivery' ? deliveryNotes : undefined,
+        delivery_address: data.orderType === 'delivery' ? data.deliveryAddress : undefined,
+        delivery_latitude: data.orderType === 'delivery' ? data.deliveryLatitude : undefined,
+        delivery_longitude: data.orderType === 'delivery' ? data.deliveryLongitude : undefined,
+        delivery_notes: data.orderType === 'delivery' ? data.deliveryNotes : undefined,
         customer_gps_location: undefined,
         notes: data.notes || undefined,
         items: items.map(item => ({
@@ -173,6 +173,18 @@ const CheckoutPage: React.FC = () => {
 
       setIsSubmitting(true);
       
+      // Enhanced logging for debugging
+      console.log('📋 Order submission data:', {
+        orderType: data.orderType,
+        deliveryAddress: data.deliveryAddress,
+        deliveryLatitude: data.deliveryLatitude,
+        deliveryLongitude: data.deliveryLongitude,
+        hasCoordinates: !!(data.deliveryLatitude && data.deliveryLongitude),
+        paymentMethod: data.paymentMethod
+      });
+      
+      console.log('🚀 Full order request payload:', JSON.stringify(orderData, null, 2));
+      
       try {
         if (data.paymentMethod === 'card') {
           // Check if PayHere is loaded
@@ -182,7 +194,7 @@ const CheckoutPage: React.FC = () => {
 
           // First create the order to get the order ID and payment data
           const result = await orderService.createOrder(orderData);
-          console.log('Order creation result:', result);
+          console.log('✅ Order creation result:', result);
           
           // Type guard to check if this is a card payment response
           const isCardPaymentResponse = (response: any): response is CardPaymentOrderResponse => {
@@ -221,7 +233,7 @@ const CheckoutPage: React.FC = () => {
         } else {
           // Cash payment - create order directly
           const result = await orderService.createOrder(orderData);
-          console.log('Order creation result:', result);
+          console.log('✅ Cash order creation result:', result);
           
           // Type guard to check if this is a simple order response (cash payment)
           const isOrderResponse = (response: any): response is Order => {
@@ -244,8 +256,32 @@ const CheckoutPage: React.FC = () => {
           navigate(`/order-confirmation/${orderId}`);
         }
       } catch (error) {
-        console.error('Order creation failed:', error);
-        toast.error('Failed to place order. Please try again.');
+        console.error('❌ Order creation failed:', error);
+        
+        // Enhanced error logging
+        if (error instanceof Error) {
+          console.error('Error message:', error.message);
+          console.error('Error stack:', error.stack);
+        }
+        
+        // Log the request data that failed
+        console.error('Failed request data:', JSON.stringify(orderData, null, 2));
+        
+        // Check for specific API error responses
+        if (error && typeof error === 'object' && 'response' in error) {
+          const apiError = error as any;
+          console.error('API Error Response:', {
+            status: apiError.response?.status,
+            statusText: apiError.response?.statusText,
+            data: apiError.response?.data
+          });
+          
+          // Show more specific error message if available
+          const errorMessage = apiError.response?.data?.message || apiError.response?.data?.error || error.message || 'Failed to place order';
+          toast.error(`Order failed: ${errorMessage}`);
+        } else {
+          toast.error('Failed to place order. Please try again.');
+        }
       } finally {
         if (data.paymentMethod !== 'card') {
           setIsSubmitting(false);
