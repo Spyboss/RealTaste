@@ -277,7 +277,13 @@ const CheckoutPage: React.FC = () => {
           });
           
           // Show more specific error message if available
-          const errorMessage = apiError.response?.data?.message || apiError.response?.data?.error || (error && typeof error === 'object' && 'message' in error ? (error as Error).message : 'Unknown error') || 'Failed to place order';
+          const getErrorMessage = (err: unknown): string => {
+            if (err && typeof err === 'object' && 'message' in err) {
+              return String((err as { message: unknown }).message);
+            }
+            return 'Unknown error';
+          };
+          const errorMessage = apiError.response?.data?.message || apiError.response?.data?.error || getErrorMessage(error) || 'Failed to place order';
           toast.error(`Order failed: ${errorMessage}`);
         } else {
           toast.error('Failed to place order. Please try again.');
