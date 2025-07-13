@@ -305,8 +305,13 @@ const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
   const displayCoordinates = draggedCoordinates || coordinates;
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6 ${className}`}>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Delivery Location</h3>
+    <div className={`bg-white rounded-lg shadow-sm border ${!address ? 'border-red-300 bg-red-50' : 'border-gray-200'} p-4 mb-6 ${className}`}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Select Delivery Location</h3>
+        {!address && (
+          <span className="text-sm text-red-600 font-medium">Required</span>
+        )}
+      </div>
       
       {/* Search Bar */}
       <div className="mb-4 relative">
@@ -464,15 +469,33 @@ const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
       </div>
 
       {/* Instructions */}
-      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="text-sm text-blue-800">
-          <p className="font-medium mb-1">How to select your delivery location:</p>
-          <ul className="text-xs space-y-1 ml-4">
-            <li>• Search for your location using the search bar above</li>
-            <li>• Click "Use My Location" to auto-detect your current position</li>
-            <li>• Click anywhere on the map to place a pin</li>
-            <li>• Drag the green/red pin to fine-tune your exact location</li>
-          </ul>
+      <div className={`mb-4 p-3 rounded-lg border ${
+        !address 
+          ? 'bg-red-50 border-red-200' 
+          : 'bg-blue-50 border-blue-200'
+      }`}>
+        <div className={`text-sm ${
+          !address ? 'text-red-800' : 'text-blue-800'
+        }`}>
+          {!address ? (
+            <>
+              <p className="font-medium mb-1">⚠️ Please select your delivery location:</p>
+              <ul className="text-xs space-y-1 ml-4">
+                <li>• Search for your location using the search bar above</li>
+                <li>• Click "Use My Location" to auto-detect your current position</li>
+                <li>• Click anywhere on the map to place a pin</li>
+              </ul>
+            </>
+          ) : (
+            <>
+              <p className="font-medium mb-1">✓ Location selected! You can:</p>
+              <ul className="text-xs space-y-1 ml-4">
+                <li>• Drag the pin to fine-tune your exact location</li>
+                <li>• Search for a different location if needed</li>
+                <li>• Click elsewhere on the map to change location</li>
+              </ul>
+            </>
+          )}
         </div>
       </div>
 

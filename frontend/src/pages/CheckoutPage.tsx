@@ -129,24 +129,26 @@ const CheckoutPage: React.FC = () => {
   }, [navigate, clearCart]);
 
   const onSubmit = async (data: CheckoutForm) => {
-    // Check if delivery is selected but required data is missing
-    if (data.orderType === 'delivery') {
-      if (!deliveryAddress.trim()) {
-        toast.error('Please enter a delivery address');
-        return;
-      }
-      // GPS coordinates are optional, but if provided, check if within range
-      if (deliveryCoordinates && !isWithinRange) {
-        toast.error('Sorry, delivery is not available to your location (outside 5km range)');
-        return;
-      }
-    }
-
     try {
-      // Validate delivery address for delivery orders
-      if (data.orderType === 'delivery' && (!deliveryAddress || deliveryAddress.trim() === '')) {
-        toast.error('Please select a delivery address');
-        return;
+      // Validate delivery requirements for delivery orders
+      if (data.orderType === 'delivery') {
+        // Check if delivery address is provided and not empty
+        if (!deliveryAddress || deliveryAddress.trim() === '') {
+          toast.error('Please select a delivery address using the map, search, or "Use My Location" button');
+          return;
+        }
+        
+        // Check if coordinates are provided (required for delivery fee calculation)
+        if (!deliveryCoordinates || !deliveryCoordinates.lat || !deliveryCoordinates.lng) {
+          toast.error('Please select a location on the map to calculate delivery fee');
+          return;
+        }
+        
+        // Check if location is within delivery range
+        if (!isWithinRange) {
+          toast.error('Sorry, delivery is not available to your location (outside 5km range)');
+          return;
+        }
       }
 
       const orderData: CreateOrderRequest = {
