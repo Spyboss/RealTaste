@@ -143,6 +143,12 @@ const CheckoutPage: React.FC = () => {
     }
 
     try {
+      // Validate delivery address for delivery orders
+      if (data.orderType === 'delivery' && (!deliveryAddress || deliveryAddress.trim() === '')) {
+        toast.error('Please select a delivery address');
+        return;
+      }
+
       const orderData: CreateOrderRequest = {
         customer_phone: data.customerPhone.replace(/\D/g, ''), // Clean phone number by removing non-digits
         customer_name: data.customerName || undefined,
