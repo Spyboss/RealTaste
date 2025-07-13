@@ -1,34 +1,53 @@
-# fly.toml app configuration file generated for realtaste on 2025-01-17T10:30:00Z
+# =============================================================================
+# REALTASTE BACKEND - FLY.IO CONFIGURATION
+# =============================================================================
+# Production deployment configuration for RealTaste backend API
+# This configuration deploys ONLY the backend service to Fly.io
+#
+# See https://fly.io/docs/reference/configuration/ for more information
 
-app = "realtaste"
-primary_region = "sin"
+app = 'realtaste'
+primary_region = 'sin'  # Singapore region for optimal performance
 
 [build]
-  dockerfile = "backend/Dockerfile"
-
-[experimental]
-  auto_rollback = true
+  # Use the optimized backend-only Dockerfile
+  dockerfile = 'backend/Dockerfile'
+  # Build context is the backend directory
+  build_context = 'backend'
 
 [env]
-  NODE_ENV = "production"
-  PORT = "3001"
+  # Production environment variables
+  NODE_ENV = 'production'
+  PORT = '3001'
 
 [http_service]
+  # Internal port that the app listens on
   internal_port = 3001
+  # Force HTTPS for security
   force_https = true
-  auto_stop_machines = "stop"
+  # Auto-scaling configuration
+  auto_stop_machines = true
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ['app']
 
+  # Health check configuration
   [[http_service.checks]]
-    grace_period = "10s"
-    interval = "30s"
-    method = "GET"
-    timeout = "5s"
-    path = "/health"
+    grace_period = '10s'     # Time to wait before starting health checks
+    interval = '30s'         # How often to run health checks
+    restart_limit = 3        # Max restarts before marking as unhealthy
+    timeout = '5s'           # Timeout for each health check
+    path = '/health'         # Health check endpoint
+    method = 'GET'
+    
+  # HTTP service options
+  [http_service.concurrency]
+    type = 'connections'
+    hard_limit = 1000
+    soft_limit = 800
 
-[[vm]]
-  memory = "1gb"
-  cpu_kind = "shared"
+# Resource allocation
+[vm]
+  cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 512

@@ -1,11 +1,51 @@
-# RealTaste - Restaurant Order Pickup PWA 🇱🇰
+# RealTaste - Sri Lankan Restaurant Management System
 
-A modern, mobile-first Progressive Web App (PWA) for restaurant order pickup, specifically designed for Sri Lankan restaurants. Built with React, Node.js, TypeScript, and Supabase.
+[![Deploy Status](https://img.shields.io/badge/deploy-automated-brightgreen)](https://github.com/yourusername/realtaste)
+[![Backend](https://img.shields.io/badge/backend-Fly.io-purple)](https://realtaste.fly.dev)
+[![Frontend](https://img.shields.io/badge/frontend-Cloudflare%20Pages-orange)](https://realtaste.pages.dev)
+[![Database](https://img.shields.io/badge/database-Supabase-green)](https://supabase.com)
 
-![RealTaste Demo](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
-![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue)
-![PWA](https://img.shields.io/badge/PWA-Enabled-purple)
-![Sri Lanka](https://img.shields.io/badge/Made%20for-Sri%20Lanka-orange)
+A modern, full-stack restaurant management system built for authentic Sri Lankan cuisine delivery. Features real-time order management, integrated payments, and location-based delivery services.
+
+## 🏗️ Architecture Overview
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │    Backend      │    │    Database     │
+│ Cloudflare Pages│◄──►│    Fly.io       │◄──►│   Supabase      │
+│   (React/Vite)  │    │  (Node.js/TS)   │    │ (PostgreSQL)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   CDN/Edge      │    │   Load Balancer │    │   Realtime      │
+│   Cloudflare    │    │   Auto-scaling  │    │   Subscriptions │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Technology Stack
+
+**Frontend:**
+- ⚛️ React 18 with TypeScript
+- ⚡ Vite for fast development and building
+- 🎨 Tailwind CSS for styling
+- 🗺️ Mapbox for location services
+- 💳 PayHere payment integration
+- 🔔 Firebase push notifications
+
+**Backend:**
+- 🟢 Node.js with Express and TypeScript
+- 🛡️ JWT authentication and authorization
+- 📊 Rate limiting and security middleware
+- 🔄 Real-time order updates
+- 💰 Payment processing integration
+
+**Infrastructure:**
+- 🌐 **Frontend**: Cloudflare Pages (Global CDN)
+- 🚀 **Backend**: Fly.io (Edge deployment)
+- 🗄️ **Database**: Supabase (PostgreSQL + Realtime)
+- 📱 **Notifications**: Firebase Cloud Messaging
+- 💳 **Payments**: PayHere (Sri Lankan payment gateway)
 
 ## 🚀 Features
 

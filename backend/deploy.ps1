@@ -1,42 +1,174 @@
-# This script builds and deploys the backend to Fly.io
+# =============================================================================
+# REALTASTE BACKEND DEPLOYMENT SCRIPT
+# =============================================================================
+# Automated deployment script for RealTaste backend to Fly.io
+# This script handles the complete deployment process with validation
 
+param(
+    [switch]$SkipHealthCheck,
+    [switch]$Verbose
+)
+
+# Set error action preference
 $ErrorActionPreference = "Stop"
 
-Write-Host "Starting RealTaste Backend Deployment to Fly.io..." -ForegroundColor Green
+# Colors for output
+$Colors = @{
+    Success = "Green"
+    Error = "Red"
+    Warning = "Yellow"
+    Info = "Cyan"
+    Progress = "Blue"
+}
 
-# Check if fly CLI is installed
+function Write-ColorOutput {
+    param(
+        [string]$Message,
+        [string]$Color = "White",
+        [string]$Prefix = ""
+    )
+    
+    if ($Prefix) {
+        Write-Host "$Prefix " -NoNewline -ForegroundColor $Color
+    }
+    Write-Host $Message -ForegroundColor $Color
+}
+
+function Test-Prerequisites {
+    Write-ColorOutput "Checking deployment prerequisites..." $Colors.Progress "🔍"
+    
+    # Check Fly CLI installation
+    if (!(Get-Command "fly" -ErrorAction SilentlyContinue)) {
+        Write-ColorOutput "Fly CLI not found!" $Colors.Error "❌"
+        Write-ColorOutput "Install from: https://fly.io/docs/getting-started/installing-flyctl/" $Colors.Warning
+        throw "Missing Fly CLI"
+    }
+    
+    # Check authentication
+    try {
+        $flyAuth = fly auth whoami 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Not authenticated"
+        }
+        Write-ColorOutput "Authenticated as: $flyAuth" $Colors.Success "✅"
+    } catch {
+        Write-ColorOutput "Not logged in to Fly.io" $Colors.Error "❌"
+        Write-ColorOutput "Please run: fly auth login" $Colors.Warning
+        throw "Authentication required"
+    }
+    
+    # Verify project structure
+    $requiredFiles = @("fly.toml", "backend/Dockerfile", "backend/package.json")
+    foreach ($file in $requiredFiles) {
+        if (!(Test-Path $file)) {
+            Write-ColorOutput "Required file missing: $file" $Colors.Error "❌"
+            throw "Invalid project structure"
+        }
+    }
+    
+    Write-ColorOutput "All prerequisites satisfied" $Colors.Success "✅"
+}
+
+function Start-Deployment {
+    Write-ColorOutput "Starting deployment to Fly.io..." $Colors.Progress "🚀"
+    
+    # Navigate to project root
+    $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $projectRoot = Split-Path -Parent $scriptPath
+    Set-Location $projectRoot
+    
+    if ($Verbose) {
+        Write-ColorOutput "Working directory: $(Get-Location)" $Colors.Info "📁"
+    }
+    
+    # Deploy application
+    Write-ColorOutput "Building and deploying application..." $Colors.Progress "🔨"
+    
+    if ($Verbose) {
+        fly deploy --verbose
+    } else {
+        fly deploy
+    }
+    
+    if ($LASTEXITCODE -ne 0) {
+        throw "Deployment failed"
+    }
+    
+    Write-ColorOutput "Deployment completed successfully" $Colors.Success "✅"
+}
+
+function Test-Deployment {
+    if ($SkipHealthCheck) {
+        Write-ColorOutput "Skipping health check as requested" $Colors.Warning "⏭️"
+        return
+    }
+    
+    Write-ColorOutput "Validating deployment..." $Colors.Progress "🔍"
+    
+    # Check application status
+    Write-ColorOutput "Checking application status..." $Colors.Info "📊"
+    fly status
+    
+    # Test health endpoint
+    Write-ColorOutput "Testing health endpoint..." $Colors.Info "🏥"
+    
+    $maxRetries = 3
+    $retryDelay = 5
+    
+    for ($i = 1; $i -le $maxRetries; $i++) {
+        try {
+            $response = Invoke-RestMethod -Uri "https://realtaste.fly.dev/health" -Method Get -TimeoutSec 15
+            Write-ColorOutput "Health check passed" $Colors.Success "✅"
+            
+            if ($Verbose -and $response) {
+                Write-ColorOutput "Response: $($response | ConvertTo-Json -Compress)" $Colors.Info
+            }
+            return
+        } catch {
+            if ($i -eq $maxRetries) {
+                Write-ColorOutput "Health check failed after $maxRetries attempts" $Colors.Error "❌"
+                Write-ColorOutput "Error: $($_.Exception.Message)" $Colors.Warning
+                throw "Health check failed"
+            } else {
+                Write-ColorOutput "Health check attempt $i failed, retrying in $retryDelay seconds..." $Colors.Warning "⚠️"
+                Start-Sleep -Seconds $retryDelay
+            }
+        }
+    }
+}
+
+function Show-DeploymentSummary {
+    Write-ColorOutput "Deployment Summary" $Colors.Success "🎉"
+    Write-Host ""
+    Write-ColorOutput "Backend API: https://realtaste.fly.dev" $Colors.Info "🌐"
+    Write-ColorOutput "Health Check: https://realtaste.fly.dev/health" $Colors.Info "🏥"
+    Write-ColorOutput "Fly Dashboard: https://fly.io/apps/realtaste" $Colors.Info "📊"
+    Write-Host ""
+    Write-ColorOutput "Next steps:" $Colors.Info "📋"
+    Write-ColorOutput "  1. Update frontend VITE_API_URL to point to the deployed backend" $Colors.Info
+    Write-ColorOutput "  2. Deploy frontend to Cloudflare Pages" $Colors.Info
+    Write-ColorOutput "  3. Test end-to-end functionality" $Colors.Info
+}
+
+# Main execution
 try {
-    fly version | Out-Null
+    Write-ColorOutput "RealTaste Backend Deployment" $Colors.Success "🚀"
+    Write-Host "" 
+    
+    Test-Prerequisites
+    Start-Deployment
+    Test-Deployment
+    Show-DeploymentSummary
+    
+    Write-ColorOutput "Deployment process completed successfully!" $Colors.Success "🎉"
+    
 } catch {
-    Write-Host "Fly CLI is not installed. Please install it first:" -ForegroundColor Red
-    Write-Host "   PowerShell: iwr https://fly.io/install.ps1 -useb | iex" -ForegroundColor Yellow
-    Write-Host "   Or visit: https://fly.io/docs/getting-started/installing-flyctl/" -ForegroundColor Yellow
+    Write-ColorOutput "Deployment failed: $($_.Exception.Message)" $Colors.Error "❌"
+    Write-ColorOutput "Check the logs above for more details" $Colors.Warning
     exit 1
 }
 
-# Check if we're in the backend directory
-if (-not (Test-Path "fly.toml")) {
-    Write-Host "fly.toml not found. Please run this script from the backend directory." -ForegroundColor Red
-    exit 1
-}
-
-# Build the project
-Write-Host "Building the project..." -ForegroundColor Blue
-Set-Location ..
-npm run build:shared
-npm run build:backend
-Set-Location backend
-
-# Deploy to Fly.io
-Write-Host "Deploying to Fly.io..." -ForegroundColor Blue
-fly deploy
-
-Write-Host "Deployment completed!" -ForegroundColor Green
-Write-Host "Your API should be available at: https://realtaste-api.fly.dev" -ForegroundColor Cyan
-Write-Host "Health check: https://realtaste-api.fly.dev/health" -ForegroundColor Cyan
-
-# Check deployment status
-Write-Host "Checking deployment status..." -ForegroundColor Blue
-fly status
-
-Write-Host "RealTaste Backend is now live!" -ForegroundColor Green
+# Usage examples:
+# .\backend\deploy.ps1                    # Standard deployment
+# .\backend\deploy.ps1 -Verbose           # Verbose output
+# .\backend\deploy.ps1 -SkipHealthCheck   # Skip health validation
