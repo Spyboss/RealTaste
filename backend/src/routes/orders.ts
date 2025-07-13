@@ -17,6 +17,12 @@ router.post('/',
   validate(schemas.createOrder),
   async (req, res) => {
     try {
+      console.log('📋 Order creation request received:', {
+        body: req.body,
+        user: req.user,
+        timestamp: new Date().toISOString()
+      });
+      
       const orderData: CreateOrderRequest = req.body;
 
       // Validate delivery data if order type is delivery
