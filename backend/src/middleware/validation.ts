@@ -25,10 +25,17 @@ export const validate = (schema: Joi.ObjectSchema) => {
 export const schemas = {
   createOrder: Joi.object({
     customer_phone: Joi.string()
-      .pattern(/^(\+94|0)[0-9]{8,9}$/)
+      .custom((value, helpers) => {
+        // Remove spaces and validate
+        const cleanPhone = value.replace(/\s+/g, '');
+        if (!/^(\+94|0)[0-9]{8,9}$/.test(cleanPhone)) {
+          return helpers.error('string.pattern.base');
+        }
+        return cleanPhone;
+      })
       .required()
       .messages({
-        'string.pattern.base': 'Please provide a valid Sri Lankan phone number'
+        'string.pattern.base': 'Please provide a valid Sri Lankan phone number (format: +94xxxxxxxxx or 0xxxxxxxxx)'
       }),
     customer_name: Joi.string().min(1).max(100).optional(),
     payment_method: Joi.string().valid('card', 'cash').required(),
