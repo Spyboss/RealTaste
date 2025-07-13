@@ -60,7 +60,7 @@ router.put('/settings',
       
       const updatedSettings = await deliveryService.updateDeliverySettings({
         base_fee,
-        per_km_rate,
+        per_km_fee: per_km_rate,
         max_delivery_distance_km,
         min_order_for_delivery,
         is_delivery_enabled

@@ -4,7 +4,7 @@ import { calculateDistance } from '../utils/geoUtils';
 export interface DeliverySettings {
   id: string;
   base_fee: number;
-  per_km_rate: number;
+  per_km_fee: number;
   max_delivery_distance_km: number;
   min_order_for_delivery: number;
   is_delivery_enabled: boolean;
@@ -55,7 +55,7 @@ class DeliveryService {
     const defaultSettings = {
       id: 'default',
       base_fee: 180.00, // LKR 180 for first 1km
-      per_km_rate: 40.00, // LKR 40 per additional km
+      per_km_fee: 40.00, // LKR 40 per additional km
       max_delivery_distance_km: 5.0, // 5km maximum
       min_order_for_delivery: 0,
       is_delivery_enabled: true
@@ -71,7 +71,7 @@ class DeliveryService {
     const validatedSettings: DeliverySettings = {
       id: data.id || defaultSettings.id,
       base_fee: (data.base_fee !== null && data.base_fee !== undefined) ? data.base_fee : defaultSettings.base_fee,
-      per_km_rate: (data.per_km_rate !== null && data.per_km_rate !== undefined) ? data.per_km_rate : defaultSettings.per_km_rate,
+      per_km_fee: (data.per_km_fee !== null && data.per_km_fee !== undefined) ? data.per_km_fee : defaultSettings.per_km_fee,
       max_delivery_distance_km: (data.max_delivery_distance_km !== null && data.max_delivery_distance_km !== undefined) ? data.max_delivery_distance_km : defaultSettings.max_delivery_distance_km,
       min_order_for_delivery: (data.min_order_for_delivery !== null && data.min_order_for_delivery !== undefined) ? data.min_order_for_delivery : defaultSettings.min_order_for_delivery,
       is_delivery_enabled: (data.is_delivery_enabled !== null && data.is_delivery_enabled !== undefined) ? data.is_delivery_enabled : defaultSettings.is_delivery_enabled
@@ -134,7 +134,7 @@ class DeliveryService {
     
     if (distance > 1) {
       const additionalKm = Math.ceil(distance - 1); // Round up additional distance
-      deliveryFee += additionalKm * settings.per_km_rate;
+      deliveryFee += additionalKm * settings.per_km_fee;
     }
 
     // Estimate delivery time: 5 minutes per km + 10 minutes base
@@ -164,7 +164,7 @@ class DeliveryService {
     
     if (standardDistance > 1) {
       const additionalKm = Math.ceil(standardDistance - 1);
-      deliveryFee += additionalKm * settings.per_km_rate;
+      deliveryFee += additionalKm * settings.per_km_fee;
     }
 
     // Standard estimated time for 3km
