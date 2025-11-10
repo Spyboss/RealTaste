@@ -23,6 +23,28 @@ A modern, full-stack restaurant management system built for authentic Sri Lankan
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
+### How the pieces fit together in production
+
+- **Edge-first delivery.** End users interact with a PWA served from Cloudflare's global edge. Static assets are cached at the CDN, while API calls are proxied over HTTPS to the Fly.io workload in Singapore to minimize latency for Sri Lankan diners.
+- **Stateless API tier.** The Fly.io app runs a single Express container image. Because session state lives in Supabase (auth) and the browser (JWTs), the backend can be horizontally scaled by increasing the Fly.io instance count without additional coordination.
+- **Managed data plane.** Supabase hosts PostgreSQL (for transactional data) and real-time subscriptions. All mutations travel through the backend using the Supabase service role key, while the frontend uses an anon key limited by Row Level Security for read access where appropriate.
+- **External integrations.** PayHere handles card and wallet payments, while Firebase Cloud Messaging powers push notifications. Both services are called only from the backend to keep secrets server-side.
+
+### Request and data flow
+
+1. **User action:** A customer browses menu data that is cached by the PWA. Cache misses trigger `GET /api/menu/*` calls routed from Cloudflare to Fly.io.
+2. **API processing:** Express handlers enforce rate limiting, validate payloads, and call Supabase using service-role credentials. Delivery radius checks run before an order can be confirmed so that out-of-range requests fail fast.
+3. **Database updates:** PostgreSQL transactions write into `orders`, `order_items`, and related tables. Supabase real-time broadcasts state changes to subscribed admin dashboards to keep the kitchen view synchronized.
+4. **Outbound integrations:** When an order is submitted with PayHere, the backend assembles the signed payload, stores the payment intent, and waits for PayHere's webhook callbacks to confirm the status.
+5. **Frontend updates:** Zustand stores invalidate cached queries via React Query, showing updated timelines to both customers and admins.
+
+### Operational characteristics
+
+- **Throughput & scaling:** Default Fly.io config runs one VM (`fly scale count 1`). For peak periods, scale horizontally (`fly scale count 3`)—each instance handles ~100 requests/15 min before rate limits engage, protecting Supabase and PayHere from abuse.
+- **Latency targets:** Typical Sri Lanka ↔ Singapore round trip averages 60–80 ms. Use Cloudflare's analytics to spot regional latency spikes; sustained degradation suggests scaling the Fly app in-region or adding a second region with Fly.io's Anycast.
+- **Resilience assumptions:** The system assumes Supabase availability. If Supabase is degraded, order placement and authentication will fail fast with user-friendly messaging while the CDN continues to serve cached menu content.
+- **Security boundaries:** All secrets (PayHere, Supabase service role, Firebase) are injected via Fly secrets. JWTs are short-lived (7 days) and validated on every request. Rate limiters protect sensitive routes (`/api/orders`, `/api/admin/*`).
+
 ### Technology Stack
 
 **Frontend:**
@@ -332,6 +354,31 @@ git push origin main
 - **🚀 Quick Start**: [QUICK_DEPLOY.md](QUICK_DEPLOY.md) - 30-minute deployment
 - **📖 Full Guide**: [DEPLOYMENT.md](DEPLOYMENT.md) - Complete instructions
 - **✅ Checklist**: [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) - Step-by-step verification
+
+### Production operations playbook
+
+| Operational Area | Primary Tooling | What to Watch |
+| --- | --- | --- |
+| **API health** | `fly status`, `fly logs`, `/health` endpoint | Instance restarts, elevated error rates, memory pressure |
+| **Frontend delivery** | Cloudflare Pages analytics & preview deploys | Build failures, cache purge results, Core Web Vitals |
+| **Database** | Supabase dashboard (Usage → Database), Log Explorer | Connection saturation, slow queries, RLS policy errors |
+| **Payments** | PayHere Merchant Portal & webhook logs | Pending callbacks >5 min, repeated signature mismatches |
+| **Notifications** | Firebase console (Cloud Messaging) | Token registration failures, push delivery lag |
+
+**Alerting tip:** Configure Fly.io log drains or Syslog forwarding if you need centralized alerting; rate-limiter warnings and global error-handler logs already include request context for triage.
+
+### Failure modes & recovery
+
+- **Supabase outage:** Orders and authentication fail. Keep the site online by serving a maintenance banner from the frontend; pause marketing traffic and monitor Supabase status. Once restored, validate background jobs (webhooks, real-time subscriptions) by placing a test order.
+- **PayHere webhook delays:** Orders remain in `received` state. Use the admin dashboard to manually mark payments after checking the PayHere portal. Investigate signature mismatches in backend logs.
+- **Fly.io deployment rollback:** If a release causes errors, redeploy the last working image (`fly deploy --image <digest>`). Since the app is stateless, no data rollback is required.
+- **Cloudflare cache poisoning:** Purge the affected paths from the Pages dashboard and redeploy to ensure a clean build.
+
+### Observability shortcuts
+
+- **Structured logging:** The backend logs environment, business hours, and PayHere configuration on startup for quick sanity checks during incident response.
+- **Real-time troubleshooting:** Attach to a running instance with `fly ssh console` to inspect `/var/log` and verify environment variables.
+- **Synthetic monitoring:** Schedule periodic `curl https://<backend>/health` checks from Colombo and Singapore to detect regional outages early.
 
 ### 🌐 Production Stack (Currently Live)
 - **Frontend**: Cloudflare Pages (Global CDN, PWA enabled)
