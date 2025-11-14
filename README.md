@@ -1,496 +1,109 @@
-# RealTaste - Sri Lankan Restaurant Management System
+# RealTaste PWA
 
-[![Deploy Status](https://img.shields.io/badge/deploy-automated-brightgreen)](https://github.com/yourusername/realtaste)
-[![Backend](https://img.shields.io/badge/backend-Fly.io-purple)](https://realtaste.fly.dev)
-[![Frontend](https://img.shields.io/badge/frontend-Cloudflare%20Pages-orange)](https://realtaste.pages.dev)
-[![Database](https://img.shields.io/badge/database-Supabase-green)](https://supabase.com)
+## Project Overview
+RealTaste is a production-ready restaurant ordering platform designed for Sri Lankan takeout businesses. The platform delivers a mobile-first PWA that lets customers browse the menu, place pickup or delivery orders, and track status updates in real time. Restaurant operators manage the same workload through an analytics-driven admin dashboard that runs in the browser and synchronises with Supabase. The system was built by Uminda H. to modernise day-to-day restaurant operations without relying on native apps.
 
-A modern, full-stack restaurant management system built for authentic Sri Lankan cuisine delivery. Features real-time order management, integrated payments, and location-based delivery services.
+## Features
+### Customer experience
+- Browse live menu data grouped by category with variant and addon pricing.
+- Persistent cart with variant/addon awareness powered by Zustand storage.
+- Checkout flow with pickup or delivery selection, Mapbox-powered address capture, and automatic delivery fee calculation.
+- PayHere card payments alongside cash on delivery/pickup.
+- Order confirmation pages that surface itemised totals and delivery estimates.
+- Authenticated order history with Supabase-backed email/password or Google login.
+- Installable PWA with offline caching via `vite-plugin-pwa`.
 
-## 🏗️ Architecture Overview
+### Operator tooling
+- Secure Supabase-authenticated admin routes protected by JWT middleware.
+- Real-time order queue that reacts to Supabase Postgres change feeds.
+- Dashboard cards for revenue, order volume, and popular items with trend visualisations.
+- Delivery control surface for configuring base fees, kilometre surcharges, and maximum range.
+- Bulk and per-order status management, cancellation controls, and analytics exports (CSV/XLSX helpers in `frontend/src/services`).
 
+## Tech Stack
+- **Frontend:** React 18, TypeScript 5, Vite 6, Tailwind CSS 3, React Query, React Router, Zustand, Mapbox GL, `vite-plugin-pwa`.
+- **Backend:** Node.js 18+, Express 4, TypeScript 5, Supabase JS v2, Joi validation, Express Rate Limit, Helmet, Compression.
+- **Shared:** Workspace package for cross-cutting types (`shared/`).
+- **Infrastructure:** Supabase (PostgreSQL + Auth + Realtime), Fly.io for the API, Cloudflare Pages for the PWA, PayHere for payments.
+
+## Architecture Overview
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │    Backend      │    │    Database     │
-│ Cloudflare Pages│◄──►│    Fly.io       │◄──►│   Supabase      │
-│   (React/Vite)  │    │  (Node.js/TS)   │    │ (PostgreSQL)    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   CDN/Edge      │    │   Load Balancer │    │   Realtime      │
-│   Cloudflare    │    │   Auto-scaling  │    │   Subscriptions │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌──────────────┐    HTTPS     ┌──────────────┐    PostgREST    ┌──────────────┐
+│ React PWA    │ ───────────▶ │ Express API  │ ──────────────▶ │ Supabase     │
+│ (Vite, SW)   │ ◀─────────── │ (Fly.io)     │ ◀────────────── │ PostgreSQL    │
+└──────────────┘  WebSockets  └──────────────┘   Realtime      └──────────────┘
+       │ Mapbox GL & PayHere SDK │       │ PayHere Webhooks │        │ RLS + Functions │
+       └────────────┬────────────┘       └──────────┬────────┘        └──────┬────────┘
+                    │                                 │                     │
+             Customer devices                 PayHere gateway         Admin dashboard
 ```
+- React Query fetches data from `/api/*` endpoints and caches responses per route.
+- Zustand stores (`frontend/src/stores`) keep client-side state for auth, cart, delivery settings, and admin metrics.
+- Supabase realtime channels broadcast order mutations so the admin queue stays synchronised without polling.
+- The Express API validates payloads, computes pricing, and uses the Supabase service role key for privileged writes.
+- PayHere notifications flow back into the API to finalise card payment statuses.
 
-### How the pieces fit together in production
-
-- **Edge-first delivery.** End users interact with a PWA served from Cloudflare's global edge. Static assets are cached at the CDN, while API calls are proxied over HTTPS to the Fly.io workload in Singapore to minimize latency for Sri Lankan diners.
-- **Stateless API tier.** The Fly.io app runs a single Express container image. Because session state lives in Supabase (auth) and the browser (JWTs), the backend can be horizontally scaled by increasing the Fly.io instance count without additional coordination.
-- **Managed data plane.** Supabase hosts PostgreSQL (for transactional data) and real-time subscriptions. All mutations travel through the backend using the Supabase service role key, while the frontend uses an anon key limited by Row Level Security for read access where appropriate.
-- **External integrations.** PayHere handles card and wallet payments, while Firebase Cloud Messaging powers push notifications. Both services are called only from the backend to keep secrets server-side.
-
-### Request and data flow
-
-1. **User action:** A customer browses menu data that is cached by the PWA. Cache misses trigger `GET /api/menu/*` calls routed from Cloudflare to Fly.io.
-2. **API processing:** Express handlers enforce rate limiting, validate payloads, and call Supabase using service-role credentials. Delivery radius checks run before an order can be confirmed so that out-of-range requests fail fast.
-3. **Database updates:** PostgreSQL transactions write into `orders`, `order_items`, and related tables. Supabase real-time broadcasts state changes to subscribed admin dashboards to keep the kitchen view synchronized.
-4. **Outbound integrations:** When an order is submitted with PayHere, the backend assembles the signed payload, stores the payment intent, and waits for PayHere's webhook callbacks to confirm the status.
-5. **Frontend updates:** Zustand stores invalidate cached queries via React Query, showing updated timelines to both customers and admins.
-
-### Operational characteristics
-
-- **Throughput & scaling:** Default Fly.io config runs one VM (`fly scale count 1`). For peak periods, scale horizontally (`fly scale count 3`)—each instance handles ~100 requests/15 min before rate limits engage, protecting Supabase and PayHere from abuse.
-- **Latency targets:** Typical Sri Lanka ↔ Singapore round trip averages 60–80 ms. Use Cloudflare's analytics to spot regional latency spikes; sustained degradation suggests scaling the Fly app in-region or adding a second region with Fly.io's Anycast.
-- **Resilience assumptions:** The system assumes Supabase availability. If Supabase is degraded, order placement and authentication will fail fast with user-friendly messaging while the CDN continues to serve cached menu content.
-- **Security boundaries:** All secrets (PayHere, Supabase service role, Firebase) are injected via Fly secrets. JWTs are short-lived (7 days) and validated on every request. Rate limiters protect sensitive routes (`/api/orders`, `/api/admin/*`).
-
-### Technology Stack
-
-**Frontend:**
-- ⚛️ React 18 with TypeScript
-- ⚡ Vite for fast development and building
-- 🎨 Tailwind CSS for styling
-- 🗺️ Mapbox for location services
-- 💳 PayHere payment integration
-- 🔔 Firebase push notifications
-
-**Backend:**
-- 🟢 Node.js with Express and TypeScript
-- 🛡️ JWT authentication and authorization
-- 📊 Rate limiting and security middleware
-- 🔄 Real-time order updates
-- 💰 Payment processing integration
-
-**Infrastructure:**
-- 🌐 **Frontend**: Cloudflare Pages (Global CDN)
-- 🚀 **Backend**: Fly.io (Edge deployment)
-- 🗄️ **Database**: Supabase (PostgreSQL + Realtime)
-- 📱 **Notifications**: Firebase Cloud Messaging
-- 💳 **Payments**: PayHere (Sri Lankan payment gateway)
-
-## 🚀 Features
-
-### 👥 Customer Features
-- **📱 Mobile-First Design**: Optimized for Sri Lankan mobile users
-- **🍽️ Browse Menu**: Categorized menu with authentic Sri Lankan dishes
-- **🛒 Smart Cart**: Add, customize, and manage orders easily
-- **🚚 Delivery System**: Location-based ordering with 5km range
-- **💰 Smart Pricing**: LKR 180 base + LKR 40/km delivery fee
-- **💳 Local Payments**: PayHere integration for LKR transactions
-- **📍 Real-time Tracking**: Complete order status workflow (received → confirmed → preparing → ready → delivered/picked up → completed)
-- **🔐 Secure Auth**: Email/Google login with Supabase
-- **📲 PWA Install**: Works offline, installs like native app
-- **🌐 Bilingual**: Sinhala and English support
-
-### 👨‍💼 Admin Features
-- **📊 Advanced Dashboard**: Real-time order management with analytics
-- **🍜 Complete Menu Management**: Categories, variants, addons with images
-- **🚚 Delivery Management**: Track orders, manage delivery zones with enhanced status workflow
-- **⏰ Business Configuration**: Hours, location, delivery settings
-- **📈 Revenue Analytics**: Daily/weekly sales tracking
-- **🔔 Real-time Notifications**: Instant order alerts
-- **👥 Customer Management**: Order history and preferences
-- **🎯 Order Status Management**: Complete workflow from received to completed with pickup/delivery differentiation
-
-## 📋 Order Status Workflow
-
-RealTaste features a comprehensive order management system with different workflows for pickup and delivery orders:
-
-### Order Statuses
-- **received** - Initial order placement
-- **confirmed** - Order confirmed by restaurant
-- **preparing** - Kitchen is preparing the order
-- **ready_for_pickup** - Order ready for customer pickup
-- **ready_for_delivery** - Order ready for delivery
-- **picked_up** - Customer has collected the order
-- **delivered** - Order has been delivered to customer
-- **completed** - Order fully completed
-- **cancelled** - Order cancelled
-
-### Workflow Paths
-
-**Pickup Orders:**
+## Folder Structure
 ```
-received → confirmed → preparing → ready_for_pickup → picked_up → completed
+.
+├── backend/        # Express API, middleware, Supabase integrations
+├── frontend/       # React PWA source, components, hooks, stores
+├── shared/         # Shared TypeScript types/utilities used by all workspaces
+├── supabase/       # SQL schema, migrations, and seed data
+├── docs/           # Project documentation suite
+├── scripts/        # Utility scripts for maintenance and diagnostics
+└── production.env.example
 ```
-
-**Delivery Orders:**
-```
-received → confirmed → preparing → ready_for_delivery → delivered → completed
-```
-
-### Admin Features
-- Color-coded status display for easy identification
-- Bulk status updates for multiple orders
-- Dynamic filtering by order status and type
-- Real-time status updates with notifications
-- Estimated delivery time tracking
-
-## 🛠️ Tech Stack
-
-### Frontend (PWA)
-```
-React 18 + TypeScript
-├── Vite (Build Tool)
-├── Tailwind CSS (Styling)
-├── React Query (Data Fetching)
-├── Zustand (State Management)
-├── React Router (Navigation)
-├── Lucide React (Icons)
-├── React Hook Form (Forms)
-├── React Hot Toast (Notifications)
-└── Workbox (Service Worker)
-```
-
-### Backend (API)
-```
-Node.js + Express + TypeScript
-├── Supabase (Database & Auth)
-├── JWT (Session Management)
-├── Rate Limiting (Security)
-├── CORS (Cross-Origin)
-├── Validation Middleware
-└── PayHere Integration
-```
-
-### Database & Infrastructure
-```
-Supabase (PostgreSQL)
-├── Row Level Security (RLS)
-├── Real-time Subscriptions
-├── Authentication
-├── File Storage
-└── Edge Functions
-```
-
-## 🏗️ Project Architecture
-
-```
-RealTaste/
-├── 📁 frontend/                 # React PWA Application
-│   ├── 📁 src/
-│   │   ├── 📁 components/       # Reusable UI Components
-│   │   ├── 📁 pages/            # Page Components
-│   │   ├── 📁 hooks/            # Custom React Hooks
-│   │   ├── 📁 services/         # API Services
-│   │   ├── 📁 stores/           # Zustand State Stores
-│   │   └── 📁 utils/            # Utility Functions
-│   ├── 📁 public/               # Static Assets
-│   └── 📁 dist/                 # Built application
-├── 📁 backend/                  # Node.js API Server
-│   ├── 📁 src/
-│   │   ├── 📁 routes/           # Express Routes
-│   │   ├── 📁 middleware/       # Express Middleware
-│   │   ├── 📁 services/         # Business Logic
-│   │   ├── 📁 config/           # Configuration
-│   │   └── server.ts            # Express app setup
-│   └── 📁 dist/                 # Compiled JavaScript
-├── 📁 shared/                   # Shared Code
-│   ├── 📁 src/
-│   │   ├── 📁 types/            # Shared TypeScript Types
-│   │   └── 📁 utils/            # Shared Utilities
-│   └── 📁 dist/                 # Compiled shared code
-├── 📁 supabase/                 # Database Schema
-│   ├── 📁 migrations/           # SQL migrations
-│   └── seed.sql                 # Sample data
-├── 📁 docs/                     # Documentation
-├── 📄 package.json              # Root package configuration
-├── 📄 .gitignore               # Git ignore rules
-├── 📄 README.md                # This file
-└── 📄 LICENSE                  # MIT License
-```
-
-## 🚀 Quick Start
-
-### Prerequisites
-- **Node.js 18+** and npm
-- **Supabase account** (free tier available)
-- **PayHere merchant account** (for Sri Lankan payments)
-
-### 1. Clone Repository
-```bash
-git clone https://github.com/Spyboss/RealTaste.git
-cd RealTaste
-npm install
-```
-
-### 2. Environment Setup
-```bash
-# Copy environment templates
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-
-# Edit the .env files with your credentials
-```
-
-### 3. Database Setup
-1. Create a new Supabase project at [supabase.com](https://supabase.com)
-2. Copy your project URL and keys to the .env files
-3. Run the database setup:
-```bash
-# This will create tables and seed sample Sri Lankan menu data
-npm run db:setup
-```
-
-### 4. Development
-```bash
-# Start all services (frontend + backend)
-npm run dev
-```
-
-**🎉 Your app is now running:**
-- **Frontend**: http://localhost:5173
-- **Backend**: http://localhost:3001
-- **Database**: Your Supabase dashboard
-
-### 5. Production Build
-```bash
-# Build all packages
-npm run build
-
-# Test production build
-npm run preview
-```
-
-## 🔧 Configuration
-
-### Backend Environment (.env)
-```env
-# Server Configuration
-PORT=3001
-NODE_ENV=development
-
-# Supabase (Get from your Supabase project settings)
-SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
-
-# Security
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-
-# PayHere (Sri Lankan Payment Gateway)
-PAYHERE_MERCHANT_ID=your-payhere-merchant-id
-PAYHERE_MERCHANT_SECRET=your-payhere-merchant-secret
-PAYHERE_SANDBOX=true
-
-# Business Settings
-RESTAURANT_NAME=RealTaste
-RESTAURANT_PHONE=+94 76 195 2541
-BUSINESS_OPEN_TIME=10:00
-BUSINESS_CLOSE_TIME=22:00
-```
-
-### Frontend Environment (.env)
-```env
-# Supabase (Same as backend)
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-
-# API Configuration
-VITE_API_URL=http://localhost:3001/api
-
-# PayHere (Frontend integration)
-VITE_PAYHERE_MERCHANT_ID=your-payhere-merchant-id
-VITE_PAYHERE_SANDBOX=true
-```
-
-## 📊 Database Schema
-
-### Core Tables
-```sql
--- Menu Structure
-categories (id, name, description, sort_order, is_active)
-menu_items (id, category_id, name, description, base_price, image_url, is_available)
-menu_variants (id, menu_item_id, name, price_modifier)
-menu_addons (id, menu_item_id, name, price, is_available)
-
--- Order Management
-orders (id, user_id, status, total_amount, customer_info, created_at)
-order_items (id, order_id, menu_item_id, variant_id, quantity, unit_price, total_price)
-order_item_addons (id, order_item_id, addon_id, quantity, unit_price)
-
--- Business Configuration
-business_hours (id, day_of_week, open_time, close_time, is_open)
-```
-
-### Sample Sri Lankan Menu Data
-The database comes pre-seeded with authentic Sri Lankan dishes:
-- **Rice & Curry**: Traditional rice with various curries
-- **Kottu**: Sri Lankan stir-fried bread dish
-- **String Hoppers**: Steamed rice noodle pancakes
-- **Hoppers**: Bowl-shaped pancakes
-- **Short Eats**: Sri Lankan snacks and appetizers
-
-## 🔐 Security Features
-
-- **🛡️ Row Level Security (RLS)**: Database-level access control
-- **🚦 Rate Limiting**: API endpoint protection (100 requests/15min)
-- **✅ Input Validation**: All requests validated with middleware
-- **🌐 CORS Protection**: Configured for production domains
-- **🔐 JWT Authentication**: Secure session management
-- **🔒 Environment Variables**: All secrets in .env files
-- **🚫 SQL Injection Protection**: Parameterized queries only
-
-## 🚀 Deployment
-
-### ⚡ Quick Deploy (30 minutes)
-```bash
-# 1. Check prerequisites
-npm run deploy:check
-
-# 2. Deploy backend to Fly.io
-cd backend
-fly launch --no-deploy
-fly secrets set NODE_ENV=production SUPABASE_URL=your-url SUPABASE_ANON_KEY=your-key
-fly deploy
-
-# 3. Deploy frontend to Cloudflare Pages
-# Push to GitHub, then connect to Cloudflare Pages
-git push origin main
-```
-
-**📚 Detailed Guides:**
-- **🚀 Quick Start**: [QUICK_DEPLOY.md](QUICK_DEPLOY.md) - 30-minute deployment
-- **📖 Full Guide**: [DEPLOYMENT.md](DEPLOYMENT.md) - Complete instructions
-- **✅ Checklist**: [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) - Step-by-step verification
-
-### Production operations playbook
-
-| Operational Area | Primary Tooling | What to Watch |
-| --- | --- | --- |
-| **API health** | `fly status`, `fly logs`, `/health` endpoint | Instance restarts, elevated error rates, memory pressure |
-| **Frontend delivery** | Cloudflare Pages analytics & preview deploys | Build failures, cache purge results, Core Web Vitals |
-| **Database** | Supabase dashboard (Usage → Database), Log Explorer | Connection saturation, slow queries, RLS policy errors |
-| **Payments** | PayHere Merchant Portal & webhook logs | Pending callbacks >5 min, repeated signature mismatches |
-| **Notifications** | Firebase console (Cloud Messaging) | Token registration failures, push delivery lag |
-
-**Alerting tip:** Configure Fly.io log drains or Syslog forwarding if you need centralized alerting; rate-limiter warnings and global error-handler logs already include request context for triage.
-
-### Failure modes & recovery
-
-- **Supabase outage:** Orders and authentication fail. Keep the site online by serving a maintenance banner from the frontend; pause marketing traffic and monitor Supabase status. Once restored, validate background jobs (webhooks, real-time subscriptions) by placing a test order.
-- **PayHere webhook delays:** Orders remain in `received` state. Use the admin dashboard to manually mark payments after checking the PayHere portal. Investigate signature mismatches in backend logs.
-- **Fly.io deployment rollback:** If a release causes errors, redeploy the last working image (`fly deploy --image <digest>`). Since the app is stateless, no data rollback is required.
-- **Cloudflare cache poisoning:** Purge the affected paths from the Pages dashboard and redeploy to ensure a clean build.
-
-### Observability shortcuts
-
-- **Structured logging:** The backend logs environment, business hours, and PayHere configuration on startup for quick sanity checks during incident response.
-- **Real-time troubleshooting:** Attach to a running instance with `fly ssh console` to inspect `/var/log` and verify environment variables.
-- **Synthetic monitoring:** Schedule periodic `curl https://<backend>/health` checks from Colombo and Singapore to detect regional outages early.
-
-### 🌐 Production Stack (Currently Live)
-- **Frontend**: Cloudflare Pages (Global CDN, PWA enabled)
-- **Backend**: Fly.io (Singapore region, auto-scaling)
-- **Database**: Supabase (PostgreSQL with RLS, real-time)
-- **Payments**: PayHere (Sri Lankan payment gateway)
-- **Status**: ✅ Production Ready with Delivery System
-
-### 🔧 Deployment Commands
-```bash
-# Check deployment readiness
-npm run deploy:check
-
-# Deploy backend only
-npm run deploy:backend
-
-# Get deployment help
-npm run deploy:help
-```
-
-## 📱 PWA Features
-
-### Installation
-1. **Mobile**: Open in browser → "Add to Home Screen"
-2. **Desktop**: Install prompt appears automatically
-3. **Offline**: Works without internet connection
-
-### Capabilities
-- **📲 App-like Experience**: Full-screen, no browser UI
-- **⚡ Fast Loading**: Service worker caching
-- **🔄 Background Sync**: Orders sync when online
-- **🔔 Push Notifications**: Order status updates (coming soon)
-- **📱 Native Feel**: Smooth animations and gestures
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-npm test
-
-# Frontend unit tests
-npm run test:frontend
-
-# Backend API tests
-npm run test:backend
-
-# End-to-end tests
-npm run test:e2e
-
-# Test coverage
-npm run test:coverage
-```
-
-## 📈 Performance
-
-### Lighthouse Scores
-- **Performance**: 95+
-- **Accessibility**: 100
-- **Best Practices**: 100
-- **SEO**: 100
-- **PWA**: 100
-
-### Optimizations
-- **Code Splitting**: Lazy-loaded routes
-- **Image Optimization**: WebP format with fallbacks
-- **Caching Strategy**: Service worker + CDN
-- **Bundle Size**: < 500KB initial load
-- **Database**: Optimized queries with indexes
-
-## 🤝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
-
-### Development Workflow
-1. **Fork** the repository
-2. **Create** feature branch: `git checkout -b feature/amazing-feature`
-3. **Commit** changes: `git commit -m 'Add amazing feature'`
-4. **Push** to branch: `git push origin feature/amazing-feature`
-5. **Open** a Pull Request
-
-### Code Standards
-- **TypeScript**: Strict mode enabled
-- **ESLint**: Airbnb configuration
-- **Prettier**: Code formatting
-- **Husky**: Pre-commit hooks
-- **Conventional Commits**: Commit message format
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **🇱🇰 Sri Lankan Restaurants**: For inspiring this project
-- **💳 PayHere**: For local payment processing
-- **🔥 Supabase**: For amazing backend infrastructure
-- **⚛️ React Team**: For the excellent framework
-- **🎨 Tailwind CSS**: For beautiful, responsive design
-
-## 📞 Support & Contact
-
-- **📧 Email**: support@realtaste.lk
-- **🐛 Issues**: [GitHub Issues](https://github.com/Spyboss/RealTaste/issues)
-- **💬 Discussions**: [GitHub Discussions](https://github.com/Spyboss/RealTaste/discussions)
-- **📱 WhatsApp**: +94 76 195 2541
-
----
-
-<div align="center">
-
-**🍽️ RealTaste - Bringing Sri Lankan Restaurants into the Digital Age! 🇱🇰**
-
-[![Made with ❤️ in Sri Lanka](https://img.shields.io/badge/Made%20with%20❤️%20in-Sri%20Lanka-orange)](https://github.com/Spyboss/RealTaste)
-
-</div>
+A detailed breakdown lives in [`docs/folder-structure.md`](docs/folder-structure.md).
+
+## How to Run (Local Development)
+1. **Node.js**: Install Node 18 or later (see `package.json` engines).
+2. **Dependencies**: From the repository root run `npm install` to bootstrap all workspaces.
+3. **Environment**:
+   - Copy `production.env.example` and trim values into local `.env` files (root for backend, `frontend/.env` for the PWA).
+   - Supply Supabase URL/keys, PayHere sandbox credentials, and Mapbox access tokens.
+4. **Start both services**: `npm run dev` starts the Express API on port `3001` and Vite dev server on port `5173` via `concurrently`.
+5. **Frontend only**: `npm run dev:frontend` inside `frontend/`.
+6. **Backend only**: `npm run dev:backend` inside `backend/`.
+7. **Type checking & linting**: `npm run type-check` / `npm run lint` from the repo root execute workspace scripts.
+
+Requests from `http://localhost:5173` are proxied to the API using the Vite dev server proxy configuration.
+
+## Deploying the PWA (Production Guide)
+### Backend (Fly.io)
+1. Install and authenticate `flyctl`.
+2. Set secrets (Supabase keys, JWT secret, PayHere credentials, Firebase keys if used) via `fly secrets set`.
+3. Build and deploy: `npm run build:backend` then `fly deploy` from `backend/`.
+4. Verify with `curl https://<your-app>.fly.dev/health`.
+
+### Frontend (Cloudflare Pages)
+1. Connect the repository to Cloudflare Pages.
+2. Configure build: Root directory `frontend`, build command `npm install && npm run build`, output directory `dist`.
+3. Add environment variables (`VITE_SUPABASE_URL`, `VITE_API_URL`, `VITE_MAPBOX_ACCESS_TOKEN`, etc.).
+4. Trigger a deploy on the main branch or via manual build.
+
+Refer to [`docs/setup.md`](docs/setup.md) for exhaustive environment variable lists and migration steps.
+
+## API / Backend Setup
+- Provision a Supabase project and execute the SQL in `supabase/schema.sql` plus any migrations under `supabase/migrations/`.
+- Configure Row Level Security policies and service role keys as per the SQL scripts.
+- Backend environment variables:
+  - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+  - `JWT_SECRET`
+  - `PAYHERE_MERCHANT_ID`, `PAYHERE_MERCHANT_SECRET`, optional API keys, `USE_LIVE_PAYHERE`
+  - `FRONTEND_URL`, `BACKEND_URL`
+  - Optional: Firebase credentials if enabling push notifications.
+- Frontend environment variables:
+  - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+  - `VITE_API_URL`
+  - `VITE_RESTAURANT_LAT`, `VITE_RESTAURANT_LNG`
+  - `VITE_MAPBOX_ACCESS_TOKEN`, `VITE_OPENCAGE_API_KEY`
+  - `VITE_PAYHERE_MERCHANT_ID`
+
+Run `npm run build` at the root to compile `shared/`, `frontend/`, and `backend/` artefacts before packaging Docker images or shipping to production.
+
+## Screenshots / GIFs
+Screenshots of the ordering flow and admin dashboard are being curated and will be added to this repository.
+
+## Roadmap
+Upcoming initiatives are tracked in [`docs/roadmap.md`](docs/roadmap.md). Focus areas include POS integration, live kitchen displays, multi-restaurant support, and delivery partner handoffs.
