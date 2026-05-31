@@ -1,7 +1,7 @@
 # RealTaste PWA
 
 ## Project Overview
-RealTaste is a production-ready restaurant ordering platform designed for Sri Lankan takeout businesses. The platform delivers a mobile-first PWA that lets customers browse the menu, place pickup or delivery orders, and track status updates in real time. Restaurant operators manage the same workload through an analytics-driven admin dashboard that runs in the browser and synchronises with Supabase. The system was built by Uminda H. to modernise day-to-day restaurant operations without relying on native apps.
+RealTaste is a restaurant ordering platform designed for Sri Lankan takeout businesses. Customers browse the menu, place pickup or delivery orders, and track status in real time. Restaurant operators manage orders through an admin dashboard that runs in the browser and syncs with Supabase.
 
 ## Features
 ### Customer experience
